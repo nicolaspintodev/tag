@@ -1,0 +1,13 @@
+/api/vendor
+/api/.env
+/api/.env.production
+/api/database/*.sqlite
+/api/tag_db*
+/api/.phpunit.result.cache
+/api/storage/logs/
+/api/storage/framework/views/
+/client/node_modules
+/client/dist
+/client/.env.production
+.DS_Store
+nul
