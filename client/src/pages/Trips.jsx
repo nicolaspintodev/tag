@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import API_BASE_URL from '../apiConfig';
 import { Plus, ChevronDown, Edit, DollarSign, Package, FileText, Truck as TruckIcon, ArrowRight, CheckCircle2, Clock, Printer, ArrowUp, ArrowDown, ChevronLeft, ChevronRight, Trash2, X, Search } from 'lucide-react';
@@ -55,9 +55,12 @@ const UNIDAD_MEDIDA_LABELS = {
 // PRINT COMPONENTS
 // ============================================================
 const PrintPortal = ({ children }) => {
-  const el = useMemo(() => document.createElement('div'), []);
+  const [el] = useState(() => {
+    const div = document.createElement('div');
+    div.className = 'print-only';
+    return div;
+  });
   useEffect(() => {
-    el.className = 'print-only';
     document.body.appendChild(el);
     return () => { document.body.removeChild(el); };
   }, [el]);
@@ -800,7 +803,7 @@ const TripFormModal = ({ trip, onClose, onSave, clientes, unidades, choferes, pr
 
   const [pesoKg, setPesoKg] = useState(d.carga?.peso_kg || '');
   const [bultos, setBultos] = useState(d.carga?.cantidad_bultos || '');
-  const [kmRecorrido, setKmRecorrido] = useState(d.km_recorrido || '');
+  const [kmRecorrido] = useState(d.km_recorrido || '');
 
   // Tariff System
   const [tipoTarifa, setTipoTarifa] = useState(d.tipo_tarifa || 'fija');
@@ -1225,7 +1228,7 @@ const TripFormModal = ({ trip, onClose, onSave, clientes, unidades, choferes, pr
                     const err = await res.json();
                     setAlertMsg('Error al guardar: ' + JSON.stringify(err.errors || err.message));
                   }
-                } catch (e) {
+                } catch {
                   setAlertMsg('Error de red al conectar al API');
                 } finally {
                   setIsSaving(false);
@@ -1287,7 +1290,6 @@ const TripDetail = ({ trip, onRefresh, onPrint, setConfirmCfg, setAlertMsg }) =>
     onRefresh();
   };
 
-  const totalGastos = trip.gastos?.reduce((a, g) => a + parseFloat(g.monto), 0) || 0;
   const totalAnticipos = trip.anticipos?.reduce((a, an) => a + parseFloat(an.monto), 0) || 0;
 
   const propioReintegro = trip.gastos?.filter(g => g.clase === 'propio' && g.reintegro).reduce((a, g) => a + parseFloat(g.monto), 0) || 0;
@@ -1295,7 +1297,6 @@ const TripDetail = ({ trip, onRefresh, onPrint, setConfirmCfg, setAlertMsg }) =>
   const propioSinReintegro = trip.gastos?.filter(g => g.clase === 'propio' && !g.reintegro).reduce((a, g) => a + parseFloat(g.monto), 0) || 0;
   const terceroSinReintegro = trip.gastos?.filter(g => g.clase === 'proveedor' && !g.reintegro).reduce((a, g) => a + parseFloat(g.monto), 0) || 0;
   const costoProveedorBase = parseFloat(trip.costo_proveedor) || 0;
-  const costoProveedorAjustado = costoProveedorBase - totalAnticipos + terceroReintegro;
 
   const handleDelete = (endpoint, id) => {
     setConfirmCfg({
@@ -1623,12 +1624,6 @@ const tabButtonStyle = (isActive) => ({
 });
 
 const subHeaderStyle = { marginBottom: '1.25rem', fontSize: '0.9rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '0.5rem', borderBottom: '1px solid var(--border-color)', paddingBottom: '0.5rem' };
-
-const chainContainerStyle = { display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '1rem', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', backgroundColor: 'var(--bg-body)' };
-const stepStyle = { flex: 1, display: 'flex', flexDirection: 'column', gap: '0.4rem' };
-const stepTitleStyle = { fontSize: '0.7rem', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', display: 'flex', alignItems: 'center', gap: '0.25rem' };
-const stepContentStyle = { display: 'flex', flexDirection: 'column', gap: '0.1rem', minHeight: '40px', justifyContent: 'center' };
-const arrowStyle = { color: 'var(--border-color)', margin: '0 0.25rem' };
 
 const InfoLine = ({ label, value }) => (
   <div style={{ fontSize: '0.85rem', marginBottom: '0.5rem' }}>

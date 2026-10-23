@@ -1,88 +1,112 @@
-# TAG Logistica
+# TAG Logística
 
-Sistema de gestion integral para empresas de transporte y logistica. Centraliza la operativa diaria: asignacion de recursos, trazabilidad documental y financiera de cada viaje.
+Sistema de gestión para una empresa de transporte y logística: clientes, proveedores, unidades, choferes, viajes, liquidaciones, documentación y facturación.
 
-## Modulos
+[![CI](https://github.com/nicolaspintodev/tag/actions/workflows/ci.yml/badge.svg)](https://github.com/nicolaspintodev/tag/actions/workflows/ci.yml)
 
-### Viajes (modulo central)
-Ciclo de vida completo con 5 estados: Pendiente → En Curso → Finalizado → Liquidado (o Cancelado). Asignacion de recursos (choferes y unidades, propios o tercerizados), sistema de tarifa flexible (km, bulto, tonelada, tarifa plana), gestion de cargas, hoja de ruta imprimible (A4).
-
-### Administracion de recursos
-- **Unidades**: camiones y acoplados, seguimiento VTV/seguros
-- **Choferes**: legajos, contactos, control LINTI
-- **Proveedores (fleteros)**: transporte tercerizado
-
-### Liquidaciones
-Agrupacion de viajes para cobrar al cliente o pagar al proveedor. Wizard de creacion con filtros dinamicos, numeracion automatica (LIQ-C-XXXX / LIQ-P-XXXX), estados: borrador → pendiente → facturada.
-
-### Facturacion
-Facturas generadas a partir de liquidaciones (mock por ahora).
-
-### Documentacion
-Hojas de ruta imprimibles, documentos por viaje (REMITO, CARTA_DE_PORTE, HOJA_DE_RUTA).
-
-## Flujo de negocio
-
-```
-Viaje → Documento → Liquidacion → Factura
-         (1:1)        (N:N)         (1:1)
-```
+> **Estado:** PoC funcional. La autenticación y la facturación están implementadas como mock/bypass. No usar todavía con datos reales de producción.
 
 ## Stack
 
-- **Frontend**: React 19, Vite 8, React Router DOM 7, Recharts, Lucide React
-- **Backend**: Laravel 13, PHP 8.4
-- **Base de datos**: SQLite (desarrollo), MySQL (produccion)
-- **Auth**: Laravel Sanctum
-- **Infra dev**: Docker Compose (MySQL + Laravel + Node)
-
-## Setup
-
-```bash
-# Backend
-cd api
-cp .env.example .env
-php artisan key:generate
-php artisan migrate:fresh --seed
-php artisan serve
-
-# Frontend
-cd client
-npm install
-npm run dev
-```
-
-O con Docker:
-
-```bash
-docker compose up
-```
-
-- API: `http://localhost:8000`
-- Frontend: `http://localhost:5173`
+| Capa | Tecnología |
+|---|---|
+| Backend | Laravel 13 + PHP 8.4 + Sanctum |
+| Frontend | React 19 + Vite 8 |
+| Base de datos (dev) | SQLite |
+| Base de datos (prod) | MySQL 8 |
+| Estilos | CSS nativo |
+| Iconos | Lucide React |
 
 ## Estructura
 
-```
-tag/
-├── api/                    # Backend Laravel
-│   ├── app/                # Controllers, Models, Enums
-│   ├── database/           # Migraciones y seeders
-│   ├── routes/             # API y web routes
-│   └── tests/              # Feature y unit tests
-├── client/                 # Frontend React
-│   └── src/pages/          # 10 modulos (Viajes, Liquidaciones, etc.)
-├── docs/                   # Documentacion del proyecto
-├── docker-compose.yml
+```text
+TAG/
+├── api/          # Backend Laravel
+├── client/       # Frontend React + Vite
+├── docs/         # Reservada para documentación de código
+├── scripts/      # Atajos para Windows (.bat)
+├── LICENSE
 └── README.md
 ```
 
-## Docs
+## Requisitos
 
-- `docs/DEPLOYMENT_GUIDE.md` — Guia de despliegue en produccion
-- `docs/ESTADO_DEL_PROYECTO.md` — Estado actual y proximos pasos
-- `docs/HISTORY.md` — Historial de cambios
+- PHP 8.4 con `pdo_sqlite`, `mbstring`, `openssl`, `fileinfo`
+- Composer 2
+- Node.js 22 + npm
+- Git
+
+## Setup local
+
+### Backend
+
+```bash
+cd api
+composer install
+cp .env.example .env
+php artisan key:generate
+php -r "file_exists('database/database.sqlite') || touch('database/database.sqlite');"
+php artisan migrate:fresh --seed --force
+php artisan storage:link
+php artisan serve
+```
+
+En Windows podés usar `copy .env.example .env` en lugar de `cp`. `storage:link` es opcional y puede requerir permisos de administrador.
+
+La API queda en `http://localhost:8000`.
+
+### Frontend
+
+```bash
+cd client
+npm ci
+cp .env.example .env.local
+npm run dev
+```
+
+La UI queda en `http://localhost:5173`.
+
+### Scripts para Windows
+
+```bat
+scripts\iniciar-backend.bat
+scripts\iniciar-frontend.bat
+scripts\reset-db.bat
+scripts\pre-deploy.bat
+scripts\cerrar-servers.bat
+```
+
+Los scripts usan `php` y, si existe, `C:\php84\php.exe`. Podés forzar otro binario con `set PHP_EXE=C:\ruta\a\php.exe` antes de ejecutarlos.
+
+## Tests
+
+```bash
+cd api
+composer test
+```
+
+```bash
+cd client
+npm run lint
+npm run build
+```
+
+Los tests de backend usan SQLite en memoria (`api/phpunit.xml`) y no tocan la base local. La documentación de testing se mantiene en el hub interno del proyecto.
+
+## Documentación
+
+- [Guía para agentes](AGENTS.md)
+
+La documentación de gestión, deploy, testing e historial se mantiene en el hub interno del proyecto. `docs/` queda reservada para documentación de código.
+
+## Despliegue
+
+El hosting de producción es DonWeb/Ferozo (hosting compartido). No soporta Docker ni procesos persistentes de Node, por lo que el frontend se compila y se sube por FTP. La guía de deploy se mantiene en el hub interno del proyecto.
+
+## Repositorio legacy
+
+El repositorio anterior [`pinto0528/TAG`](https://github.com/pinto0528/TAG) quedó archivado. La rama `nuevo-flujo` conserva el historial y los planes de testing antiguos. El repositorio canónico es [`nicolaspintodev/tag`](https://github.com/nicolaspintodev/tag).
 
 ## Licencia
 
-MIT
+[MIT](LICENSE)

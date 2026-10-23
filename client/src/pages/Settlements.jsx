@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { Plus, Search, FileText, Printer, Users, Briefcase, Eye, X, ChevronRight, ChevronLeft, ChevronDown, Trash2, RotateCcw, AlertTriangle, CheckSquare } from 'lucide-react';
 import API_BASE_URL from '../apiConfig';
@@ -32,9 +32,12 @@ const getViajeCodigo = (v) => v.codigo_viaje || `VIA-${String(v.id).padStart(4, 
 // PRINT COMPONENTS
 // ============================================================
 const PrintPortal = ({ children }) => {
-    const el = useMemo(() => document.createElement('div'), []);
+    const [el] = useState(() => {
+        const div = document.createElement('div');
+        div.className = 'print-only';
+        return div;
+    });
     useEffect(() => {
-        el.className = 'print-only';
         document.body.appendChild(el);
         return () => { document.body.removeChild(el); };
     }, [el]);
@@ -244,7 +247,7 @@ const LiquidacionWizard = ({ onClose, onSave }) => {
         if (liquidacionTempId) {
             try {
                 await fetch(`${API_BASE_URL}/liquidaciones/${liquidacionTempId}`, { method: 'DELETE' });
-            } catch (_) {
+            } catch {
                 // best effort cleanup
             }
         }
@@ -593,51 +596,14 @@ const Settlements = () => {
         }
     }, [printMode]);
 
-    const handleSaveWizard = (nuevaLiq) => {
+    const handleSaveWizard = () => {
         setShowWizard(false);
         fetchLiquidaciones();
-        setPreviewData(nuevaLiq);
     };
 
     const handlePrint = (liq) => {
         setDataToPrint(liq);
         setPrintMode(true);
-    };
-
-    const handleArchive = (liq) => {
-        setConfirmAction({
-            title: 'Archivar Liquidación',
-            message: `¿Está seguro de archivar la liquidación ${liq.numero}? Podrá restaurarla más tarde.`,
-            onConfirm: async () => {
-                try {
-                    const res = await fetch(`${API_BASE_URL}/liquidaciones/${liq.id}`, { method: 'DELETE' });
-                    if (!res.ok) throw new Error('Error al archivar');
-                    setConfirmAction(null);
-                    fetchLiquidaciones();
-                } catch (err) {
-                    console.error(err);
-                    setConfirmAction(null);
-                }
-            }
-        });
-    };
-
-    const handleRestore = (liq) => {
-        setConfirmAction({
-            title: 'Restaurar Liquidación',
-            message: `¿Está seguro de restaurar la liquidación ${liq.numero}?`,
-            onConfirm: async () => {
-                try {
-                    const res = await fetch(`${API_BASE_URL}/liquidaciones/${liq.id}/restore`, { method: 'POST' });
-                    if (!res.ok) throw new Error('Error al restaurar');
-                    setConfirmAction(null);
-                    fetchLiquidaciones();
-                } catch (err) {
-                    console.error(err);
-                    setConfirmAction(null);
-                }
-            }
-        });
     };
 
     const handleChangeEstado = (liq, nuevoEstado) => {
@@ -673,18 +639,6 @@ const Settlements = () => {
         const numero = (l.numero || '').toLowerCase();
         return entityName.includes(q) || numero.includes(q);
     });
-
-    const getSiguienteEstado = (estado) => {
-        if (estado === 'borrador') return 'pendiente';
-        if (estado === 'pendiente') return 'facturada';
-        return null;
-    };
-
-    const getEstadoLabel = (estado) => {
-        if (estado === 'borrador') return 'Pendiente';
-        if (estado === 'pendiente') return 'Facturada';
-        return null;
-    };
 
     return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', animation: 'fadeIn 0.5s ease-in-out' }}>

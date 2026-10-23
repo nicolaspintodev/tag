@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { BrowserRouter as Router, Routes, Route, NavLink, useLocation, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, NavLink, Navigate } from 'react-router-dom';
 import { Truck, Bell, Search, LogOut, Eye, EyeOff, Layout, Users, Briefcase, FileText } from 'lucide-react';
 import './App.css';
 
@@ -11,8 +11,6 @@ import Settlements from './pages/Settlements';
 import Login from './pages/Login';
 
 const Header = ({ onLogout, theme, toggleTheme }) => {
-  const location = useLocation();
-  const pathName = location.pathname.split('/')[1] || 'Dashboard';
   const [showLogoutModal, setShowLogoutModal] = useState(false);
 
   return (

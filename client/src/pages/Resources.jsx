@@ -258,7 +258,7 @@ const Resources = () => {
     );
 };
 
-const ItemCard = ({ item, type, onEdit, onDelete, onRestore, onToggleActive }) => {
+const ItemCard = ({ item, type, onEdit, onToggleActive }) => {
     const isArchived = !!item.deleted_at;
 
     return (
