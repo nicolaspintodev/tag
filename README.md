@@ -29,6 +29,13 @@ TAG/
 └── README.md
 ```
 
+## Ramas
+
+- `main`: estable y deployable; solo releases y hotfixes.
+- `develop`: integración; recibe PRs de ramas cortas.
+- Ramas cortas: `feat/...`, `fix/...`, `chore/...`, `docs/...`.
+- Flujo detallado en [CONTRIBUTING](CONTRIBUTING.md).
+
 ## Requisitos
 
 - PHP 8.4 con `pdo_sqlite`, `mbstring`, `openssl`, `fileinfo`
@@ -96,12 +103,14 @@ Los tests de backend usan SQLite en memoria (`api/phpunit.xml`) y no tocan la ba
 ## Documentación
 
 - [Guía para agentes](AGENTS.md)
+- [Cómo contribuir](CONTRIBUTING.md)
+- [Seguridad](SECURITY.md)
 
 La documentación de gestión, deploy, testing e historial se mantiene en el hub interno del proyecto. `docs/` queda reservada para documentación de código.
 
 ## Despliegue
 
-El hosting de producción es DonWeb/Ferozo (hosting compartido). No soporta Docker ni procesos persistentes de Node, por lo que el frontend se compila y se sube por FTP. La guía de deploy se mantiene en el hub interno del proyecto.
+El entorno de prueba corre en DonWeb/Ferozo (hosting compartido). No soporta Docker ni procesos persistentes de Node, por lo que el frontend se compila y se sube por FTP. La guía de deploy se mantiene en el hub interno del proyecto.
 
 ## Repositorio legacy
 

@@ -20,14 +20,17 @@ cd ../client && npm ci
 
 ## Flujo de trabajo
 
-1. Crear una rama desde `main`: `feat/...`, `fix/...` o `chore/...`.
+1. Crear una rama desde `develop`: `feat/...`, `fix/...`, `chore/...` o `docs/...`.
 2. Hacer commits chicos y descriptivos.
 3. Antes de abrir el PR:
    ```bash
    cd api && composer test
    cd ../client && npm run lint && npm run build
    ```
-4. Abrir el PR contra `main` usando la plantilla.
+4. Abrir el PR contra `develop` usando la plantilla y mergear con squash.
+5. Releases: PR de `develop` a `main` con tag `vX.Y.Z`. Hotfixes: rama desde `main`, PR a `main` y réplica a `develop`.
+
+No pushear directo a `main` ni `develop`.
 
 ## Estilo
 

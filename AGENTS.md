@@ -6,8 +6,12 @@ Guia para agentes de IA trabajando en este proyecto.
 
 - Canonico: <https://github.com/nicolaspintodev/tag>
 - Legacy (archivado): <https://github.com/pinto0528/TAG>
-- Rama principal: `main`
+- `main`: estable y deployable. Solo recibe releases y hotfixes.
+- `develop`: rama de integracion. Recibe PRs de ramas cortas.
+- Ramas cortas: `feat/...`, `fix/...`, `chore/...`, `docs/...` desde `develop`.
+- Flujo: rama corta -> PR squash -> `develop`; release: `develop` -> PR -> `main` + tag; hotfix: `main` -> PR -> `main` y replica a `develop`.
 - No commitear ni pushear sin autorizacion explicita.
+- No pushear directo a `main` ni `develop`.
 
 ## Comandos de Desarrollo
 

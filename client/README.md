@@ -14,11 +14,13 @@ La app queda en `http://localhost:5173` y consume la API en `http://localhost:80
 
 ## Configuración
 
-La URL de la API se define con `VITE_API_URL` (ver `src/apiConfig.js`). Para producción, crear `.env.production`:
+La URL de la API se define con `VITE_API_URL` (ver `src/apiConfig.js`). Para el entorno de prueba actual, crear `.env.production`:
 
 ```env
-VITE_API_URL=https://logisticatag.com.ar/api
+VITE_API_URL=http://logisticatag.com.ar/api
 ```
+
+Cuando se habilite SSL en el dominio, cambiar la URL a `https://`.
 
 ## Build y lint
 

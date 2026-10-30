@@ -2,6 +2,9 @@
 
 <!-- Describir el cambio y el problema que resuelve. -->
 
+- Issue relacionado:
+- Base del PR: `develop` (o `main` solo para release/hotfix)
+
 ## Cómo probar
 
 - [ ] `cd api && composer test`
