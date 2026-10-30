@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, Legend, BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts';
 import { AlertTriangle, TrendingUp, DollarSign } from 'lucide-react';
 
-const Dashboard = ({ theme }) => {
+const Dashboard = () => {
   const [viajes, setViajes] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -52,18 +52,9 @@ const Dashboard = ({ theme }) => {
     .filter(k => statusMap[k] > 0)
     .map(k => ({ name: statusLabels[k], value: statusMap[k], key: k }));
 
-  // Dynamic Theme Colors
-  const isWarm = theme === 'warm';
-
-  const PIE_COLORS = isWarm
-    ? ['#5c4e3f', '#70604e', '#877461', '#a08c76', '#baa68f', '#d0c0ad']
-    : ['#0f172a', '#1e293b', '#334155', '#475569', '#64748b', '#94a3b8'];
-
-  const STATUS_COLORS_LIGHT = { 'Finalizado': '#1e293b', 'En curso': '#334155', 'Pendiente': '#64748b', 'Cancelado': '#94a3b8' };
-  const STATUS_COLORS_WARM = { 'Finalizado': '#5c4e3f', 'En curso': '#70604e', 'Pendiente': '#a08c76', 'Cancelado': '#d0c0ad' };
-  const STATUS_COLORS = isWarm ? STATUS_COLORS_WARM : STATUS_COLORS_LIGHT;
-
-  const BAR_COLOR = isWarm ? '#5c4e3f' : '#1e293b';
+  const PIE_COLORS = ['#0f172a', '#1e293b', '#334155', '#475569', '#64748b', '#94a3b8'];
+  const STATUS_COLORS = { 'Finalizado': '#1e293b', 'En curso': '#334155', 'Pendiente': '#64748b', 'Cancelado': '#94a3b8' };
+  const BAR_COLOR = '#1e293b';
 
   const formatCurrency = (val) => new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', maximumFractionDigits: 0 }).format(val);
 
