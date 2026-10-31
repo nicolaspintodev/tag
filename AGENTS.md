@@ -87,7 +87,6 @@ php artisan tinker --execute="echo print_r(\Illuminate\Support\Facades\Schema::g
 - CSS nativo (sin framework CSS)
 - API calls via fetch con `API_BASE_URL` (ver `client/src/apiConfig.js`)
 - Lucide React para iconos
-- Modo Proteccion Visual soportado
 
 ### Base de datos
 - SQLite en desarrollo, MySQL en produccion
@@ -118,8 +117,9 @@ php artisan tinker --execute="echo print_r(\Illuminate\Support\Facades\Schema::g
 - `api/app/Http/Controllers/GastoController.php` — CRUD, auto-recalcula costo_viaje
 - `api/app/Http/Controllers/FacturaController.php` — CRUD, filtrado por liquidacion
 
-### Frontend
-- `client/src/App.jsx` — rutas y layout
+### Frontend (UI anterior desactivada)
+- `client/src/App.jsx` — shell mínimo: login + placeholder.
+- Las páginas en `client/src/pages/` se conservan como referencia, sin rutas activas hasta la reconstrucción en W1.
 - `client/src/pages/Trips.jsx` — modulo de viajes (1700+ lineas)
 - `client/src/pages/Settlements.jsx` — liquidaciones con wizard
 - `client/src/pages/Billing.jsx` — facturacion

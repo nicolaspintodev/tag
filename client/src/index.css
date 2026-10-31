@@ -207,32 +207,6 @@ button.outline:hover {
   animation: spin 1s linear infinite;
 }
 
-/* Warm / Eye-Care Theme (Earthier, Lower-contrast, Muted Sepia) */
-[data-theme="warm"] {
-  --bg-body: #d4cec4;
-  --bg-card: #e4e0d7;
-  --bg-hover: #c4beb3;
-  --bg-primary: #5c4e3f;
-  --bg-primary-rgb: 92, 78, 63;
-  --text-main: #332d26;
-  --text-muted: #665b4f;
-  --text-invert: #e4e0d7;
-  --border-color: #beb8ac;
-  --bg-active: #c4beb3;
-
-  --color-success-bg: #c9d6ca;
-  --color-success-text: #1a5c2b;
-  --color-warning-bg: #dcca9e;
-  --color-warning-text: #73450d;
-  --color-danger-bg: #dfbbbb;
-  --color-danger-text: #7e1e1e;
-  --color-info-bg: #bacbd3;
-  --color-info-text: #134e6b;
-
-  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
-  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.2), 0 2px 4px -2px rgb(0 0 0 / 0.1);
-}
-
 .input-field {
   background-color: var(--bg-card);
   color: var(--text-main);
