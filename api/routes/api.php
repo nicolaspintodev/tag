@@ -12,10 +12,17 @@ use App\Http\Controllers\AnticipoController;
 use App\Http\Controllers\DocumentoController;
 use App\Http\Controllers\FacturaController;
 use App\Http\Controllers\LiquidacionController;
+use App\Http\Controllers\AuthController;
 
-Route::get('/user', function (Request $request) {
-    return $request->user();
-})->middleware('auth:sanctum');
+Route::post('/login', [AuthController::class, 'login']);
+
+Route::middleware('auth:sanctum')->group(function () {
+    Route::get('/user', function (Request $request) {
+        return $request->user();
+    });
+
+    Route::post('/logout', [AuthController::class, 'logout']);
+});
 
 // Resources with Restore capability
 $resources = [
