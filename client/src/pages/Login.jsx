@@ -1,15 +1,26 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Truck } from 'lucide-react';
 
-const Login = ({ onLogin }) => {
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
+import { login } from '../api';
 
-  const handleSubmit = (e) => {
+const Login = ({ onLogin }) => {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  const [enviando, setEnviando] = useState(false);
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    // Mock PoC: cualquier par de datos ingresados entra.
-    if (username && password) {
-      onLogin();
+    setError('');
+    setEnviando(true);
+
+    try {
+      const user = await login(email, password);
+      onLogin(user);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setEnviando(false);
     }
   };
 
@@ -21,31 +32,40 @@ const Login = ({ onLogin }) => {
         </div>
         <h2 style={{ fontSize: '1.75rem', fontWeight: 'bold', marginBottom: '0.5rem', color: 'var(--text-main)', textAlign: 'center' }}>TAG Logística</h2>
         <p style={{ color: 'var(--text-muted)', marginBottom: '2.5rem', fontSize: '0.875rem', textAlign: 'center' }}>Plataforma Integral de Flota</p>
-        
+
         <form style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: '1.25rem' }} onSubmit={handleSubmit}>
           <div>
-            <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', fontWeight: 500 }}>Usuario</label>
-            <input 
-              type="text" 
-              className="input-field" 
-              placeholder="Ej. admin" 
-              value={username} 
-              onChange={(e) => setUsername(e.target.value)} 
-              required 
+            <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', fontWeight: 500 }}>Email</label>
+            <input
+              type="email"
+              className="input-field"
+              placeholder="usuario@logisticatag.com.ar"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              autoComplete="username"
+              required
             />
           </div>
           <div>
             <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', fontWeight: 500 }}>Contraseña</label>
-            <input 
-              type="password" 
-              className="input-field" 
-              placeholder="••••••••" 
-              value={password} 
-              onChange={(e) => setPassword(e.target.value)} 
-              required 
+            <input
+              type="password"
+              className="input-field"
+              placeholder="••••••••"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              autoComplete="current-password"
+              required
             />
           </div>
-          <button type="submit" style={{ marginTop: '0.5rem', padding: '0.75rem', fontSize: '1rem' }}>Ingresar al Sistema</button>
+
+          {error && (
+            <p role="alert" style={{ color: '#b91c1c', fontSize: '0.875rem' }}>{error}</p>
+          )}
+
+          <button type="submit" disabled={enviando} style={{ marginTop: '0.5rem', padding: '0.75rem', fontSize: '1rem' }}>
+            {enviando ? 'Ingresando…' : 'Ingresar al Sistema'}
+          </button>
         </form>
       </div>
     </div>
