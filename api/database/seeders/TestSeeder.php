@@ -19,6 +19,20 @@ class TestSeeder extends Seeder
             'password' => bcrypt('admin123'),
         ]);
 
+        User::create([
+            'name' => 'Ángel J. Guillén',
+            'email' => 'ajguillen@logisticatag.com.ar',
+            'password' => bcrypt('Angel2026!'),
+            'role' => 'operador',
+        ]);
+
+        User::create([
+            'name' => 'Ana C. Zerpa',
+            'email' => 'aczerpa@logisticatag.com.ar',
+            'password' => bcrypt('Ana2026!'),
+            'role' => 'operador',
+        ]);
+
         $clientes = [
             ['razon_social' => 'Transporte SRL', 'cuit' => '30-71111111-9', 'direccion' => 'San Martín 1234, CABA', 'telefono' => '011 4444-1111', 'email' => 'info@transportesrl.com', 'contacto' => 'Mario Pérez'],
             ['razon_social' => 'Distribuidora Norte', 'cuit' => '30-22222222-5', 'direccion' => 'Av. Industrial 567, Rosario', 'telefono' => '0341 555-2222', 'email' => 'logistica@distnorte.com', 'contacto' => 'Laura Gómez'],
