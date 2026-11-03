@@ -3,7 +3,7 @@ import { Truck } from 'lucide-react';
 
 import { login } from '../api';
 
-const Login = ({ onLogin }) => {
+const Login = ({ onLogin, mensaje = '' }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -58,6 +58,10 @@ const Login = ({ onLogin }) => {
               required
             />
           </div>
+
+          {mensaje && (
+            <p role="status" style={{ color: '#1d4ed8', fontSize: '0.875rem' }}>{mensaje}</p>
+          )}
 
           {error && (
             <p role="alert" style={{ color: '#b91c1c', fontSize: '0.875rem' }}>{error}</p>
