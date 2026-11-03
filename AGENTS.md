@@ -135,7 +135,7 @@ php artisan tinker --execute="echo print_r(\Illuminate\Support\Facades\Schema::g
 ## Datos de Prueba
 
 Seeder incluido (`TestSeeder.php`):
-- Admin: admin@tag.com / admin123
+- Admin: admin@tag.com / Admin2026!
 - 2 clientes, 2 proveedores
 - 2 choferes propios + 2 externos
 - 2 unidades propias + 2 externas
