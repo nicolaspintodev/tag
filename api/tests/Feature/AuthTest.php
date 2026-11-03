@@ -150,4 +150,95 @@ class AuthTest extends TestCase
     {
         $this->postJson('/api/logout')->assertStatus(401);
     }
+
+    public function test_login_bloquea_tras_cinco_intentos_fallidos(): void
+    {
+        $this->crearUsuario();
+
+        for ($i = 0; $i < 5; $i++) {
+            $this->postJson('/api/login', [
+                'email' => 'operador@tag.com',
+                'password' => 'incorrecta',
+            ])->assertStatus(401);
+        }
+
+        $response = $this->postJson('/api/login', [
+            'email' => 'operador@tag.com',
+            'password' => 'Secreto123!',
+        ]);
+
+        $response->assertStatus(429)
+            ->assertJsonStructure(['message'])
+            ->assertHeader('Retry-After');
+
+        $this->assertDatabaseCount('personal_access_tokens', 0);
+    }
+
+    public function test_login_exitoso_reinicia_el_contador_de_intentos(): void
+    {
+        $this->crearUsuario();
+
+        for ($i = 0; $i < 4; $i++) {
+            $this->postJson('/api/login', [
+                'email' => 'operador@tag.com',
+                'password' => 'incorrecta',
+            ])->assertStatus(401);
+        }
+
+        $this->postJson('/api/login', [
+            'email' => 'operador@tag.com',
+            'password' => 'Secreto123!',
+        ])->assertOk();
+
+        $this->postJson('/api/login', [
+            'email' => 'operador@tag.com',
+            'password' => 'incorrecta',
+        ])->assertStatus(401);
+    }
+
+    public function test_limite_de_intentos_es_independiente_por_email(): void
+    {
+        $this->crearUsuario();
+        $this->crearUsuario(['email' => 'otro@tag.com']);
+
+        for ($i = 0; $i < 5; $i++) {
+            $this->postJson('/api/login', [
+                'email' => 'operador@tag.com',
+                'password' => 'incorrecta',
+            ])->assertStatus(401);
+        }
+
+        $this->postJson('/api/login', [
+            'email' => 'operador@tag.com',
+            'password' => 'incorrecta',
+        ])->assertStatus(429);
+
+        $this->postJson('/api/login', [
+            'email' => 'otro@tag.com',
+            'password' => 'Secreto123!',
+        ])->assertOk();
+    }
+
+    public function test_limite_de_intentos_es_independiente_por_ip(): void
+    {
+        $this->crearUsuario();
+
+        for ($i = 0; $i < 5; $i++) {
+            $this->postJson('/api/login', [
+                'email' => 'operador@tag.com',
+                'password' => 'incorrecta',
+            ])->assertStatus(401);
+        }
+
+        $this->postJson('/api/login', [
+            'email' => 'operador@tag.com',
+            'password' => 'incorrecta',
+        ])->assertStatus(429);
+
+        $this->withServerVariables(['REMOTE_ADDR' => '203.0.113.9'])
+            ->postJson('/api/login', [
+                'email' => 'operador@tag.com',
+                'password' => 'Secreto123!',
+            ])->assertOk();
+    }
 }
