@@ -2,7 +2,7 @@
 
 Frontend React 19 + Vite 8.
 
-> La UI de páginas está desactivada temporalmente. Hasta la reconstrucción en W1, la app solo muestra el login y un placeholder.
+> La UI anterior se movió a la rama `legacy/ui` como referencia. Hasta la reconstrucción en W1, la app solo muestra el login y un placeholder.
 
 ## Desarrollo
 

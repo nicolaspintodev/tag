@@ -118,15 +118,10 @@ php artisan tinker --execute="echo print_r(\Illuminate\Support\Facades\Schema::g
 - `api/app/Http/Controllers/GastoController.php` — CRUD, auto-recalcula costo_viaje
 - `api/app/Http/Controllers/FacturaController.php` — CRUD, filtrado por liquidacion
 
-### Frontend (UI anterior desactivada)
+### Frontend (UI legacy)
 - `client/src/App.jsx` — shell mínimo: login + placeholder.
-- Las páginas en `client/src/pages/` se conservan como referencia, sin rutas activas hasta la reconstrucción en W1.
-- `client/src/pages/Trips.jsx` — modulo de viajes (1700+ lineas)
-- `client/src/pages/Settlements.jsx` — liquidaciones con wizard
-- `client/src/pages/Billing.jsx` — facturacion
-- `client/src/pages/Resources.jsx` — unidades y choferes
-- `client/src/pages/Clients.jsx` — ABM clientes
-- `client/src/pages/Providers.jsx` — ABM proveedores
+- `client/src/pages/Login.jsx` — login activo.
+- La UI anterior no está en `develop`; se conserva en la rama `legacy/ui` como referencia hasta la reconstrucción en W1.
 
 ## Bugs Conocidos
 
