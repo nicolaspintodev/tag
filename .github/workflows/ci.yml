@@ -11,7 +11,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: ci-${{ github.workflow }}-${{ github.ref }}
+  group: ci-${{ github.workflow }}-${{ github.head_ref || github.ref_name }}
   cancel-in-progress: true
 
 jobs:
@@ -35,7 +35,6 @@ jobs:
         uses: ramsey/composer-install@v3
         with:
           working-directory: api
-          composer-options: "--no-progress"
       - name: Prepare environment
         run: |
           cp .env.example .env
