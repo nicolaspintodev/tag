@@ -56,14 +56,3 @@ Route::put('/liquidaciones/{id}/estado', [LiquidacionController::class, 'cambiar
 Route::post('/documentos/{id}/archivos', [DocumentoController::class, 'storeArchivo']);
 Route::delete('/documentos/{documentoId}/archivos/{archivoId}', [DocumentoController::class, 'destroyArchivo']);
 
-// Debug & Extra routes
-Route::get('/debug-viajes', function () { 
-    $start = microtime(true);
-    $data = \App\Models\Viaje::all();
-    $end = microtime(true);
-    return response()->json([
-        'time_ms' => ($end - $start) * 1000,
-        'count' => count($data),
-        'data' => $data
-    ]);
-});
