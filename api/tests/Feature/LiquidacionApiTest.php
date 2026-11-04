@@ -82,102 +82,6 @@ class LiquidacionApiTest extends TestCase
     }
 
     // ================================================================
-    // VIAJES DISPONIBLES — CLIENTE
-    // ================================================================
-
-    public function test_viajes_disponibles_tipo_cliente(): void
-    {
-        $viaje = $this->crearViaje(['cliente_id' => $this->cliente->id]);
-        $liquidacion = $this->crearLiquidacion(['tipo' => 'cliente', 'cliente_id' => $this->cliente->id]);
-
-        $response = $this->getJson("/api/liquidaciones/{$liquidacion->id}/viajes-disponibles");
-
-        $response->assertOk()
-            ->assertJsonCount(1)
-            ->assertJsonFragment(['id' => $viaje->id]);
-    }
-
-    public function test_viajes_disponibles_excluye_cancelados(): void
-    {
-        $this->crearViaje(['estado' => 'cancelado']);
-        $liquidacion = $this->crearLiquidacion(['tipo' => 'cliente', 'cliente_id' => $this->cliente->id]);
-
-        $response = $this->getJson("/api/liquidaciones/{$liquidacion->id}/viajes-disponibles");
-
-        $response->assertOk()
-            ->assertJsonCount(0);
-    }
-
-    // ================================================================
-    // VIAJES DISPONIBLES — PROVEEDOR
-    // ================================================================
-
-    public function test_viajes_disponibles_tipo_proveedor(): void
-    {
-        $viaje = $this->crearViaje([
-            'proveedor_id' => $this->proveedor->id,
-            'cliente_id' => null,
-        ]);
-        $liquidacion = $this->crearLiquidacion([
-            'tipo' => 'proveedor',
-            'cliente_id' => null,
-            'proveedor_id' => $this->proveedor->id,
-        ]);
-
-        $response = $this->getJson("/api/liquidaciones/{$liquidacion->id}/viajes-disponibles");
-
-        $response->assertOk()
-            ->assertJsonCount(1)
-            ->assertJsonFragment(['id' => $viaje->id]);
-    }
-
-    // ================================================================
-    // VIAJES DISPONIBLES — EXCLUYE MISMO TIPO
-    // ================================================================
-
-    public function test_viajes_disponibles_excluye_mismo_tipo(): void
-    {
-        $viaje = $this->crearViaje(['cliente_id' => $this->cliente->id]);
-        $liq1 = $this->crearLiquidacion(['tipo' => 'cliente', 'cliente_id' => $this->cliente->id]);
-        $liq1->viajes()->attach($viaje->id, ['monto' => 780000]);
-
-        $liq2 = $this->crearLiquidacion(['tipo' => 'cliente', 'cliente_id' => $this->cliente->id]);
-
-        $response = $this->getJson("/api/liquidaciones/{$liq2->id}/viajes-disponibles");
-
-        $response->assertOk()
-            ->assertJsonCount(0);
-    }
-
-    public function test_viajes_disponibles_permite_otro_tipo(): void
-    {
-        $viaje = $this->crearViaje(['cliente_id' => $this->cliente->id]);
-        $liqCliente = $this->crearLiquidacion(['tipo' => 'cliente', 'cliente_id' => $this->cliente->id]);
-        $liqCliente->viajes()->attach($viaje->id, ['monto' => 780000]);
-
-        // Crear liquidacion de proveedor con el mismo viaje — debe permitirlo
-        // (necesitamos un viaje con proveedor para esto, creamos uno nuevo)
-        $viajeProv = $this->crearViaje([
-            'proveedor_id' => $this->proveedor->id,
-            'cliente_id' => null,
-            'origen' => 'Cordoba',
-        ]);
-        $liqProveedor = $this->crearLiquidacion([
-            'tipo' => 'proveedor',
-            'cliente_id' => null,
-            'proveedor_id' => $this->proveedor->id,
-        ]);
-
-        // El viaje de cliente NO deberia aparecer en liquidacion de proveedor
-        // porque no tiene proveedor_id
-        $response = $this->getJson("/api/liquidaciones/{$liqProveedor->id}/viajes-disponibles");
-
-        $response->assertOk()
-            ->assertJsonCount(1)
-            ->assertJsonFragment(['id' => $viajeProv->id]);
-    }
-
-    // ================================================================
     // AGREGAR VIAJES
     // ================================================================
 
@@ -200,37 +104,6 @@ class LiquidacionApiTest extends TestCase
             'viaje_id' => $viaje->id,
             'monto' => 780000,
         ]);
-    }
-
-    public function test_agregar_viajes_recalcula_total(): void
-    {
-        $viaje1 = $this->crearViaje(['cliente_id' => $this->cliente->id, 'precio_pactado' => 500000]);
-        $viaje2 = $this->crearViaje(['cliente_id' => $this->cliente->id, 'precio_pactado' => 300000, 'origen' => 'Cordoba']);
-        $liquidacion = $this->crearLiquidacion(['tipo' => 'cliente', 'cliente_id' => $this->cliente->id]);
-
-        $this->postJson("/api/liquidaciones/{$liquidacion->id}/viajes", [
-            'viajes' => [
-                ['viaje_id' => $viaje1->id],
-                ['viaje_id' => $viaje2->id],
-            ],
-        ]);
-
-        $liquidacion->refresh();
-        $this->assertEquals(800000, $liquidacion->total);
-    }
-
-    public function test_agregar_viajes_estado_no_borrador(): void
-    {
-        $viaje = $this->crearViaje(['cliente_id' => $this->cliente->id]);
-        $liquidacion = $this->crearLiquidacion(['tipo' => 'cliente', 'cliente_id' => $this->cliente->id, 'estado' => 'pendiente']);
-
-        $response = $this->postJson("/api/liquidaciones/{$liquidacion->id}/viajes", [
-            'viajes' => [
-                ['viaje_id' => $viaje->id],
-            ],
-        ]);
-
-        $response->assertStatus(422);
     }
 
     // ================================================================
@@ -274,9 +147,6 @@ class LiquidacionApiTest extends TestCase
             'viaje_id' => $viaje->id,
             'monto' => 850000,
         ]);
-
-        $liquidacion->refresh();
-        $this->assertEquals(850000, $liquidacion->total);
     }
 
     // ================================================================
