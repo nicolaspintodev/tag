@@ -4,7 +4,7 @@ Sistema de gestión para una empresa de transporte y logística: clientes, prove
 
 [![CI](https://github.com/nicolaspintodev/tag/actions/workflows/ci.yml/badge.svg)](https://github.com/nicolaspintodev/tag/actions/workflows/ci.yml)
 
-> **Estado:** PoC funcional. La autenticación y la facturación están implementadas como mock/bypass. No usar todavía con datos reales de producción.
+> **Estado:** PoC funcional. La autenticación ya usa Sanctum; la facturación sigue en desarrollo. No usar todavía con datos reales de producción.
 
 ## Stack
 
@@ -99,6 +99,8 @@ npm run build
 ```
 
 Los tests de backend usan SQLite en memoria (`api/phpunit.xml`) y no tocan la base local. La documentación de testing se mantiene en el hub interno del proyecto.
+
+El CI corre en `main` y `develop`. En `develop` es informativo; en `main` es bloqueante.
 
 ## Documentación
 

@@ -27,8 +27,10 @@ cd ../client && npm ci
    cd api && composer test
    cd ../client && npm run lint && npm run build
    ```
-4. Abrir el PR contra `develop` usando la plantilla y mergear con squash.
+4. Abrir el PR contra `develop` usando la plantilla y mergear con **merge commit** (sin squash).
 5. Releases: PR de `develop` a `main` con tag `vX.Y.Z`. Hotfixes: rama desde `main`, PR a `main` y réplica a `develop`.
+
+El CI corre en cada PR y push a `main`/`develop`. En `develop` es informativo; en `main` es bloqueante.
 
 No pushear directo a `main` ni `develop`.
 
