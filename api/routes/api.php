@@ -1,18 +1,18 @@
 <?php
 
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\ViajeController;
-use App\Http\Controllers\UnidadController;
+use App\Http\Controllers\AnticipoController;
+use App\Http\Controllers\AuthController;
 use App\Http\Controllers\ChoferController;
 use App\Http\Controllers\ClienteController;
-use App\Http\Controllers\ProveedorController;
-use App\Http\Controllers\GastoController;
-use App\Http\Controllers\AnticipoController;
 use App\Http\Controllers\DocumentoController;
 use App\Http\Controllers\FacturaController;
+use App\Http\Controllers\GastoController;
 use App\Http\Controllers\LiquidacionController;
-use App\Http\Controllers\AuthController;
+use App\Http\Controllers\ProveedorController;
+use App\Http\Controllers\UnidadController;
+use App\Http\Controllers\ViajeController;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Route;
 
 Route::post('/login', [AuthController::class, 'login']);
 
@@ -55,4 +55,3 @@ Route::put('/liquidaciones/{id}/estado', [LiquidacionController::class, 'cambiar
 // Documento file uploads
 Route::post('/documentos/{id}/archivos', [DocumentoController::class, 'storeArchivo']);
 Route::delete('/documentos/{documentoId}/archivos/{archivoId}', [DocumentoController::class, 'destroyArchivo']);
-

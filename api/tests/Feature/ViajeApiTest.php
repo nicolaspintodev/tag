@@ -2,11 +2,11 @@
 
 namespace Tests\Feature;
 
-use App\Models\Viaje;
+use App\Models\Chofer;
 use App\Models\Cliente;
 use App\Models\Proveedor;
-use App\Models\Chofer;
 use App\Models\Unidad;
+use App\Models\Viaje;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -15,8 +15,11 @@ class ViajeApiTest extends TestCase
     use RefreshDatabase;
 
     private $cliente;
+
     private $proveedor;
+
     private $chofer;
+
     private $unidad;
 
     protected function setUp(): void

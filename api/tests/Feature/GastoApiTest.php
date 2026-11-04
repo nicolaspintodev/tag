@@ -2,10 +2,10 @@
 
 namespace Tests\Feature;
 
-use App\Models\Viaje;
-use App\Models\Gasto;
-use App\Models\Cliente;
 use App\Models\Chofer;
+use App\Models\Cliente;
+use App\Models\Gasto;
+use App\Models\Viaje;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -14,7 +14,9 @@ class GastoApiTest extends TestCase
     use RefreshDatabase;
 
     private $cliente;
+
     private $chofer;
+
     private $viaje;
 
     protected function setUp(): void

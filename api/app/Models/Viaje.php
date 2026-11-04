@@ -30,7 +30,8 @@ class Viaje extends Model
     public function getCodigoViajeAttribute()
     {
         $tipo = $this->proveedor_id !== null ? 'T' : 'P';
-        return $tipo . '-' . str_pad($this->id, 5, '0', STR_PAD_LEFT);
+
+        return $tipo.'-'.str_pad($this->id, 5, '0', STR_PAD_LEFT);
     }
 
     protected $fillable = [

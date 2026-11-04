@@ -65,7 +65,7 @@ class LiquidacionController extends Controller
 
         $liquidacion = Liquidacion::create($validated);
 
-        if (!empty($viajeIds)) {
+        if (! empty($viajeIds)) {
             $viajes = Viaje::whereIn('id', $viajeIds)->get();
             foreach ($viajes as $v) {
                 $monto = $validated['tipo'] === 'proveedor' ? ($v->costo_proveedor_ajustado ?? $v->costo_viaje ?? 0) : $v->precio_pactado;
@@ -84,6 +84,7 @@ class LiquidacionController extends Controller
                 $q->with(['chofer', 'unidades', 'cliente', 'documento', 'gastos', 'anticipos']);
             }, 'factura'])
             ->findOrFail($id);
+
         return response()->json($liquidacion);
     }
 
@@ -109,6 +110,7 @@ class LiquidacionController extends Controller
     {
         $liquidacion = Liquidacion::findOrFail($id);
         $liquidacion->delete();
+
         return response()->json(['message' => 'Liquidación archivada']);
     }
 
@@ -116,6 +118,7 @@ class LiquidacionController extends Controller
     {
         $liquidacion = Liquidacion::withTrashed()->findOrFail($id);
         $liquidacion->restore();
+
         return response()->json(['message' => 'Liquidación restaurada']);
     }
 
@@ -253,7 +256,7 @@ class LiquidacionController extends Controller
             $siguiente = 1;
         }
 
-        return $prefijo . '-' . str_pad($siguiente, 4, '0', STR_PAD_LEFT);
+        return $prefijo.'-'.str_pad($siguiente, 4, '0', STR_PAD_LEFT);
     }
 
     private function recalcularTotal(Liquidacion $liquidacion): void

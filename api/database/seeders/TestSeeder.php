@@ -2,9 +2,9 @@
 
 namespace Database\Seeders;
 
+use App\Models\Chofer;
 use App\Models\Cliente;
 use App\Models\Proveedor;
-use App\Models\Chofer;
 use App\Models\Unidad;
 use App\Models\User;
 use Illuminate\Database\Seeder;
@@ -43,8 +43,8 @@ class TestSeeder extends Seeder
             ['razon_social' => 'Transportes del Sur', 'cuit' => '33-44444444-9', 'direccion' => 'Ruta 8 km 45, La Plata', 'telefono' => '0221 777-4444', 'email' => 'contacto@tessur.com.ar'],
         ];
 
-        $clientesModels = collect($clientes)->map(fn($c) => Cliente::create($c));
-        $proveedoresModels = collect($proveedores)->map(fn($p) => Proveedor::create($p));
+        $clientesModels = collect($clientes)->map(fn ($c) => Cliente::create($c));
+        $proveedoresModels = collect($proveedores)->map(fn ($p) => Proveedor::create($p));
 
         $choferes = [
             ['nombre' => 'Juan', 'apellido' => 'García', 'dni' => '30.111.111', 'telefono' => '11 2222-3333', 'licencia_vencimiento' => '2027-05-15', 'proveedor_id' => null],
@@ -64,7 +64,7 @@ class TestSeeder extends Seeder
             ['patente' => 'PQR 678', 'marca' => 'Mercedes-Benz', 'modelo' => 'Actros', 'tipo' => 'Chasis c/Acoplado', 'anio' => 2022, 'proveedor_id' => $proveedoresModels[1]->id],
         ];
 
-        collect($choferes)->each(fn($c) => Chofer::create($c));
-        collect($unidades)->each(fn($u) => Unidad::create($u));
+        collect($choferes)->each(fn ($c) => Chofer::create($c));
+        collect($unidades)->each(fn ($u) => Unidad::create($u));
     }
 }

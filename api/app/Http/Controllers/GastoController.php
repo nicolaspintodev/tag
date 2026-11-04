@@ -44,6 +44,7 @@ class GastoController extends Controller
     public function show($id)
     {
         $gasto = Gasto::withTrashed()->findOrFail($id);
+
         return response()->json($gasto);
     }
 
@@ -72,6 +73,7 @@ class GastoController extends Controller
         $gasto = Gasto::findOrFail($id);
         $gasto->delete();
         $gasto->viaje->recalcularCostoViaje();
+
         return response()->json(['message' => 'Gasto archivado']);
     }
 
@@ -80,6 +82,7 @@ class GastoController extends Controller
         $gasto = Gasto::withTrashed()->findOrFail($id);
         $gasto->restore();
         $gasto->viaje->recalcularCostoViaje();
+
         return response()->json(['message' => 'Gasto restaurado']);
     }
 }

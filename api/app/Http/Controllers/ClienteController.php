@@ -19,9 +19,9 @@ class ClienteController extends Controller
             $search = $request->get('search');
             $query->where(function ($q) use ($search) {
                 $q->where('razon_social', 'like', "%{$search}%")
-                  ->orWhere('cuit', 'like', "%{$search}%")
-                  ->orWhere('contacto', 'like', "%{$search}%")
-                  ->orWhere('email', 'like', "%{$search}%");
+                    ->orWhere('cuit', 'like', "%{$search}%")
+                    ->orWhere('contacto', 'like', "%{$search}%")
+                    ->orWhere('email', 'like', "%{$search}%");
             });
         }
 
@@ -48,6 +48,7 @@ class ClienteController extends Controller
     public function show($id)
     {
         $cliente = Cliente::withTrashed()->findOrFail($id);
+
         return response()->json($cliente);
     }
 
@@ -57,7 +58,7 @@ class ClienteController extends Controller
 
         $validated = $request->validate([
             'razon_social' => 'sometimes|required|string',
-            'cuit' => 'sometimes|required|string|unique:clientes,cuit,' . $id,
+            'cuit' => 'sometimes|required|string|unique:clientes,cuit,'.$id,
             'direccion' => 'nullable|string',
             'telefono' => 'nullable|string',
             'email' => 'nullable|email',
