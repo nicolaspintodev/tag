@@ -52,6 +52,7 @@ class FacturaController extends Controller
         $factura = Factura::withTrashed()
             ->with(['liquidacion', 'liquidacion.cliente', 'liquidacion.proveedor', 'liquidacion.viajes'])
             ->findOrFail($id);
+
         return response()->json($factura);
     }
 
@@ -60,7 +61,7 @@ class FacturaController extends Controller
         $factura = Factura::withTrashed()->findOrFail($id);
 
         $validated = $request->validate([
-            'numero' => 'sometimes|required|string|unique:facturas,numero,' . $id,
+            'numero' => 'sometimes|required|string|unique:facturas,numero,'.$id,
             'tipo' => 'nullable|string',
             'punto_venta' => 'nullable|string',
             'fecha_emision' => 'sometimes|required|date',
@@ -81,6 +82,7 @@ class FacturaController extends Controller
     {
         $factura = Factura::findOrFail($id);
         $factura->delete();
+
         return response()->json(['message' => 'Factura archivada']);
     }
 
@@ -88,6 +90,7 @@ class FacturaController extends Controller
     {
         $factura = Factura::withTrashed()->findOrFail($id);
         $factura->restore();
+
         return response()->json(['message' => 'Factura restaurada']);
     }
 }

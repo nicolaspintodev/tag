@@ -2,12 +2,12 @@
 
 namespace Tests\Feature;
 
-use App\Models\Viaje;
-use App\Models\Liquidacion;
-use App\Models\Cliente;
-use App\Models\Proveedor;
 use App\Models\Chofer;
+use App\Models\Cliente;
+use App\Models\Liquidacion;
+use App\Models\Proveedor;
 use App\Models\Unidad;
+use App\Models\Viaje;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -16,8 +16,11 @@ class LiquidacionApiTest extends TestCase
     use RefreshDatabase;
 
     private $cliente;
+
     private $proveedor;
+
     private $chofer;
+
     private $unidad;
 
     protected function setUp(): void
@@ -69,7 +72,7 @@ class LiquidacionApiTest extends TestCase
     {
         self::$liqCounter++;
         $defaults = [
-            'numero' => 'LIQ-TEST-' . str_pad(self::$liqCounter, 4, '0', STR_PAD_LEFT),
+            'numero' => 'LIQ-TEST-'.str_pad(self::$liqCounter, 4, '0', STR_PAD_LEFT),
             'tipo' => 'cliente',
             'cliente_id' => $this->cliente->id,
             'proveedor_id' => null,

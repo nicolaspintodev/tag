@@ -19,9 +19,9 @@ class ProveedorController extends Controller
             $search = $request->get('search');
             $query->where(function ($q) use ($search) {
                 $q->where('razon_social', 'like', "%{$search}%")
-                  ->orWhere('cuit', 'like', "%{$search}%")
-                  ->orWhere('contacto', 'like', "%{$search}%")
-                  ->orWhere('email', 'like', "%{$search}%");
+                    ->orWhere('cuit', 'like', "%{$search}%")
+                    ->orWhere('contacto', 'like', "%{$search}%")
+                    ->orWhere('email', 'like', "%{$search}%");
             });
         }
 
@@ -52,6 +52,7 @@ class ProveedorController extends Controller
     public function show($id)
     {
         $proveedor = Proveedor::withTrashed()->with(['unidades', 'choferes'])->findOrFail($id);
+
         return response()->json($proveedor);
     }
 
@@ -61,7 +62,7 @@ class ProveedorController extends Controller
 
         $validated = $request->validate([
             'razon_social' => 'sometimes|required|string',
-            'cuit' => 'sometimes|required|string|unique:proveedores,cuit,' . $id,
+            'cuit' => 'sometimes|required|string|unique:proveedores,cuit,'.$id,
             'direccion' => 'nullable|string',
             'telefono' => 'nullable|string',
             'email' => 'nullable|email',

@@ -2,10 +2,9 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Viaje;
 use App\Models\Carga;
+use App\Models\Viaje;
 use Illuminate\Http\Request;
-use Illuminate\Validation\ValidationException;
 
 class ViajeController extends Controller
 {
@@ -57,7 +56,7 @@ class ViajeController extends Controller
             $sortDir = strtolower($request->get('sort_dir'));
 
             if ($sortBy === 'estado' && in_array($sortDir, ['pendiente', 'en_curso', 'finalizado', 'cancelado'])) {
-                $query->orderByRaw("CASE WHEN estado = ? THEN 0 ELSE 1 END", [$sortDir])
+                $query->orderByRaw('CASE WHEN estado = ? THEN 0 ELSE 1 END', [$sortDir])
                     ->orderBy('viajes.id', 'desc');
             } else {
                 $dir = $sortDir === 'asc' ? 'asc' : 'desc';
@@ -91,6 +90,7 @@ class ViajeController extends Controller
         }
 
         $viajes = $query->paginate(10);
+
         return response()->json($viajes);
     }
 
@@ -151,11 +151,11 @@ class ViajeController extends Controller
             'observaciones' => $validated['observaciones'] ?? null,
         ]);
 
-        if (!empty($validated['unidades'])) {
+        if (! empty($validated['unidades'])) {
             $viaje->unidades()->sync($validated['unidades']);
         }
 
-        if (!empty($request->input('carga'))) {
+        if (! empty($request->input('carga'))) {
             Carga::create([
                 'viaje_id' => $viaje->id,
                 'descripcion' => $validated['carga']['descripcion'] ?? null,
@@ -232,7 +232,7 @@ class ViajeController extends Controller
             $viaje->unidades()->sync($validated['unidades'] ?? []);
         }
 
-        if (!empty($request->input('carga'))) {
+        if (! empty($request->input('carga'))) {
             $cargaData = [
                 'descripcion' => $validated['carga']['descripcion'] ?? null,
                 'tipo_carga' => $validated['carga']['tipo_carga'] ?? null,
@@ -268,12 +268,14 @@ class ViajeController extends Controller
             'documento',
             'liquidaciones',
         ])->findOrFail($id);
+
         return response()->json($viaje);
     }
 
     public function destroy(Viaje $viaje)
     {
         $viaje->delete();
+
         return response()->json(['message' => 'Viaje archivado']);
     }
 
@@ -281,6 +283,7 @@ class ViajeController extends Controller
     {
         $viaje = Viaje::withTrashed()->findOrFail($id);
         $viaje->restore();
+
         return response()->json(['message' => 'Viaje restaurado']);
     }
 

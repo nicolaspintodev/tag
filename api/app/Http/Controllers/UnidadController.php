@@ -19,9 +19,9 @@ class UnidadController extends Controller
             $search = $request->get('search');
             $query->where(function ($q) use ($search) {
                 $q->where('patente', 'like', "%{$search}%")
-                  ->orWhere('marca', 'like', "%{$search}%")
-                  ->orWhere('modelo', 'like', "%{$search}%")
-                  ->orWhere('numero', 'like', "%{$search}%");
+                    ->orWhere('marca', 'like', "%{$search}%")
+                    ->orWhere('modelo', 'like', "%{$search}%")
+                    ->orWhere('numero', 'like', "%{$search}%");
             });
         }
 
@@ -61,6 +61,7 @@ class UnidadController extends Controller
                 ->exists();
             if ($duplicado) {
                 $unidad->delete();
+
                 return response()->json(['errors' => ['numero' => ['El número ya existe en esta flota']]], 422);
             }
         }
@@ -71,15 +72,16 @@ class UnidadController extends Controller
     public function show($id)
     {
         $unidad = Unidad::withTrashed()->findOrFail($id);
+
         return response()->json($unidad);
     }
 
     public function update(Request $request, $id)
     {
         $unidade = Unidad::withTrashed()->findOrFail($id);
-        
+
         $validated = $request->validate([
-            'patente' => 'sometimes|required|string|unique:unidades,patente,' . $id,
+            'patente' => 'sometimes|required|string|unique:unidades,patente,'.$id,
             'marca' => 'nullable|string',
             'modelo' => 'nullable|string',
             'anio' => 'nullable|integer',

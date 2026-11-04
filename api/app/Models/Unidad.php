@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
@@ -34,7 +35,7 @@ class Unidad extends Model
         ];
     }
 
-    public function proveedor(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    public function proveedor(): BelongsTo
     {
         return $this->belongsTo(Proveedor::class);
     }
