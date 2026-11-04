@@ -9,7 +9,8 @@ Guia para agentes de IA trabajando en este proyecto.
 - `main`: estable y deployable. Solo recibe releases y hotfixes.
 - `develop`: rama de integracion. Recibe PRs de ramas cortas.
 - Ramas cortas: `feat/...`, `fix/...`, `chore/...`, `docs/...` desde `develop`.
-- Flujo: rama corta -> PR squash -> `develop`; release: `develop` -> PR -> `main` + tag; hotfix: `main` -> PR -> `main` y replica a `develop`.
+- Flujo: rama corta -> PR con merge commit -> `develop`; release: `develop` -> PR -> `main` + tag; hotfix: `main` -> PR -> `main` y replica a `develop`.
+- CI: `.github/workflows/ci.yml` corre en `main` y `develop`; en `develop` es informativo y en `main` es bloqueante.
 - No commitear ni pushear sin autorizacion explicita.
 - No pushear directo a `main` ni `develop`.
 
