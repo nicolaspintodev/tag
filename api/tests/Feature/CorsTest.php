@@ -2,10 +2,13 @@
 
 namespace Tests\Feature;
 
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
 class CorsTest extends TestCase
 {
+    use RefreshDatabase;
+
     private array $origenes = [
         'http://localhost:5173',
         'https://logisticatag.com.ar',
@@ -18,6 +21,7 @@ class CorsTest extends TestCase
 
     public function test_origen_local_permitido_recibe_cabecera_cors(): void
     {
+        $this->actingAsUser();
         $this->conOrigenesPermitidos();
 
         $this->withHeaders(['Origin' => 'http://localhost:5173'])
@@ -27,6 +31,7 @@ class CorsTest extends TestCase
 
     public function test_origen_de_produccion_permitido_recibe_cabecera_cors(): void
     {
+        $this->actingAsUser();
         $this->conOrigenesPermitidos();
 
         $this->withHeaders(['Origin' => 'https://logisticatag.com.ar'])
@@ -36,6 +41,7 @@ class CorsTest extends TestCase
 
     public function test_origen_ajeno_no_recibe_cabecera_cors(): void
     {
+        $this->actingAsUser();
         $this->conOrigenesPermitidos();
 
         $this->withHeaders(['Origin' => 'https://sitio-ajeno.example'])
@@ -45,6 +51,7 @@ class CorsTest extends TestCase
 
     public function test_preflight_permite_metodos_y_headers_configurados(): void
     {
+        $this->actingAsUser();
         $this->conOrigenesPermitidos();
 
         $response = $this->call('OPTIONS', '/api/user', [], [], [], [
