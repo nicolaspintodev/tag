@@ -27,6 +27,8 @@ class LiquidacionApiTest extends TestCase
     {
         parent::setUp();
 
+        $this->actingAsUser();
+
         $this->cliente = Cliente::create([
             'razon_social' => 'Cliente Test',
             'cuit' => '30-11111111-1',

@@ -25,6 +25,8 @@ class DocumentoApiTest extends TestCase
     {
         parent::setUp();
 
+        $this->actingAsUser();
+
         Storage::fake('public');
 
         $this->cliente = Cliente::create([
