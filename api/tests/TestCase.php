@@ -10,7 +10,7 @@ trait ActsAsAuthenticated
 {
     protected User $authenticatedUser;
 
-    protected function actingAsUser(User $user = null): User
+    protected function actingAsUser(?User $user = null): User
     {
         $this->authenticatedUser = $user ?? User::factory()->create([
             'email' => 'operador@tag.com',
