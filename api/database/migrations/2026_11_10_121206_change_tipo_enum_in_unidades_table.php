@@ -42,10 +42,10 @@ return new class extends Migration
                 END as tipo_new
             FROM unidades_new
         ");
-        
+
         // Borrar la tabla sin constraint y recrear con constraint
         Schema::drop('unidades_new');
-        
+
         Schema::create('unidades_new', function (Blueprint $table) {
             $table->id();
             $table->foreignId('proveedor_id')->nullable()->constrained('proveedores');
