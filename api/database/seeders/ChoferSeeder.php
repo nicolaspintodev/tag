@@ -207,6 +207,6 @@ class ChoferSeeder extends Seeder
             }
         }
 
-        $this->command->info('Choferes creados: ' . Chofer::count() . ' (propios + tercerizados)');
+        $this->command->info('Choferes creados: '.Chofer::count().' (propios + tercerizados)');
     }
 }
