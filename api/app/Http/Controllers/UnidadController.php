@@ -34,6 +34,10 @@ class UnidadController extends Controller
             }
         }
 
+        if ($request->has('tipo')) {
+            $query->where('tipo', $request->get('tipo'));
+        }
+
         return response()->json($query->orderBy('id', 'desc')->get());
     }
 
@@ -44,7 +48,7 @@ class UnidadController extends Controller
             'marca' => 'nullable|string',
             'modelo' => 'nullable|string',
             'anio' => 'nullable|integer',
-            'tipo' => 'nullable|string',
+            'tipo' => 'nullable|string|in:tractora,acoplado,semirremolque',
             'numero' => 'nullable|string',
             'vtv_vencimiento' => 'nullable|date',
             'seguro_vencimiento' => 'nullable|date',
@@ -85,7 +89,7 @@ class UnidadController extends Controller
             'marca' => 'nullable|string',
             'modelo' => 'nullable|string',
             'anio' => 'nullable|integer',
-            'tipo' => 'nullable|string',
+            'tipo' => 'nullable|string|in:tractora,acoplado,semirremolque',
             'numero' => 'nullable|string',
             'vtv_vencimiento' => 'nullable|date',
             'seguro_vencimiento' => 'nullable|date',

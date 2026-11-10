@@ -32,6 +32,7 @@ class Unidad extends Model
             'vtv_vencimiento' => 'date',
             'seguro_vencimiento' => 'date',
             'activo' => 'boolean',
+            'tipo' => 'string',
         ];
     }
 

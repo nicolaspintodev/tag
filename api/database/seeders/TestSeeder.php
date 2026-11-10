@@ -56,12 +56,12 @@ class TestSeeder extends Seeder
         ];
 
         $unidades = [
-            ['patente' => 'ABC 123', 'marca' => 'Mercedes-Benz', 'modelo' => 'Actros', 'tipo' => 'Chasis c/Acoplado', 'anio' => 2022, 'proveedor_id' => null],
-            ['patente' => 'DEF 456', 'marca' => 'Scania', 'modelo' => 'R450', 'tipo' => 'Semi', 'anio' => 2023, 'proveedor_id' => null],
-            ['patente' => 'GHI 789', 'marca' => 'Volvo', 'modelo' => 'FH16', 'tipo' => 'Chasis c/Acoplado', 'anio' => 2021, 'proveedor_id' => $proveedoresModels[0]->id],
-            ['patente' => 'MNO 345', 'marca' => 'Scania', 'modelo' => 'R500', 'tipo' => 'Semi', 'anio' => 2023, 'proveedor_id' => $proveedoresModels[0]->id],
-            ['patente' => 'JKL 012', 'marca' => 'Iveco', 'modelo' => 'Stralis', 'tipo' => 'Semi', 'anio' => 2024, 'proveedor_id' => $proveedoresModels[1]->id],
-            ['patente' => 'PQR 678', 'marca' => 'Mercedes-Benz', 'modelo' => 'Actros', 'tipo' => 'Chasis c/Acoplado', 'anio' => 2022, 'proveedor_id' => $proveedoresModels[1]->id],
+            ['patente' => 'ABC 123', 'marca' => 'Mercedes-Benz', 'modelo' => 'Actros', 'tipo' => 'acoplado', 'anio' => 2022, 'proveedor_id' => null],
+            ['patente' => 'DEF 456', 'marca' => 'Scania', 'modelo' => 'R450', 'tipo' => 'semirremolque', 'anio' => 2023, 'proveedor_id' => null],
+            ['patente' => 'GHI 789', 'marca' => 'Volvo', 'modelo' => 'FH16', 'tipo' => 'acoplado', 'anio' => 2021, 'proveedor_id' => $proveedoresModels[0]->id],
+            ['patente' => 'MNO 345', 'marca' => 'Scania', 'modelo' => 'R500', 'tipo' => 'semirremolque', 'anio' => 2023, 'proveedor_id' => $proveedoresModels[0]->id],
+            ['patente' => 'JKL 012', 'marca' => 'Iveco', 'modelo' => 'Stralis', 'tipo' => 'semirremolque', 'anio' => 2024, 'proveedor_id' => $proveedoresModels[1]->id],
+            ['patente' => 'PQR 678', 'marca' => 'Mercedes-Benz', 'modelo' => 'Actros', 'tipo' => 'acoplado', 'anio' => 2022, 'proveedor_id' => $proveedoresModels[1]->id],
         ];
 
         collect($choferes)->each(fn ($c) => Chofer::create($c));
