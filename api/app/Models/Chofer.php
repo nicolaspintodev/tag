@@ -19,12 +19,12 @@ class Chofer extends Model
         'nombre',
         'apellido',
         'dni',
+        'cuil',
         'telefono',
         'email',
         'direccion',
         'fecha_nacimiento',
         'licencia_vencimiento',
-        'linti_vencimiento',
         'activo',
     ];
 
@@ -33,7 +33,6 @@ class Chofer extends Model
         return [
             'fecha_nacimiento' => 'date',
             'licencia_vencimiento' => 'date',
-            'linti_vencimiento' => 'date',
             'activo' => 'boolean',
         ];
     }
