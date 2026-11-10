@@ -9,62 +9,86 @@ return new class extends Migration
 {
     public function up(): void
     {
-        // SQLite no soporta enum nativo, usar check constraint
-        // Para MySQL/PostgreSQL se podría usar enum nativo
+        // SQLite no soporta ALTER TABLE ADD CONSTRAINT ni enum nativo
+        // Usar check constraint recreando la tabla
 
-        // 1. Agregar columna temporal con check constraint
-        Schema::table('unidades', function (Blueprint $table) {
-            $table->string('tipo_enum')->nullable()->after('modelo');
+        // 1. Crear nueva tabla con estructura final
+        Schema::create('unidades_new', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('proveedor_id')->nullable()->constrained('proveedores');
+            $table->string('patente')->unique();
+            $table->string('marca')->nullable();
+            $table->string('modelo')->nullable();
+            $table->integer('anio')->nullable();
+            $table->string('tipo')->default('tractora');
+            $table->string('numero')->nullable(); // Sin unique global - se valida por proveedor en controller
+            $table->date('vtv_vencimiento')->nullable();
+            $table->date('seguro_vencimiento')->nullable();
+            $table->boolean('activo')->default(true);
+            $table->timestamps();
+            $table->softDeletes();
         });
 
-        // 2. Migrar datos existentes
+        // 2. Agregar check constraint para tipo (SQLite lo permite en CREATE TABLE)
         DB::statement("
-            UPDATE unidades 
-            SET tipo_enum = CASE 
-                WHEN LOWER(tipo) IN ('camión', 'camion', 'tractora', 'tractor') THEN 'tractora'
-                WHEN LOWER(tipo) IN ('acoplado', 'acoplado') THEN 'acoplado'
-                WHEN LOWER(tipo) IN ('semi', 'semirremolque', 'semi-remolque') THEN 'semirremolque'
-                ELSE 'tractora'
-            END
+            ALTER TABLE unidades_new ADD CONSTRAINT check_tipo_enum 
+            CHECK (tipo IN ('tractora', 'acoplado', 'semirremolque'))
         ");
 
-        // 3. Agregar check constraint y default
-        Schema::table('unidades', function (Blueprint $table) {
-            $table->string('tipo_enum')->default('tractora')->change();
-        });
-
-        // SQLite: check constraint via raw SQL
+        // 3. Migrar datos
         DB::statement("
-            ALTER TABLE unidades ADD CONSTRAINT check_tipo_enum 
-            CHECK (tipo_enum IN ('tractora', 'acoplado', 'semirremolque'))
+            INSERT INTO unidades_new (id, proveedor_id, patente, marca, modelo, anio, tipo, numero, vtv_vencimiento, seguro_vencimiento, activo, created_at, updated_at, deleted_at)
+            SELECT 
+                id, proveedor_id, patente, marca, modelo, anio,
+                CASE 
+                    WHEN LOWER(tipo) IN ('camión', 'camion', 'tractora', 'tractor') THEN 'tractora'
+                    WHEN LOWER(tipo) IN ('acoplado') THEN 'acoplado'
+                    WHEN LOWER(tipo) IN ('semi', 'semirremolque', 'semi-remolque') THEN 'semirremolque'
+                    ELSE 'tractora'
+                END as tipo,
+                numero, vtv_vencimiento, seguro_vencimiento, activo, created_at, updated_at, deleted_at
+            FROM unidades
         ");
 
-        // 4. Drop columna vieja y rename nueva
-        Schema::table('unidades', function (Blueprint $table) {
-            $table->dropColumn('tipo');
-            $table->renameColumn('tipo_enum', 'tipo');
-        });
+        // 4. Drop tabla vieja y rename
+        Schema::drop('unidades');
+        Schema::rename('unidades_new', 'unidades');
     }
 
     public function down(): void
     {
-        Schema::table('unidades', function (Blueprint $table) {
-            $table->string('tipo_enum')->nullable()->after('modelo');
+        // Recrear tabla original
+        Schema::create('unidades_old', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('proveedor_id')->nullable()->constrained('proveedores');
+            $table->string('patente')->unique();
+            $table->string('marca')->nullable();
+            $table->string('modelo')->nullable();
+            $table->integer('anio')->nullable();
+            $table->string('tipo')->default('Camión');
+            $table->string('numero')->nullable()->unique(); // Original tenía unique
+            $table->date('vtv_vencimiento')->nullable();
+            $table->date('seguro_vencimiento')->nullable();
+            $table->boolean('activo')->default(true);
+            $table->timestamps();
+            $table->softDeletes();
         });
 
         DB::statement("
-            UPDATE unidades 
-            SET tipo_enum = CASE 
-                WHEN tipo = 'tractora' THEN 'Camión'
-                WHEN tipo = 'acoplado' THEN 'Acoplado'
-                WHEN tipo = 'semirremolque' THEN 'Semi'
-                ELSE 'Camión'
-            END
+            INSERT INTO unidades_old (id, proveedor_id, patente, marca, modelo, anio, tipo, numero, vtv_vencimiento, seguro_vencimiento, activo, created_at, updated_at, deleted_at)
+            SELECT 
+                id, proveedor_id, patente, marca, modelo, anio,
+                CASE 
+                    WHEN tipo = 'tractora' THEN 'Camión'
+                    WHEN tipo = 'acoplado' THEN 'Acoplado'
+                    WHEN tipo = 'semirremolque' THEN 'Semi'
+                    ELSE 'Camión'
+                END as tipo,
+                numero, vtv_vencimiento, seguro_vencimiento, activo, created_at, updated_at, deleted_at
+            FROM unidades
         ");
 
-        Schema::table('unidades', function (Blueprint $table) {
-            $table->dropColumn('tipo');
-            $table->renameColumn('tipo_enum', 'tipo');
-        });
+        Schema::drop('unidades');
+        Schema::rename('unidades_old', 'unidades');
     }
 };
