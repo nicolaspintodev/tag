@@ -12,6 +12,7 @@ class DatabaseSeeder extends Seeder
             TestSeeder::class,
             ChoferSeeder::class,
             UnidadSeeder::class,
+            ClienteSeeder::class,
         ]);
     }
 }
