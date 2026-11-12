@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { required, email, cuit, runValidators } from './validations';
+import { required, email, cuit, runValidators, CUIT_MESSAGE } from './validations';
 
 describe('required', () => {
   it('rechaza vacío, null, undefined y espacios', () => {
@@ -31,10 +31,10 @@ describe('cuit', () => {
     expect(cuit(' 20-12345678-6 ')).toBeNull();
   });
   it('rechaza dígito verificador inválido', () => {
-    expect(cuit('20-12345678-9')).toBe('CUIT inválido');
+    expect(cuit('20-12345678-9')).toBe(CUIT_MESSAGE);
   });
   it('rechaza longitud incorrecta', () => {
-    expect(cuit('123')).toBe('CUIT inválido');
+    expect(cuit('123')).toBe(CUIT_MESSAGE);
   });
   it('acepta vacío (campo opcional a nivel validador)', () => {
     expect(cuit('')).toBeNull();

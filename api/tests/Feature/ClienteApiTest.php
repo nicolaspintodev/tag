@@ -105,15 +105,15 @@ class ClienteApiTest extends TestCase
     }
 
     /** @test */
-    public function test_clientes_store_validates_cuit_format()
+    public function test_clientes_store_allows_invalid_cuit_check_digit()
     {
         $response = $this->postJson('/api/clientes', [
             'razon_social' => 'CUIT Inválido SA',
             'cuit' => '20-12345678-9',
         ]);
 
-        $response->assertStatus(422)
-            ->assertJsonValidationErrors(['cuit']);
+        $response->assertStatus(201)
+            ->assertJsonFragment(['cuit' => '20-12345678-9']);
     }
 
     /** @test */

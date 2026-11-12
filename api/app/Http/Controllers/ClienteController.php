@@ -3,7 +3,6 @@
 namespace App\Http\Controllers;
 
 use App\Models\Cliente;
-use App\Rules\Cuit;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 
@@ -72,7 +71,6 @@ class ClienteController extends Controller
                 'required',
                 'string',
                 Rule::unique('clientes', 'cuit')->ignore($id),
-                new Cuit,
             ]),
             'direccion' => 'nullable|string',
             'telefono' => 'nullable|string',
