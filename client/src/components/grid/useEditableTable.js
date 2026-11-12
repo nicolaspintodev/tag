@@ -1,11 +1,13 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import { firstEditableCol, moveCell } from '../../lib/gridNavigation';
 import { parsePaste } from '../../lib/gridClipboard';
 
 export const useEditableTable = ({ columns, rows, rowKey, onCellChange }) => {
   const [activeState, setActive] = useState(null);
   const [editing, setEditing] = useState(null);
-  const [draft, setDraft] = useState('');
+  const [draft, setDraftState] = useState('');
+  const editingRef = useRef(null);
+  const draftRef = useRef('');
 
   const dims = useMemo(() => ({ rowCount: rows.length, columns }), [rows.length, columns]);
 
@@ -15,31 +17,42 @@ export const useEditableTable = ({ columns, rows, rowKey, onCellChange }) => {
     [activeState, initialCol],
   );
 
+  const setDraft = useCallback((value) => {
+    draftRef.current = value;
+    setDraftState(value);
+  }, []);
+
   const startEdit = useCallback((pos) => {
+    if (!pos) return;
     const column = columns[pos.col];
     if (!column?.editable) return;
     const row = rows[pos.row];
     if (!row) return;
-    setActive(pos);
+    editingRef.current = pos;
     setEditing(pos);
     setDraft(row[column.accessor] ?? '');
-  }, [columns, rows]);
+  }, [columns, rows, setDraft]);
 
-  const commit = useCallback(() => {
-    if (!editing) return;
-    const column = columns[editing.col];
-    const row = rows[editing.row];
-    if (row && column) onCellChange(row[rowKey], column.id, draft);
+  const commit = useCallback((moveDown = true) => {
+    const current = editingRef.current;
+    if (!current) return;
+    editingRef.current = null;
+    const column = columns[current.col];
+    const row = rows[current.row];
+    if (row && column) onCellChange(row[rowKey], column.id, draftRef.current);
     setEditing(null);
-    setActive(moveCell(editing, 'down', dims));
-  }, [editing, columns, rows, draft, onCellChange, rowKey, dims]);
+    if (moveDown) setActive(moveCell(current, 'down', dims));
+  }, [columns, rows, onCellChange, rowKey, dims]);
 
-  const cancel = useCallback(() => setEditing(null), []);
+  const cancel = useCallback(() => {
+    editingRef.current = null;
+    setEditing(null);
+  }, []);
 
   const move = useCallback((direction) => {
-    if (editing) return;
+    if (editingRef.current) return;
     setActive((current) => moveCell(current ?? active, direction, dims));
-  }, [editing, dims, active]);
+  }, [dims, active]);
 
   const handlePaste = useCallback((text) => {
     if (!active) return;
