@@ -327,3 +327,76 @@ button.btn-ghost:hover {
   justify-content: center;
   align-items: center;
 }
+
+/* App shell */
+.app-shell {
+  min-height: 100vh;
+  display: flex;
+  background: var(--bg-body);
+}
+
+.app-sidebar {
+  width: 240px;
+  flex-shrink: 0;
+  background: var(--bg-primary);
+  color: var(--text-invert);
+  display: flex;
+  flex-direction: column;
+  padding: 1rem 0.75rem;
+  gap: 0.25rem;
+}
+
+.app-sidebar-brand {
+  font-size: 1.15rem;
+  font-weight: 700;
+  padding: 0.75rem 0.75rem 1.25rem;
+}
+
+.app-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.6rem 0.75rem;
+  border-radius: var(--radius-md);
+  color: rgb(255 255 255 / 0.75);
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.app-nav-item:hover {
+  background: rgb(255 255 255 / 0.08);
+  color: var(--text-invert);
+}
+
+.app-nav-item.active {
+  background: rgb(255 255 255 / 0.14);
+  color: var(--text-invert);
+}
+
+.app-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.app-header {
+  height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 2rem;
+  background: var(--bg-card);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.app-header-title {
+  font-size: 1.15rem;
+  color: var(--bg-primary);
+}
+
+.app-content {
+  flex: 1;
+  padding: 1.5rem 2rem;
+  overflow: auto;
+}
