@@ -9,7 +9,7 @@ const buildPayload = (row) =>
     return payload;
   }, {});
 
-export const useEditableResource = (resource, { rowKey = 'id', delay = 500 } = {}) => {
+export const useEditableResource = (resource, { rowKey = 'id', delay = 500, canPersist } = {}) => {
   const [rows, setRows] = useState([]);
   const [saveState, setSaveState] = useState({});
   const [loading, setLoading] = useState(true);
@@ -18,6 +18,10 @@ export const useEditableResource = (resource, { rowKey = 'id', delay = 500 } = {
   const rowsRef = useRef(rows);
   rowsRef.current = rows;
 
+  const canPersistRef = useRef(canPersist);
+  canPersistRef.current = canPersist;
+
+  const lastParamsRef = useRef(undefined);
   const debouncers = useRef({});
 
   const persist = useCallback(async (key, payload, existing) => {
@@ -32,7 +36,8 @@ export const useEditableResource = (resource, { rowKey = 'id', delay = 500 } = {
     }
   }, [resource, rowKey]);
 
-  const reload = useCallback(async (params) => {
+  const reload = useCallback(async (params = lastParamsRef.current) => {
+    lastParamsRef.current = params;
     setLoading(true);
     setError(null);
     try {
@@ -54,6 +59,7 @@ export const useEditableResource = (resource, { rowKey = 'id', delay = 500 } = {
       debouncers.current[key] = createDebouncer((k) => {
         const row = rowsRef.current.find((item) => item[rowKey] === k);
         if (!row) return;
+        if (canPersistRef.current && !canPersistRef.current(row)) return;
         persist(k, buildPayload(row), Boolean(row.id));
       }, delay);
     }
@@ -75,5 +81,14 @@ export const useEditableResource = (resource, { rowKey = 'id', delay = 500 } = {
     }
   }, [resource, rowKey]);
 
-  return { rows, setRows, saveState, loading, error, reload, updateCell, createRow, deleteRow };
+  const restoreRow = useCallback(async (key) => {
+    try {
+      await resource.restore(key);
+      await reload();
+    } catch (err) {
+      setError(err);
+    }
+  }, [resource, reload]);
+
+  return { rows, setRows, saveState, loading, error, reload, updateCell, createRow, deleteRow, restoreRow };
 };
