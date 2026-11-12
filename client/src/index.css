@@ -257,3 +257,73 @@ button.outline:hover {
   #root { display: none !important; }
   body { margin: 0; padding: 0; background: white; }
 }
+
+/* UI primitives */
+button.btn-danger {
+  background-color: var(--color-danger-text);
+  color: var(--text-invert);
+}
+
+button.btn-ghost {
+  background-color: transparent;
+  color: var(--text-muted);
+  border-color: transparent;
+}
+
+button.btn-ghost:hover {
+  background-color: var(--bg-hover);
+  color: var(--text-main);
+}
+
+.drawer-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgb(15 23 42 / 0.4);
+  display: flex;
+  justify-content: flex-end;
+  z-index: 50;
+}
+
+.drawer {
+  background: var(--bg-card);
+  width: min(480px, 100%);
+  height: 100%;
+  box-shadow: var(--shadow-md);
+  display: flex;
+  flex-direction: column;
+  animation: drawer-in 0.2s ease-out;
+}
+
+@keyframes drawer-in {
+  from { transform: translateX(16px); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+
+.drawer-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.drawer-header button {
+  padding: 0.35rem;
+  display: inline-flex;
+}
+
+.drawer-body {
+  padding: 1.25rem;
+  overflow-y: auto;
+}
+
+.confirm-dialog {
+  align-self: center;
+  margin: auto;
+  width: min(420px, 100%);
+}
+
+.drawer-overlay:has(.confirm-dialog) {
+  justify-content: center;
+  align-items: center;
+}
