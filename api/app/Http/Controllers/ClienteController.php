@@ -27,7 +27,7 @@ class ClienteController extends Controller
             });
         }
 
-        return response()->json(
+        return $this->safeJson(
             $query->orderByRaw('COALESCE(nombre_administrativo, razon_social) asc')->get()
         );
     }
@@ -38,14 +38,14 @@ class ClienteController extends Controller
 
         $cliente = Cliente::create($validated);
 
-        return response()->json($cliente, 201);
+        return $this->safeJson($cliente, 201);
     }
 
     public function show($id)
     {
         $cliente = Cliente::withTrashed()->findOrFail($id);
 
-        return response()->json($cliente);
+        return $this->safeJson($cliente);
     }
 
     public function update(Request $request, $id)
@@ -56,7 +56,7 @@ class ClienteController extends Controller
 
         $cliente->update($validated);
 
-        return response()->json($cliente);
+        return $this->safeJson($cliente);
     }
 
     private function rules(?int $id = null): array
@@ -90,7 +90,7 @@ class ClienteController extends Controller
         $cliente = Cliente::findOrFail($id);
         $cliente->delete();
 
-        return response()->json(['message' => 'Cliente archivado exitosamente']);
+        return $this->safeJson(['message' => 'Cliente archivado exitosamente']);
     }
 
     public function restore($id)
@@ -98,6 +98,6 @@ class ClienteController extends Controller
         $cliente = Cliente::withTrashed()->findOrFail($id);
         $cliente->restore();
 
-        return response()->json(['message' => 'Cliente restaurado exitosamente']);
+        return $this->safeJson(['message' => 'Cliente restaurado exitosamente']);
     }
 }

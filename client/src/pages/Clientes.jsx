@@ -20,7 +20,7 @@ const Clientes = () => {
   const [selectedKey, setSelectedKey] = useState(null);
   const [toDelete, setToDelete] = useState(null);
 
-  const { rows, saveState, loading, error, reload, updateCell, createRow, deleteRow, restoreRow } =
+  const { rows, saveState, loading, error, setError, reload, updateCell, createRow, deleteRow, restoreRow } =
     useEditableResource(clientes, { rowKey: 'id', canPersist });
 
   const selected = useMemo(() => rows.find((row) => row.id === selectedKey), [rows, selectedKey]);
@@ -74,7 +74,12 @@ const Clientes = () => {
         </span>
       </div>
 
-      {error && <div className="card" style={{ color: 'var(--color-danger-text)' }}>{error.message}</div>}
+      {error && (
+        <div className="card" style={{ color: 'var(--color-danger-text)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <span>{error.status === 500 ? 'Error del servidor (datos con caracteres inválidos). Contactá a soporte.' : error.message}</span>
+          <Button variant="outline" size="sm" onClick={() => setError(null)}>Cerrar</Button>
+        </div>
+      )}
 
       <EditableTable
         columns={GRID_COLUMNS}

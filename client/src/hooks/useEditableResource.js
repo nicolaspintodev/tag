@@ -90,5 +90,5 @@ export const useEditableResource = (resource, { rowKey = 'id', delay = 500, canP
     }
   }, [resource, reload]);
 
-  return { rows, setRows, saveState, loading, error, reload, updateCell, createRow, deleteRow, restoreRow };
+  return { rows, setRows, saveState, loading, error, setError, reload, updateCell, createRow, deleteRow, restoreRow };
 };
