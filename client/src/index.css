@@ -400,3 +400,28 @@ button.btn-ghost:hover {
   padding: 1.5rem 2rem;
   overflow: auto;
 }
+
+/* Editable grid */
+.editable-grid {
+  outline: none;
+  overflow-x: auto;
+}
+
+.grid-cell {
+  cursor: cell;
+}
+
+.grid-cell.active {
+  outline: 2px solid var(--bg-primary);
+  outline-offset: -2px;
+}
+
+.grid-cell.cell-error {
+  background-color: var(--color-danger-bg);
+}
+
+.cell-save-state {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
