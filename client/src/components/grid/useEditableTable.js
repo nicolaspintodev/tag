@@ -22,7 +22,7 @@ export const useEditableTable = ({ columns, rows, rowKey, onCellChange }) => {
     setDraftState(value);
   }, []);
 
-  const startEdit = useCallback((pos) => {
+  const startEdit = useCallback((pos, initialValue = '') => {
     if (!pos) return;
     const column = columns[pos.col];
     if (!column?.editable) return;
@@ -30,10 +30,10 @@ export const useEditableTable = ({ columns, rows, rowKey, onCellChange }) => {
     if (!row) return;
     editingRef.current = pos;
     setEditing(pos);
-    setDraft(row[column.accessor] ?? '');
+    setDraft(initialValue);
   }, [columns, rows, setDraft]);
 
-  const commit = useCallback((moveDown = true) => {
+  const commit = useCallback((moveDown = false) => {
     const current = editingRef.current;
     if (!current) return;
     editingRef.current = null;

@@ -8,6 +8,8 @@ import { serializeSelection } from '../../lib/gridClipboard';
 
 const SAVE_LABEL = { saving: 'Guardando…', saved: 'Guardado', error: 'Error al guardar' };
 
+const STATE_COLOR = { saving: 'var(--color-warning-text)', saved: 'var(--color-success-text)', error: 'var(--color-danger-text)', '': 'var(--border-color)' };
+
 const EditableTable = ({
   columns,
   rows,
@@ -50,6 +52,11 @@ const EditableTable = ({
 
   const cancelEdit = () => {
     cancel();
+    focusGrid();
+  };
+
+  const startEditAt = (pos, initialValue) => {
+    startEdit(pos, initialValue);
     focusGrid();
   };
 
@@ -105,11 +112,12 @@ const EditableTable = ({
   }
 
   return (
-    <div className="editable-grid" tabIndex={0} ref={gridRef} onKeyDown={handleKeyDown} onCopy={handleCopy} onPaste={handlePasteEvent}>
+    <div className="editable-grid-wrapper" tabIndex={0} ref={gridRef} onKeyDown={handleKeyDown} onCopy={handleCopy} onPaste={handlePasteEvent}>
       <table className="datatable">
         <thead>
           {table.getHeaderGroups().map((headerGroup) => (
             <tr key={headerGroup.id}>
+              <th className="col-estado" style={{ width: '40px' }} />
               {headerGroup.headers.map((header) => (
                 <th
                   key={header.id}
@@ -118,8 +126,7 @@ const EditableTable = ({
                   {flexRender(header.column.columnDef.header, header.getContext())}
                 </th>
               ))}
-              <th style={{ width: '100px' }}>Estado</th>
-              <th style={{ width: '110px' }}>Acciones</th>
+              <th className="col-acciones" style={{ width: '110px' }}>Acciones</th>
             </tr>
           ))}
         </thead>
@@ -127,8 +134,12 @@ const EditableTable = ({
           {table.getRowModel().rows.map((tableRow, rowIndex) => {
             const row = rows[rowIndex];
             const archived = Boolean(row.deleted_at);
+            const state = saveState[row[rowKey]] || '';
             return (
               <tr key={tableRow.id} onDoubleClick={() => onRowOpenDetail?.(row)}>
+                <td className="col-estado" onDoubleClick={(event) => event.stopPropagation()}>
+                  <span className="state-dot" style={{ backgroundColor: STATE_COLOR[state] }} title={SAVE_LABEL[state] || ''} />
+                </td>
                 {tableRow.getVisibleCells().map((cell, colIndex) => {
                   const column = columns[colIndex];
                   return (
@@ -141,16 +152,14 @@ const EditableTable = ({
                       isActive={active?.row === rowIndex && active?.col === colIndex}
                       isEditing={editing?.row === rowIndex && editing?.col === colIndex}
                       onSelect={() => selectCell({ row: rowIndex, col: colIndex })}
+                      onStartEdit={(initialValue) => startEditAt({ row: rowIndex, col: colIndex }, initialValue)}
                       onChange={setDraft}
                       onCommit={commitEdit}
                       onCancel={cancelEdit}
                     />
                   );
                 })}
-                <td onDoubleClick={(event) => event.stopPropagation()}>
-                  <span className="cell-save-state">{SAVE_LABEL[saveState[row[rowKey]]] || ''}</span>
-                </td>
-                <td onDoubleClick={(event) => event.stopPropagation()}>
+                <td className="col-acciones" onDoubleClick={(event) => event.stopPropagation()}>
                   <div className="row-actions">
                     <button
                       type="button"
@@ -199,11 +208,13 @@ const EditableTable = ({
         </tbody>
         <tfoot>
           <tr>
-            <td colSpan={columns.length + 2} style={{ padding: 0 }}>
+            <td className="col-estado" />
+            <td colSpan={columns.length} style={{ padding: 0 }}>
               <button type="button" className="grid-add-row" onClick={() => onAddRow?.()}>
                 <Plus size={15} /> Agregar fila
               </button>
             </td>
+            <td className="col-acciones" />
           </tr>
         </tfoot>
       </table>

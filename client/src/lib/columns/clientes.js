@@ -9,11 +9,13 @@ const CONDICION_IVA_OPTIONS = [
   { value: 'no_categorizado', label: 'No Categorizado' },
 ];
 
+const CONDICION_IVA_LABELS = Object.fromEntries(CONDICION_IVA_OPTIONS.map((o) => [o.value, o.label]));
+
 export const GRID_COLUMNS = [
   { id: 'razon_social', accessor: 'razon_social', header: 'Razón Social', type: 'text', editable: true, validate: required, width: '220px' },
   { id: 'nombre_administrativo', accessor: 'nombre_administrativo', header: 'Nombre Admin.', type: 'text', editable: true, width: '180px' },
   { id: 'cuit', accessor: 'cuit', header: 'CUIT', type: 'text', editable: true, validate: cuit, warn: true, width: '150px' },
-  { id: 'condicion_iva', accessor: 'condicion_iva', header: 'Cond. IVA', type: 'select', editable: true, options: CONDICION_IVA_OPTIONS, width: '170px' },
+  { id: 'condicion_iva', accessor: 'condicion_iva', header: 'Cond. IVA', type: 'select', editable: true, options: CONDICION_IVA_OPTIONS, width: '170px', render: (v) => CONDICION_IVA_LABELS[v] ?? v },
   { id: 'localidad', accessor: 'localidad', header: 'Localidad', type: 'text', editable: true, width: '150px' },
   { id: 'provincia', accessor: 'provincia', header: 'Provincia', type: 'text', editable: true, width: '140px' },
   { id: 'telefono', accessor: 'telefono', header: 'Teléfono', type: 'text', editable: true, width: '130px' },

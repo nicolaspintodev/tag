@@ -45,54 +45,58 @@ const Clientes = () => {
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-      <div className="toolbar">
-        <div className="search-field">
-          <Input
-            placeholder="Buscar por nombre, CUIT, contacto o email"
-            value={search}
-            onChange={(event) => setSearch(event.target.value)}
-            onKeyDown={(event) => event.key === 'Enter' && fetchRows()}
-          />
-          {search && (
-            <button type="button" className="search-clear" aria-label="Limpiar búsqueda" onClick={clearSearch}>
-              <X size={14} />
-            </button>
-          )}
+    <div className="clientes-page">
+      <header className="page-header">
+        <div className="toolbar">
+          <div className="search-field">
+            <Input
+              placeholder="Buscar por nombre, CUIT, contacto o email"
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+              onKeyDown={(event) => event.key === 'Enter' && fetchRows()}
+            />
+            {search && (
+              <button type="button" className="search-clear" aria-label="Limpiar búsqueda" onClick={clearSearch}>
+                <X size={14} />
+              </button>
+            )}
+          </div>
+          <Button variant="outline" onClick={() => fetchRows()}>Buscar</Button>
+          <label style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+            <input
+              type="checkbox"
+              checked={archivados}
+              onChange={(event) => toggleArchivados(event.target.checked)}
+            />
+            Ver archivados
+          </label>
+          <span style={{ marginLeft: 'auto', color: 'var(--text-muted)', fontSize: '0.85rem' }}>
+            {rows.length} clientes
+          </span>
         </div>
-        <Button variant="outline" onClick={() => fetchRows()}>Buscar</Button>
-        <label style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.85rem', color: 'var(--text-muted)' }}>
-          <input
-            type="checkbox"
-            checked={archivados}
-            onChange={(event) => toggleArchivados(event.target.checked)}
-          />
-          Ver archivados
-        </label>
-        <span style={{ marginLeft: 'auto', color: 'var(--text-muted)', fontSize: '0.85rem' }}>
-          {rows.length} clientes
-        </span>
-      </div>
+      </header>
 
       {error && (
-        <div className="card" style={{ color: 'var(--color-danger-text)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div className="error-banner" style={{ color: 'var(--color-danger-text)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.75rem 1.5rem' }}>
           <span>{error.status === 500 ? 'Error del servidor (datos con caracteres inválidos). Contactá a soporte.' : error.message}</span>
           <Button variant="outline" size="sm" onClick={() => setError(null)}>Cerrar</Button>
         </div>
       )}
 
-      <EditableTable
-        columns={GRID_COLUMNS}
-        rows={rows}
-        rowKey="id"
-        onCellChange={updateCell}
-        onRowDelete={(key) => setToDelete(key)}
-        onRowOpenDetail={(row) => setSelectedKey(row.id)}
-        onRowRestore={(key) => restoreRow(key)}
-        onAddRow={createRow}
-        saveState={saveState}
-        loading={loading}
-      />
+      <div className="grid-container">
+        <EditableTable
+          columns={GRID_COLUMNS}
+          rows={rows}
+          rowKey="id"
+          onCellChange={updateCell}
+          onRowDelete={(key) => setToDelete(key)}
+          onRowOpenDetail={(row) => setSelectedKey(row.id)}
+          onRowRestore={(key) => restoreRow(key)}
+          onAddRow={createRow}
+          saveState={saveState}
+          loading={loading}
+        />
+      </div>
 
       <Modal
         open={Boolean(selected)}

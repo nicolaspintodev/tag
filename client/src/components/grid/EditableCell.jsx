@@ -2,7 +2,9 @@ import { useEffect, useRef } from 'react';
 import Input from '../ui/Input';
 import Select from '../ui/Select';
 
-const EditableCell = ({ column, value, draft, row, isActive, isEditing, onSelect, onChange, onCommit, onCancel }) => {
+const PRINTABLE_KEY_REGEX = /^[^ -~]$/;
+
+const EditableCell = ({ column, value, draft, row, isActive, isEditing, onSelect, onStartEdit, onChange, onCommit, onCancel }) => {
   const ref = useRef(null);
 
   useEffect(() => {
@@ -15,20 +17,53 @@ const EditableCell = ({ column, value, draft, row, isActive, isEditing, onSelect
   const handleKeyDown = (event) => {
     if (event.key === 'Enter' && !event.shiftKey) {
       event.preventDefault();
-      onCommit(true);
+      onCommit(false);
     } else if (event.key === 'Escape') {
       event.preventDefault();
       onCancel();
     }
   };
 
+  const handleKeyDownDisplay = (event) => {
+    if (event.key === 'Enter' && !event.shiftKey) {
+      event.preventDefault();
+      onStartEdit();
+    } else if (PRINTABLE_KEY_REGEX.test(event.key)) {
+      event.preventDefault();
+      onStartEdit(event.key);
+    } else if (event.key === 'F2') {
+      event.preventDefault();
+      onStartEdit();
+    }
+  };
+
+  const handleDoubleClick = (event) => {
+    event.preventDefault();
+    onStartEdit();
+  };
+
   const error = column.validate ? column.validate(value, row) : null;
   const severity = error ? (column.warn ? 'cell-warning' : 'cell-error') : '';
   const className = `grid-cell ${isActive ? 'active' : ''} ${severity}`.trim();
 
-  if (!column.editable || !isEditing) {
+  if (!column.editable) {
     return (
-      <td className={className} title={error || undefined} onClick={onSelect}>
+      <td className={className} title={error || undefined} onClick={onSelect} onDoubleClick={handleDoubleClick}>
+        {column.render ? column.render(value, row) : value}
+      </td>
+    );
+  }
+
+  if (!isEditing) {
+    return (
+      <td
+        className={className}
+        title={error || undefined}
+        onClick={onSelect}
+        onDoubleClick={handleDoubleClick}
+        onKeyDown={handleKeyDownDisplay}
+        tabIndex={0}
+      >
         {column.render ? column.render(value, row) : value}
       </td>
     );
