@@ -425,3 +425,18 @@ button.btn-ghost:hover {
   color: var(--text-muted);
   white-space: nowrap;
 }
+
+.toolbar {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.field-label {
+  display: block;
+  margin-bottom: 0.3rem;
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--text-muted);
+}
