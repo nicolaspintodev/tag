@@ -481,6 +481,7 @@ button.btn-ghost:hover {
 .row-actions {
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 0.25rem;
 }
 
@@ -514,7 +515,7 @@ button.btn-ghost:hover {
 .page-header {
   position: sticky;
   top: 0;
-  z-index: 10;
+  z-index: 20;
   background: var(--bg-body);
   border-bottom: 1px solid var(--border-color);
   padding: 0 1.5rem;
@@ -526,17 +527,59 @@ button.btn-ghost:hover {
 
 .grid-container {
   flex: 1;
-  overflow: hidden;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
   min-height: 0;
-  padding-top: 0.5rem;
+  padding: 0 1.5rem;
 }
 
-.editable-grid-wrapper {
+.table-header-wrapper {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: var(--bg-body);
+  border-bottom: 1px solid var(--border-color);
+  flex-shrink: 0;
+}
+
+.table-body-wrapper {
   flex: 1;
-  overflow: auto;
-  outline: none;
+  overflow-y: auto;
+  overflow-x: auto;
+  min-height: 0;
+}
+
+.table-footer-fixed {
+  position: sticky;
+  bottom: 0;
+  z-index: 10;
+  background: var(--bg-body);
+  border-top: 1px solid var(--border-color);
+  padding: 0.5rem 1.5rem 0.75rem;
+  display: flex;
+  justify-content: flex-end;
+  flex-shrink: 0;
+}
+
+.grid-add-row-fixed {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  background: transparent;
+  color: var(--text-muted);
+  border: 1px dashed var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 0.5rem 1rem;
+  font-size: 0.85rem;
+  white-space: nowrap;
+}
+
+.grid-add-row-fixed:hover {
+  background: var(--bg-hover);
+  color: var(--text-main);
+  opacity: 1;
 }
 
 .datatable {
@@ -546,9 +589,6 @@ button.btn-ghost:hover {
 }
 
 .datatable th {
-  position: sticky;
-  top: 72px; /* altura aprox header + toolbar */
-  z-index: 5;
   background: var(--bg-body);
   padding: 0.5rem 0.75rem;
   border-bottom: 1px solid var(--border-color);
@@ -556,16 +596,6 @@ button.btn-ghost:hover {
   font-weight: 500;
   font-size: 0.8rem;
   white-space: nowrap;
-}
-
-.datatable th:first-child {
-  left: 0;
-  background: var(--bg-body);
-  border-left: none;
-}
-
-.datatable th:last-child {
-  right: 0;
 }
 
 .datatable td {
@@ -577,18 +607,6 @@ button.btn-ghost:hover {
 
 .datatable tbody tr:hover {
   background: var(--bg-hover);
-}
-
-.datatable tfoot {
-  position: sticky;
-  bottom: 0;
-  z-index: 5;
-  background: var(--bg-body);
-}
-
-.datatable tfoot td {
-  padding: 0;
-  border-top: 1px solid var(--border-color);
 }
 
 .col-estado {
@@ -647,8 +665,7 @@ button.btn-ghost:hover {
   gap: 0.25rem;
 }
 
-.grid-add-row {
-  width: 100%;
+.grid-add-row-fixed {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -656,12 +673,13 @@ button.btn-ghost:hover {
   background: transparent;
   color: var(--text-muted);
   border: 1px dashed var(--border-color);
-  border-radius: 0;
-  padding: 0.5rem;
+  border-radius: var(--radius-md);
+  padding: 0.5rem 1rem;
   font-size: 0.85rem;
+  white-space: nowrap;
 }
 
-.grid-add-row:hover {
+.grid-add-row-fixed:hover {
   background: var(--bg-hover);
   color: var(--text-main);
   opacity: 1;

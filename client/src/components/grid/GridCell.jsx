@@ -4,7 +4,7 @@ import Select from '../ui/Select';
 
 const PRINTABLE_KEY_REGEX = /^[^ -~]$/;
 
-const EditableCell = ({ column, value, draft, row, isActive, isEditing, onSelect, onStartEdit, onChange, onCommit, onCancel }) => {
+const GridCell = ({ column, value, draft, row, isActive, isEditing, onSelect, onStartEdit, onChange, onCommit, onCancel }) => {
   const ref = useRef(null);
 
   useEffect(() => {
@@ -105,4 +105,4 @@ const EditableCell = ({ column, value, draft, row, isActive, isEditing, onSelect
   );
 };
 
-export default EditableCell;
+export default GridCell;
