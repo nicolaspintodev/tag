@@ -36,7 +36,11 @@ class ChoferController extends Controller
             }
         }
 
-        return response()->json($query->orderBy('id', 'desc')->get());
+        if ($request->filled('activo')) {
+            $query->where('activo', $request->boolean('activo'));
+        }
+
+        return response()->json($query->with('proveedor')->orderBy('id', 'desc')->get());
     }
 
     public function store(Request $request)

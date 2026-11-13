@@ -47,12 +47,12 @@ class TestSeeder extends Seeder
         $proveedoresModels = collect($proveedores)->map(fn ($p) => Proveedor::create($p));
 
         $choferes = [
-            ['nombre' => 'Juan', 'apellido' => 'García', 'dni' => '30.111.111', 'telefono' => '11 2222-3333', 'licencia_vencimiento' => '2027-05-15', 'proveedor_id' => null],
-            ['nombre' => 'Carlos', 'apellido' => 'López', 'dni' => '28.222.222', 'telefono' => '11 3333-4444', 'licencia_vencimiento' => '2027-08-20', 'proveedor_id' => null],
-            ['nombre' => 'Pedro', 'apellido' => 'Ramírez', 'dni' => '32.333.333', 'telefono' => '11 4444-5555', 'licencia_vencimiento' => '2027-03-10', 'proveedor_id' => $proveedoresModels[0]->id],
-            ['nombre' => 'Miguel', 'apellido' => 'Torres', 'dni' => '34.666.666', 'telefono' => '11 7777-8888', 'licencia_vencimiento' => '2028-01-20', 'proveedor_id' => $proveedoresModels[0]->id],
-            ['nombre' => 'Luis', 'apellido' => 'Fernández', 'dni' => '31.444.444', 'telefono' => '11 5555-6666', 'licencia_vencimiento' => '2027-11-25', 'proveedor_id' => $proveedoresModels[1]->id],
-            ['nombre' => 'Sergio', 'apellido' => 'Díaz', 'dni' => '33.777.777', 'telefono' => '11 8888-9999', 'licencia_vencimiento' => '2028-06-15', 'proveedor_id' => $proveedoresModels[1]->id],
+            ['numero' => 'CH-005', 'nombre' => 'Juan', 'apellido' => 'García', 'dni' => '30.111.111', 'telefono' => '11 2222-3333', 'licencia_vencimiento' => '2027-05-15', 'proveedor_id' => null],
+            ['numero' => 'CH-006', 'nombre' => 'Carlos', 'apellido' => 'López', 'dni' => '28.222.222', 'telefono' => '11 3333-4444', 'licencia_vencimiento' => '2027-08-20', 'proveedor_id' => null],
+            ['numero' => 'CH-007', 'nombre' => 'Pedro', 'apellido' => 'Ramírez', 'dni' => '32.333.333', 'telefono' => '11 4444-5555', 'licencia_vencimiento' => '2027-03-10', 'proveedor_id' => $proveedoresModels[0]->id],
+            ['numero' => 'CH-008', 'nombre' => 'Miguel', 'apellido' => 'Torres', 'dni' => '34.666.666', 'telefono' => '11 7777-8888', 'licencia_vencimiento' => '2028-01-20', 'proveedor_id' => $proveedoresModels[0]->id],
+            ['numero' => 'CH-009', 'nombre' => 'Luis', 'apellido' => 'Fernández', 'dni' => '31.444.444', 'telefono' => '11 5555-6666', 'licencia_vencimiento' => '2027-11-25', 'proveedor_id' => $proveedoresModels[1]->id],
+            ['numero' => 'CH-010', 'nombre' => 'Sergio', 'apellido' => 'Díaz', 'dni' => '33.777.777', 'telefono' => '11 8888-9999', 'licencia_vencimiento' => '2028-06-15', 'proveedor_id' => $proveedoresModels[1]->id],
         ];
 
         $unidades = [

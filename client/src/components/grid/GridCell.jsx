@@ -86,7 +86,7 @@ const GridCell = ({ column, value, draft, row, isActive, isEditing, onSelect, on
       {column.type === 'select' ? (
         <Select
           ref={ref}
-          value={editingValue}
+          value={editingValue ?? ''}
           options={column.options}
           onChange={(event) => onChange(event.target.value)}
           onKeyDown={handleKeyDown}
@@ -105,7 +105,7 @@ const GridCell = ({ column, value, draft, row, isActive, isEditing, onSelect, on
         <Input
           ref={ref}
           type={column.type === 'number' ? 'number' : column.type === 'date' ? 'date' : 'text'}
-          value={editingValue}
+          value={column.type === 'date' ? String(editingValue).slice(0, 10) : editingValue}
           onChange={(event) => {
             const formatted = column.id === 'cuit' ? formatCuit(event.target.value) : event.target.value;
             onChange(formatted);

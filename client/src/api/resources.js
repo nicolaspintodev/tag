@@ -33,3 +33,5 @@ export const makeResource = (base) => ({
 });
 
 export const clientes = makeResource('/clientes');
+export const choferes = makeResource('/choferes');
+export const proveedores = makeResource('/proveedores');

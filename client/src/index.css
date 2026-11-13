@@ -580,6 +580,16 @@ button.btn-ghost:hover {
   color: var(--text-muted);
 }
 
+.choferes-state-bar {
+  display: flex;
+  justify-content: flex-end;
+  padding: 0.4rem 2rem;
+  border-top: 1px solid var(--border-color);
+  background: var(--bg-card);
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
 .field-label {
   display: block;
   margin-bottom: 0.3rem;

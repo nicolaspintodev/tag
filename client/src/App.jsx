@@ -4,6 +4,7 @@ import { Navigate, Route, Routes } from 'react-router-dom';
 import Login from './pages/Login';
 import Placeholder from './pages/Placeholder';
 import Clientes from './pages/Clientes';
+import Choferes from './pages/Choferes';
 import AppShell from './components/layout/AppShell';
 import { clearToken, fetchCurrentUser, getToken, logout } from './api';
 import { clearTabMarker, markTabUnloading, resolveTabLifecycle } from './session';
@@ -96,7 +97,7 @@ const App = () => {
         <Route path="/clientes" element={<Clientes />} />
         <Route path="/viajes" element={<Placeholder title="Viajes" />} />
         <Route path="/proveedores" element={<Placeholder title="Proveedores" />} />
-        <Route path="/choferes" element={<Placeholder title="Choferes" />} />
+        <Route path="/choferes" element={<Choferes />} />
         <Route path="/unidades" element={<Placeholder title="Unidades" />} />
         <Route path="/liquidaciones" element={<Placeholder title="Liquidaciones" />} />
         <Route path="/facturas" element={<Placeholder title="Facturas" />} />
