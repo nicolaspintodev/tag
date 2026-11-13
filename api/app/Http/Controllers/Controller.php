@@ -2,8 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Resources\Json\JsonResource;
-
 abstract class Controller
 {
     protected function sanitizeUtf8($data)
@@ -15,11 +13,13 @@ abstract class Controller
             if (method_exists($data, 'toArray')) {
                 return $this->sanitizeUtf8($data->toArray());
             }
+
             return $data;
         }
         if (is_string($data)) {
             return mb_convert_encoding($data, 'UTF-8', 'UTF-8');
         }
+
         return $data;
     }
 

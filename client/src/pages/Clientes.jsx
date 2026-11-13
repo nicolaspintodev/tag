@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { X } from 'lucide-react';
+import { Search, X } from 'lucide-react';
 import ClientGrid from '../components/grid/ClientGrid';
 import Modal from '../components/ui/Modal';
 import ConfirmDialog from '../components/ui/ConfirmDialog';
@@ -19,6 +19,21 @@ const Clientes = () => {
   const [archivados, setArchivados] = useState(false);
   const [selectedKey, setSelectedKey] = useState(null);
   const [toDelete, setToDelete] = useState(null);
+
+  const getErrorMessage = (err) => {
+    if (err.status === 500) return 'Error del servidor. Contactá a soporte.'
+    if (err.status === 400) return 'Datos inválidos. Revisá los campos.'
+    if (err.status === 409) return 'El CUIT ya está registrado.'
+    if (err.status === 404) return 'No se encontró el registro solicitado.'
+    if (err.status === 403) return 'No tenés permisos para realizar esta acción.'
+    if (err.status === 401) return 'Tu sesión expiró. Volvé a iniciar sesión.'
+    const msg = (err.message || '').toLowerCase()
+    if (msg.includes('required')) return 'Un campo obligatorio está vacío.'
+    if (msg.includes('unique') || msg.includes('duplicate')) return 'El valor ya está registrado.'
+    if (msg.includes('email')) return 'El email no es válido.'
+    if (msg.includes('cuit')) return 'El CUIT es inválido.'
+    return 'Ocurrió un error inesperado.'
+  }
 
   const { rows, saveState, loading, error, setError, reload, updateCell, createRow, deleteRow, restoreRow } =
     useEditableResource(clientes, { rowKey: 'id', canPersist });
@@ -46,8 +61,9 @@ const Clientes = () => {
 
   return (
     <div className="clientes-page">
-      <header className="page-header">
+      <div className="page-header">
         <div className="toolbar">
+        <div className="toolbar-left">
           <div className="search-field">
             <Input
               placeholder="Buscar por nombre, CUIT, contacto o email"
@@ -61,7 +77,9 @@ const Clientes = () => {
               </button>
             )}
           </div>
-          <Button variant="outline" onClick={() => fetchRows()}>Buscar</Button>
+          <Button variant="outline" size="sm" onClick={() => fetchRows()}>
+            <Search size={14} />
+          </Button>
           <label style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.85rem', color: 'var(--text-muted)' }}>
             <input
               type="checkbox"
@@ -70,97 +88,106 @@ const Clientes = () => {
             />
             Ver archivados
           </label>
-          <span style={{ marginLeft: 'auto', color: 'var(--text-muted)', fontSize: '0.85rem' }}>
-            {rows.length} clientes
-          </span>
         </div>
-      </header>
+        <div style={{ marginLeft: 'auto' }}>
+          <Button onClick={() => createRow()}>+ Agregar fila</Button>
+        </div>
+      </div>
+      </div>
 
       {error && (
-        <div className="error-banner" style={{ color: 'var(--color-danger-text)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.75rem 1.5rem' }}>
-          <span>{error.status === 500 ? 'Error del servidor (datos con caracteres inválidos). Contactá a soporte.' : error.message}</span>
+        <div className="error-banner" style={{ color: 'var(--color-danger-text)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.4rem 1rem', margin: '0.75rem 1.5rem', fontSize: '0.85rem', borderRadius: 'var(--radius-md)', background: 'var(--color-danger-bg)', border: '1px solid var(--color-danger-text)' }}>
+          <span>{getErrorMessage(error)}</span>
           <Button variant="outline" size="sm" onClick={() => setError(null)}>Cerrar</Button>
         </div>
       )}
 
-      <div className="grid-container">
-        <div className="table-header-wrapper">
-          <table className="datatable">
-            <thead>
-              <tr>
-                <th className="col-estado" style={{ width: '40px' }} />
-                {GRID_COLUMNS.map((column) => (
-                  <th
-                    key={column.id}
-                    style={column.width ? { width: column.width } : undefined}
-                  >
-                    {column.header}
-                  </th>
-                ))}
-                <th className="col-acciones" style={{ width: '110px' }}>Acciones</th>
-              </tr>
-            </thead>
-          </table>
-        </div>
-
-        <div className="table-body-wrapper">
-          <ClientGrid
-            columns={GRID_COLUMNS}
-            rows={rows}
-            rowKey="id"
-            onCellChange={updateCell}
-            onRowDelete={(key) => setToDelete(key)}
-            onRowOpenDetail={(row) => setSelectedKey(row.id)}
-            onRowRestore={(key) => restoreRow(key)}
-            saveState={saveState}
-            loading={loading}
-          />
-        </div>
+      <div className="table-container">
+        <ClientGrid
+          columns={GRID_COLUMNS}
+          rows={rows}
+          rowKey="id"
+          onCellChange={updateCell}
+          onRowDelete={(key) => setToDelete(key)}
+          onRowOpenDetail={(row) => setSelectedKey(row.id)}
+          onRowRestore={(key) => restoreRow(key)}
+          onAddRow={createRow}
+          saveState={saveState}
+          loading={loading}
+        />
       </div>
 
-      <div className="table-footer-fixed">
-        <button type="button" className="grid-add-row-fixed" onClick={createRow}>
-          <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-          Agregar fila
-        </button>
+      <div className="clientes-state-bar">
+        <span style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>{rows.length} clientes</span>
       </div>
 
       <Modal
         open={Boolean(selected)}
-        title={selected?.nombre_administrativo || selected?.razon_social || 'Cliente'}
+        title="Detalle de Cliente"
         onClose={() => setSelectedKey(null)}
+        footer={
+          <div className="modal-detail-footer">
+            <Button variant="outline" size="sm" onClick={() => setSelectedKey(null)}>
+              Cancelar
+            </Button>
+            <Button size="sm" onClick={() => setSelectedKey(null)}>
+              Guardar
+            </Button>
+          </div>
+        }
       >
-        {selected &&
-          DETAIL_FIELDS.map((field) => (
-            <div key={field.id} style={{ marginBottom: '0.85rem' }}>
-              <label className="field-label">{field.label}</label>
-              {field.type === 'select' ? (
-                <Select
-                  value={selected[field.id] ?? ''}
-                  options={field.options}
-                  onChange={(event) => updateCell(selected.id, field.id, event.target.value)}
-                />
-              ) : field.type === 'textarea' ? (
-                <textarea
-                  className="input-field"
-                  rows={3}
-                  value={selected[field.id] ?? ''}
-                  onChange={(event) => updateCell(selected.id, field.id, event.target.value)}
-                />
-              ) : (
-                <Input
-                  type="text"
-                  value={selected[field.id] ?? ''}
-                  onChange={(event) => updateCell(selected.id, field.id, event.target.value)}
-                />
-              )}
-              {field.validate && field.validate(selected[field.id], selected) && (
-                <span style={{ color: 'var(--color-danger-text)', fontSize: '0.75rem' }}>
-                  {field.validate(selected[field.id], selected)}
-                </span>
-              )}
-            </div>
-          ))}
+        {selected && (
+          <div className="modal-detail">
+            {[
+              'Identificación',
+              'Ubicación',
+              'Contacto',
+              'Otros',
+            ].map((sectionName) => {
+              const fields = DETAIL_FIELDS.filter((f) => f.section === sectionName);
+              if (fields.length === 0) return null;
+              return (
+                <div key={sectionName} className="modal-detail-section">
+                  <div className="modal-detail-section-title">{sectionName}</div>
+                  <div className="modal-detail-grid">
+                    {fields.map((field) => (
+                      <div key={field.id} className="modal-detail-row">
+                        <label className="modal-detail-label">{field.label}</label>
+                        {field.type === 'select' ? (
+                          <Select
+                            value={selected[field.id] ?? ''}
+                            options={field.options}
+                            onChange={(event) => updateCell(selected.id, field.id, event.target.value)}
+                            className="modal-detail-value"
+                          />
+                        ) : field.type === 'textarea' ? (
+                          <textarea
+                            className="modal-detail-value textarea"
+                            rows={3}
+                            value={selected[field.id] ?? ''}
+                            onChange={(event) => updateCell(selected.id, field.id, event.target.value)}
+                          />
+                        ) : (
+                          <Input
+                            type="text"
+                            value={selected[field.id] ?? ''}
+                            onChange={(event) => updateCell(selected.id, field.id, event.target.value)}
+                            className="modal-detail-value"
+                          />
+                        )}
+                        {field.validate && field.validate(selected[field.id], selected) && (
+                          <span style={{ color: 'var(--color-danger-text)', fontSize: '0.7rem' }}>
+                            {field.validate(selected[field.id], selected)}
+                          </span>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
       </Modal>
 
       <ConfirmDialog

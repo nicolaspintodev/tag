@@ -60,7 +60,7 @@ export const useEditableResource = (resource, { rowKey = 'id', delay = 500, canP
         const row = rowsRef.current.find((item) => item[rowKey] === k);
         if (!row) return;
         if (canPersistRef.current && !canPersistRef.current(row)) return;
-        persist(k, buildPayload(row), Boolean(row.id));
+        persist(k, buildPayload(row), !String(row.id).startsWith('new-'));
       }, delay);
     }
     debouncers.current[key](key);

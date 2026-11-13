@@ -5,9 +5,9 @@ import GridCell from './GridCell';
 import { serializeSelection, parsePaste } from '../../lib/gridClipboard';
 import { moveCell } from '../../lib/gridNavigation';
 
-const SAVE_LABEL = { saving: 'Guardando…', saved: 'Guardado', error: 'Error al guardar' };
+const SAVE_LABEL = { saving: 'Guardando…', saved: 'Guardado', error: 'Error al guardar', new: 'Nuevo' };
 
-const STATE_COLOR = { saving: 'var(--color-warning-text)', saved: 'var(--color-success-text)', error: 'var(--color-danger-text)', '': 'var(--border-color)' };
+const STATE_COLOR = { saving: 'var(--color-warning-text)', saved: 'var(--color-success-text)', error: 'var(--color-danger-text)', '': 'var(--color-success-text)', new: '#94a3b8' };
 
 class ClientGrid extends React.Component {
   constructor(props) {
@@ -19,6 +19,7 @@ class ClientGrid extends React.Component {
     this.commitEdit = this.commitEdit.bind(this);
     this.cancelEdit = this.cancelEdit.bind(this);
     this.startEditAt = this.startEditAt.bind(this);
+    this.move = this.move.bind(this);
     this.handleKeyDown = this.handleKeyDown.bind(this);
     this.handleCopy = this.handleCopy.bind(this);
     this.handlePasteEvent = this.handlePasteEvent.bind(this);
@@ -44,7 +45,7 @@ class ClientGrid extends React.Component {
     this.setState({ editing: null });
     if (!stay) {
       const dims = { rowCount: this.props.rows.length, columns: this.props.columns };
-      this.setState({ active: moveCell(current, 'down', dims) });
+      this.setState({ active: moveCell(current, 'right', dims) });
     }
     this.focusGrid();
   }
@@ -58,12 +59,18 @@ class ClientGrid extends React.Component {
     this.setState({ active: pos, editing: pos, draft: initialValue || '' }, () => this.focusGrid());
   }
 
+  move(direction) {
+    const { active } = this.state;
+    if (!active) return;
+    const dims = { rowCount: this.props.rows.length, columns: this.props.columns };
+    this.setState({ active: moveCell(active, direction, dims) }, () => this.focusGrid());
+  }
+
   handlePaste(text) {
     if (!this.state.active) return;
     const matrix = parsePaste(text);
     if (matrix.length === 0) return;
-    const { columns, rows, rowKey, onCellChange } = this.props;
-    const { active } = this.state;
+    const { active, columns, rows, rowKey, onCellChange } = this.props;
     matrix.forEach((rowCells, r) => {
       rowCells.forEach((value, c) => {
         const pos = { row: active.row + r, col: active.col + c };
@@ -74,31 +81,47 @@ class ClientGrid extends React.Component {
     });
   }
 
-  handleKeyDown(event) {
-    const { active, editing, move } = this.state;
-    const { columns, rows, rowKey, onCellChange } = this.props;
-    if (editing) return;
+handleKeyDown(event) {
+    const { editing, active } = this.state;
+    const { rows, columns } = this.props;
+    if (editing) {
+      if (event.key === 'Enter') {
+        event.preventDefault();
+        this.commitEdit(true);
+      }
+      return;
+    }
     if (event.key === 'Tab') {
       event.preventDefault();
-      move(event.shiftKey ? 'prev' : 'next');
+      this.move(event.shiftKey ? 'prev' : 'next');
     } else if (event.key === 'ArrowDown') {
       event.preventDefault();
-      move('down');
+      this.move('down');
     } else if (event.key === 'ArrowUp') {
       event.preventDefault();
-      move('up');
+      this.move('up');
     } else if (event.key === 'ArrowRight') {
       event.preventDefault();
-      move('right');
+      this.move('right');
     } else if (event.key === 'ArrowLeft') {
       event.preventDefault();
-      move('left');
+      this.move('left');
     } else if (event.key === 'Enter') {
       event.preventDefault();
-      if (active) this.startEdit(active);
+      if (active) {
+        const isLastCol = active.col === columns.length - 1;
+        if (isLastCol) {
+          this.props.onAddRow?.();
+          this.setState({ active: { row: rows.length, col: 0 } });
+        } else {
+          const currentValue = rows?.[active.row]?.[columns[active.col]?.accessor] ?? '';
+          this.startEditAt(active, currentValue);
+        }
+      }
     } else if (event.key === 'Delete' && active) {
-      const column = columns[active.col];
-      const row = rows[active.row];
+      const { columns, rows, rowKey, onCellChange } = this.props;
+      const column = columns[this.state.active.col];
+      const row = rows[this.state.active.row];
       if (column?.editable && row) onCellChange(row[rowKey], column.id, '');
     }
   }
@@ -122,8 +145,8 @@ class ClientGrid extends React.Component {
   }
 
   render() {
-    const { columns, rows, rowKey = 'id', onRowDelete, onRowOpenDetail, onRowRestore, saveState = {}, loading } = this.props;
-    const { active, editing, draft } = this.state;
+    const { columns, rows, rowKey = 'id', loading } = this.props;
+    const { draft } = this.state;
 
     if (loading) {
       return (
@@ -134,13 +157,30 @@ class ClientGrid extends React.Component {
     }
 
     return (
-      <div ref={this.gridRef} onKeyDown={this.handleKeyDown} onCopy={this.handleCopy} onPaste={this.handlePasteEvent}>
-        <table>
+      <div ref={this.gridRef} onKeyDown={this.handleKeyDown} onCopy={this.handleCopy} onPaste={this.handlePasteEvent} className="client-grid">
+        <table className="datatable">
+          <thead>
+            <tr>
+              <th className="col-estado" style={{ width: '40px' }} />
+              {columns.map((column) => (
+                <th
+                  key={column.id}
+                  style={column.width ? { width: column.width } : undefined}
+                >
+                  {column.header}
+                </th>
+              ))}
+              <th className="col-acciones" style={{ width: '110px' }}>Acciones</th>
+            </tr>
+          </thead>
           <tbody>
             {rows.map((row, rowIndex) => {
-              const state = saveState[row[rowKey]] || '';
+              const rowId = row[rowKey];
+              const isNewRow = String(rowId).startsWith('new-');
+              const state = isNewRow ? 'new' : (this.props.saveState[row[rowKey]] || '');
+              const archived = row.deleted_at;
               return (
-                <tr key={row.id} onDoubleClick={() => onRowOpenDetail?.(row)}>
+                <tr key={row.id}>
                   <td className="col-estado" onDoubleClick={(event) => event.stopPropagation()}>
                     <span className="state-dot" style={{ backgroundColor: STATE_COLOR[state] }} title={SAVE_LABEL[state] || ''} />
                   </td>
@@ -151,11 +191,11 @@ class ClientGrid extends React.Component {
                       row={row}
                       value={row[column.accessor]}
                       draft={draft}
-                      isActive={active?.row === rowIndex && active?.col === colIndex}
-                      isEditing={editing?.row === rowIndex && editing?.col === colIndex}
+                      isActive={this.state.active?.row === rowIndex && this.state.active?.col === colIndex}
+                      isEditing={this.state.editing?.row === rowIndex && this.state.editing?.col === colIndex}
                       onSelect={() => this.selectCell({ row: rowIndex, col: colIndex })}
                       onStartEdit={(initialValue) => this.startEditAt({ row: rowIndex, col: colIndex }, initialValue)}
-                      onChange={this.setState.bind(this, { draft: '' })}
+                      onChange={(value) => this.setState({ draft: value })}
                       onCommit={this.commitEdit}
                       onCancel={this.cancelEdit}
                     />
@@ -169,12 +209,12 @@ class ClientGrid extends React.Component {
                         title="Abrir detalle"
                         onClick={(event) => {
                           event.stopPropagation();
-                          onRowOpenDetail?.(row);
+                          this.props.onRowOpenDetail?.(row);
                         }}
                       >
                         <Eye size={15} />
                       </button>
-                      {row.deleted_at ? (
+                      {archived ? (
                         <button
                           type="button"
                           className="btn-ghost"
@@ -182,7 +222,7 @@ class ClientGrid extends React.Component {
                           title="Restaurar"
                           onClick={(event) => {
                             event.stopPropagation();
-                            onRowRestore?.(row[rowKey]);
+                            this.props.onRowRestore?.(row[rowKey]);
                           }}
                         >
                           <RotateCcw size={15} />
@@ -195,7 +235,7 @@ class ClientGrid extends React.Component {
                           title="Archivar"
                           onClick={(event) => {
                             event.stopPropagation();
-                            onRowDelete?.(row[rowKey]);
+                            this.props.onRowDelete?.(row[rowKey]);
                           }}
                         >
                           <Trash2 size={15} />
