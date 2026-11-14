@@ -109,14 +109,8 @@ handleKeyDown(event) {
     } else if (event.key === 'Enter') {
       event.preventDefault();
       if (active) {
-        const isLastCol = active.col === columns.length - 1;
-        if (isLastCol) {
-          this.props.onAddRow?.();
-          this.setState({ active: { row: rows.length, col: 0 } });
-        } else {
-          const currentValue = rows?.[active.row]?.[columns[active.col]?.accessor] ?? '';
-          this.startEditAt(active, currentValue);
-        }
+        const currentValue = rows?.[active.row]?.[columns[active.col]?.accessor] ?? '';
+        this.startEditAt(active, currentValue);
       }
     } else if (event.key === 'Delete' && active) {
       const { columns, rows, rowKey, onCellChange } = this.props;
@@ -185,7 +179,7 @@ handleKeyDown(event) {
                     <span className="state-dot" style={{ backgroundColor: STATE_COLOR[state] }} title={SAVE_LABEL[state] || ''} />
                   </td>
                   {columns.map((column, colIndex) => (
-                    <GridCell
+                      <GridCell
                       key={`${row.id}-${column.id}`}
                       column={column}
                       row={row}
@@ -193,6 +187,7 @@ handleKeyDown(event) {
                       draft={draft}
                       isActive={this.state.active?.row === rowIndex && this.state.active?.col === colIndex}
                       isEditing={this.state.editing?.row === rowIndex && this.state.editing?.col === colIndex}
+                      isNewRow={isNewRow}
                       onSelect={() => this.selectCell({ row: rowIndex, col: colIndex })}
                       onStartEdit={(initialValue) => this.startEditAt({ row: rowIndex, col: colIndex }, initialValue)}
                       onChange={(value) => this.setState({ draft: value })}
@@ -231,8 +226,8 @@ handleKeyDown(event) {
                         <button
                           type="button"
                           className="btn-ghost"
-                          aria-label="Archivar"
-                          title="Archivar"
+                          aria-label={archived ? 'Restaurar' : (isNewRow ? 'Eliminar' : 'Archivar')}
+                          title={archived ? 'Restaurar' : (isNewRow ? 'Eliminar' : 'Archivar')}
                           onClick={(event) => {
                             event.stopPropagation();
                             this.props.onRowDelete?.(row[rowKey]);

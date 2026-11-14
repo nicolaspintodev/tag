@@ -6,6 +6,7 @@ import ConfirmDialog from '../components/ui/ConfirmDialog';
 import Button from '../components/ui/Button';
 import Input from '../components/ui/Input';
 import Select from '../components/ui/Select';
+import StateBar from '../components/ui/StateBar';
 import { useEditableResource } from '../hooks/useEditableResource';
 import { choferes, proveedores as proveedoresResource } from '../api/resources';
 import {
@@ -69,7 +70,7 @@ const Choferes = () => {
     return 'Ocurrió un error inesperado.';
   };
 
-  const { rows, saveState, loading, error, setError, reload, updateCell, createRow, deleteRow, restoreRow } =
+  const { rows, saveState, loading, error, setError, reload, updateCell, createRow, deleteRow, restoreRow, flush } =
     useEditableResource(choferes, { rowKey: 'id', canPersist });
 
   const selected = useMemo(() => rows.find((row) => row.id === selectedKey), [rows, selectedKey]);
@@ -178,10 +179,9 @@ const Choferes = () => {
           loading={loading}
         />
       </div>
-
-      <div className="choferes-state-bar">
-        <span style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>{rows.length} choferes</span>
-      </div>
+        {rows.length > 0 && (
+          <StateBar key={rows.length} count={rows.length} singular="chofer" plural="choferes" />
+        )}
 
       <Modal
         open={Boolean(selected)}
@@ -191,6 +191,9 @@ const Choferes = () => {
           <div className="modal-detail-footer">
             <Button variant="outline" size="sm" onClick={() => setSelectedKey(null)}>
               Cerrar
+            </Button>
+            <Button size="sm" onClick={async () => { await flush(); setSelectedKey(null); }}>
+              Guardar
             </Button>
           </div>
         }

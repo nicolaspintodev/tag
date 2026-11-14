@@ -41,7 +41,8 @@ export const useEditableResource = (resource, { rowKey = 'id', delay = 500, canP
     setLoading(true);
     setError(null);
     try {
-      setRows(await resource.list(params));
+      const data = await resource.list(params);
+      setRows(data);
     } catch (err) {
       setError(err);
     } finally {
@@ -90,5 +91,13 @@ export const useEditableResource = (resource, { rowKey = 'id', delay = 500, canP
     }
   }, [resource, reload]);
 
-  return { rows, setRows, saveState, loading, error, setError, reload, updateCell, createRow, deleteRow, restoreRow };
+  const flush = useCallback(async () => {
+    await Promise.all(
+      Object.keys(debouncers.current).map((key) => debouncers.current[key].flush?.())
+    );
+  }, []);
+
+  return { rows, setRows, saveState, loading, error, setError, reload, updateCell, createRow, deleteRow, restoreRow, flush };
 };
+
+export { buildPayload, SERVER_KEYS };

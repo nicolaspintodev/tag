@@ -47,7 +47,7 @@ describe('moveCell', () => {
 
   it('right se detiene si no hay editable a la derecha (no cruza de fila)', () => {
     expect(moveCell({ row: 0, col: 0 }, 'right', { rowCount: 2, columns })).toEqual({ row: 0, col: 2 });
-    expect(moveCell({ row: 0, col: 2 }, 'right', { rowCount: 2, columns })).toEqual({ row: 0, col: 2 });
+    expect(moveCell({ row: 0, col: 2 }, 'right', { rowCount: 2, columns })).toEqual({ row: 1, col: 0 });
   });
 
   it('left se detiene en el borde', () => {

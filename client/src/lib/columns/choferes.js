@@ -11,12 +11,13 @@ export const buildChoferesGridColumns = (proveedorOptions = [PROPIO_OPTION]) => 
   const labels = Object.fromEntries(proveedorOptions.map((o) => [o.value, o.label]));
   return [
     { id: 'numero', accessor: 'numero', header: 'Nº Interno', type: 'text', editable: true, validate: required, width: '100px', className: 'truncate mono' },
-    { id: 'nombre_completo', accessor: 'nombre_completo', header: 'Chofer', type: 'text', editable: false, width: '180px', className: 'truncate', render: (v, row) => `${row.apellido || ''}, ${row.nombre || ''}`.trim() },
+    { id: 'nombre', accessor: 'nombre', header: 'Nombre', type: 'text', editable: true, width: '120px', className: 'truncate' },
+    { id: 'apellido', accessor: 'apellido', header: 'Apellido', type: 'text', editable: true, width: '120px', className: 'truncate' },
     { id: 'dni', accessor: 'dni', header: 'DNI', type: 'text', editable: true, validate: required, width: '130px', className: 'truncate mono' },
     { id: 'proveedor_id', accessor: 'proveedor_id', header: 'Proveedor', type: 'select', editable: true, options: proveedorOptions, width: '180px', render: (v) => labels[v] ?? 'Propio' },
     { id: 'telefono', accessor: 'telefono', header: 'Teléfono', type: 'text', editable: true, width: '130px', className: 'mono' },
     { id: 'licencia_vencimiento', accessor: 'licencia_vencimiento', header: 'Lic. Vence', type: 'date', editable: true, width: '140px', className: 'mono', render: (v) => (v ? String(v).slice(0, 10) : '') },
-    { id: 'activo', accessor: 'activo', header: 'Activo', type: 'boolean', editable: false, width: '90px', render: (v) => (v ? 'Sí' : 'No') },
+    { id: 'activo', accessor: 'activo', header: 'Activo', type: 'select', editable: true, options: [{ value: true, label: 'Sí' }, { value: false, label: 'No' }], width: '90px', render: (v) => (v ? 'Sí' : 'No') },
   ];
 };
 

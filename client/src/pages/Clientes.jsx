@@ -6,6 +6,7 @@ import ConfirmDialog from '../components/ui/ConfirmDialog';
 import Button from '../components/ui/Button';
 import Input from '../components/ui/Input';
 import Select from '../components/ui/Select';
+import StateBar from '../components/ui/StateBar';
 import { useEditableResource } from '../hooks/useEditableResource';
 import { clientes } from '../api/resources';
 import { GRID_COLUMNS, DETAIL_FIELDS } from '../lib/columns/clientes';
@@ -35,7 +36,7 @@ const Clientes = () => {
     return 'Ocurrió un error inesperado.'
   }
 
-  const { rows, saveState, loading, error, setError, reload, updateCell, createRow, deleteRow, restoreRow } =
+  const { rows, saveState, loading, error, setError, reload, updateCell, createRow, deleteRow, restoreRow, flush } =
     useEditableResource(clientes, { rowKey: 'id', canPersist });
 
   const selected = useMemo(() => rows.find((row) => row.id === selectedKey), [rows, selectedKey]);
@@ -115,12 +116,10 @@ const Clientes = () => {
           saveState={saveState}
           loading={loading}
         />
-      </div>
-
-      <div className="clientes-state-bar">
-        <span style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>{rows.length} clientes</span>
-      </div>
-
+</div>
+      {rows.length > 0 && (
+        <StateBar key={rows.length} count={rows.length} singular="cliente" plural="clientes" />
+      )}
       <Modal
         open={Boolean(selected)}
         title="Detalle de Cliente"
@@ -130,7 +129,7 @@ const Clientes = () => {
             <Button variant="outline" size="sm" onClick={() => setSelectedKey(null)}>
               Cancelar
             </Button>
-            <Button size="sm" onClick={() => setSelectedKey(null)}>
+            <Button size="sm" onClick={async () => { await flush(); setSelectedKey(null); }}>
               Guardar
             </Button>
           </div>

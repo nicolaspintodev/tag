@@ -2,6 +2,8 @@ import { Outlet, useLocation } from 'react-router-dom';
 
 import Sidebar from './Sidebar';
 import Header from './Header';
+import StateBar from '../ui/StateBar';
+import { StateBarProvider } from '../../context/StateBarContext';
 
 const TITLES = {
   '/clientes': 'Clientes',
@@ -17,18 +19,20 @@ const TITLES = {
 
 const AppShell = ({ onLogout }) => {
   const { pathname } = useLocation();
-  const title = TITLES[pathname] || 'TAG Logística';
 
   return (
-    <div className="app-shell">
-      <Sidebar />
-      <div className="app-main">
-        <Header title={title} onLogout={onLogout} />
-        <main className="app-content">
-          <Outlet />
-        </main>
+    <StateBarProvider>
+      <div className="app-shell">
+        <Sidebar />
+        <div className="app-main">
+          <Header title={TITLES[pathname] || 'TAG Logística'} onLogout={onLogout} />
+          <main className="app-content">
+            <Outlet />
+          </main>
+          <StateBar />
+        </div>
       </div>
-    </div>
+    </StateBarProvider>
   );
 };
 

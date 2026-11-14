@@ -35,11 +35,19 @@ export const moveCell = (pos, direction, { rowCount, columns }) => {
       return { row: clampRow(current.row - 1), col: current.col };
     case 'right': {
       const col = nextEditableCol(columns, current.col);
-      return col === -1 ? current : { row: current.row, col };
+      if (col !== -1) return { row: current.row, col };
+      // Última columna: ir a primera columna editable de la siguiente fila
+      const nextRow = current.row + 1;
+      if (nextRow >= rowCount) return current;
+      return { row: nextRow, col: first };
     }
     case 'left': {
       const col = prevEditableCol(columns, current.col);
-      return col === -1 ? current : { row: current.row, col };
+      if (col !== -1) return { row: current.row, col };
+      // Primera columna: ir a última columna editable de la fila anterior
+      const prevRow = current.row - 1;
+      if (prevRow < 0) return current;
+      return { row: prevRow, col: lastEditableCol(columns) };
     }
     case 'prev': {
       const col = prevEditableCol(columns, current.col);

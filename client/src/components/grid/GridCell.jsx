@@ -11,7 +11,7 @@ const formatCuit = (value) => {
   return `${digits.slice(0, 2)}-${digits.slice(2, 10)}-${digits.slice(10, 11)}`;
 };
 
-const GridCell = ({ column, value, draft, row, isActive, isEditing, onSelect, onStartEdit, onChange, onCommit, onCancel }) => {
+const GridCell = ({ column, value, draft, row, isActive, isEditing, onSelect, onStartEdit, onChange, onCommit, onCancel, isNewRow }) => {
   const ref = useRef(null);
 
   useEffect(() => {
@@ -47,11 +47,12 @@ const GridCell = ({ column, value, draft, row, isActive, isEditing, onSelect, on
   const handleDoubleClick = (event) => {
     event.preventDefault();
     event.stopPropagation();
-    onStartEdit();
+    onStartEdit(value ?? '');
   };
 
   const error = column.validate ? column.validate(value, row) : null;
-  const severity = error ? (column.warn ? 'cell-warning' : 'cell-error') : '';
+  const showError = error && !isNewRow;
+  const severity = showError ? (column.warn ? 'cell-warning' : 'cell-error') : '';
   const className = `grid-cell ${isActive ? 'active' : ''} ${isEditing ? 'editing' : ''} ${severity} ${column.className ?? ''}`.trim();
 
   if (!column.editable) {
