@@ -61,7 +61,7 @@ const Clientes = () => {
   };
 
   return (
-    <div className="clientes-page">
+    <div className="resource-page">
       <div className="page-header">
         <div className="toolbar">
         <div className="toolbar-left">

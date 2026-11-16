@@ -17,7 +17,7 @@ export const buildChoferesGridColumns = (proveedorOptions = [PROPIO_OPTION]) => 
     { id: 'proveedor_id', accessor: 'proveedor_id', header: 'Proveedor', type: 'select', editable: true, options: proveedorOptions, width: '180px', render: (v) => labels[v] ?? 'Propio' },
     { id: 'telefono', accessor: 'telefono', header: 'Teléfono', type: 'text', editable: true, width: '130px', className: 'mono' },
     { id: 'licencia_vencimiento', accessor: 'licencia_vencimiento', header: 'Lic. Vence', type: 'date', editable: true, width: '140px', className: 'mono', render: (v) => (v ? String(v).slice(0, 10) : '') },
-    { id: 'activo', accessor: 'activo', header: 'Activo', type: 'select', editable: true, options: [{ value: true, label: 'Sí' }, { value: false, label: 'No' }], width: '90px', render: (v) => (v ? 'Sí' : 'No') },
+    { id: 'activo', accessor: 'activo', header: 'Activo', type: 'boolean', editable: true, width: '90px' },
   ];
 };
 

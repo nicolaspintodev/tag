@@ -11,7 +11,13 @@ const formatCuit = (value) => {
   return `${digits.slice(0, 2)}-${digits.slice(2, 10)}-${digits.slice(10, 11)}`;
 };
 
-const GridCell = ({ column, value, draft, row, isActive, isEditing, onSelect, onStartEdit, onChange, onCommit, onCancel, isNewRow }) => {
+const toBoolean = (val) => {
+  if (typeof val === 'boolean') return val;
+  if (typeof val === 'string') return val === 'true';
+  return Boolean(val);
+};
+
+const GridCell = ({ column, value, draft, row, isActive, isEditing, onSelect, onStartEdit, onChange, onCommit, onCancel, onToggle, isNewRow }) => {
   const ref = useRef(null);
 
   useEffect(() => {
@@ -50,6 +56,13 @@ const GridCell = ({ column, value, draft, row, isActive, isEditing, onSelect, on
     onStartEdit(value ?? '');
   };
 
+  const handleToggleClick = (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    onSelect?.();
+    onToggle?.(!toBoolean(value));
+  };
+
   const error = column.validate ? column.validate(value, row) : null;
   const showError = error && !isNewRow;
   const severity = showError ? (column.warn ? 'cell-warning' : 'cell-error') : '';
@@ -66,34 +79,69 @@ const GridCell = ({ column, value, draft, row, isActive, isEditing, onSelect, on
 
   if (!isEditing) {
     const displayValue = column.id === 'cuit' ? formatCuit(value) : value;
+    const isBooleanType = column.type === 'boolean' || (column.type === 'select' && column.options?.some((o) => typeof o.value === 'boolean'));
     return (
       <td
         className={className}
         title={error || undefined}
-        onClick={onSelect}
+        onClick={isBooleanType ? handleToggleClick : onSelect}
         onDoubleClick={handleDoubleClick}
         onKeyDown={handleKeyDownDisplay}
-        tabIndex={0}
       >
-        {column.render ? column.render(value, row) : displayValue}
+        {isBooleanType ? (
+          <div
+            className={`toggle-switch-display ${toBoolean(value) ? 'on' : 'off'}`}
+          />
+        ) : column.render ? (
+          column.render(value, row)
+        ) : (
+          displayValue
+        )}
       </td>
     );
   }
 
   const editingValue = draft ?? '';
 
-  return (
-    <td className={className}>
-      {column.type === 'select' ? (
+  if (column.type === 'boolean') {
+    const checked = toBoolean(editingValue);
+    return (
+      <td className={className}>
+        <input
+          ref={ref}
+          type="checkbox"
+          className="toggle-switch"
+          checked={checked}
+          onChange={(event) => onChange(event.target.checked)}
+          onKeyDown={handleKeyDown}
+          onBlur={() => onCommit(false)}
+        />
+      </td>
+    );
+  }
+
+  if (column.type === 'select') {
+    const isBooleanOptions = column.options?.some((o) => typeof o.value === 'boolean');
+    return (
+      <td className={className}>
         <Select
           ref={ref}
           value={editingValue ?? ''}
           options={column.options}
-          onChange={(event) => onChange(event.target.value)}
+          onChange={(event) => {
+            const val = event.target.value;
+            onChange(isBooleanOptions ? toBoolean(val) : val);
+          }}
           onKeyDown={handleKeyDown}
           onBlur={() => onCommit(false)}
         />
-      ) : column.type === 'textarea' ? (
+      </td>
+    );
+  }
+
+  if (column.type === 'textarea') {
+    return (
+      <td className={className}>
         <textarea
           ref={ref}
           className="input-field"
@@ -102,19 +150,23 @@ const GridCell = ({ column, value, draft, row, isActive, isEditing, onSelect, on
           onKeyDown={handleKeyDown}
           onBlur={() => onCommit(false)}
         />
-      ) : (
-        <Input
-          ref={ref}
-          type={column.type === 'number' ? 'number' : column.type === 'date' ? 'date' : 'text'}
-          value={column.type === 'date' ? String(editingValue).slice(0, 10) : editingValue}
-          onChange={(event) => {
-            const formatted = column.id === 'cuit' ? formatCuit(event.target.value) : event.target.value;
-            onChange(formatted);
-          }}
-          onKeyDown={handleKeyDown}
-          onBlur={() => onCommit(false)}
-        />
-      )}
+      </td>
+    );
+  }
+
+  return (
+    <td className={className}>
+      <Input
+        ref={ref}
+        type={column.type === 'number' ? 'number' : column.type === 'date' ? 'date' : 'text'}
+        value={column.type === 'date' ? String(editingValue).slice(0, 10) : editingValue}
+        onChange={(event) => {
+          const formatted = column.id === 'cuit' ? formatCuit(event.target.value) : event.target.value;
+          onChange(formatted);
+        }}
+        onKeyDown={handleKeyDown}
+        onBlur={() => onCommit(false)}
+      />
     </td>
   );
 };

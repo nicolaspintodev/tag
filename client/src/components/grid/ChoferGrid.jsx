@@ -3,7 +3,7 @@ import { Eye, RotateCcw, Trash2 } from 'lucide-react';
 import Spinner from '../ui/Spinner';
 import GridCell from './GridCell';
 import { serializeSelection, parsePaste } from '../../lib/gridClipboard';
-import { moveCell } from '../../lib/gridNavigation';
+import { moveCell, firstEditableCol } from '../../lib/gridNavigation';
 
 const SAVE_LABEL = { saving: 'Guardando…', saved: 'Guardado', error: 'Error al guardar', new: 'Nuevo' };
 
@@ -61,8 +61,18 @@ class ChoferGrid extends React.Component {
 
   move(direction) {
     const { active } = this.state;
-    if (!active) return;
-    const dims = { rowCount: this.props.rows.length, columns: this.props.columns };
+    const { rows, columns, onAddRow } = this.props;
+    const dims = { rowCount: rows.length, columns };
+
+    if (direction === 'down' && active && active.row === rows.length - 1) {
+      const newKey = onAddRow?.();
+      if (newKey) {
+        const first = firstEditableCol(columns);
+        this.setState({ active: { row: rows.length, col: first } }, () => this.focusGrid());
+        return;
+      }
+    }
+
     this.setState({ active: moveCell(active, direction, dims) }, () => this.focusGrid());
   }
 
@@ -151,7 +161,7 @@ class ChoferGrid extends React.Component {
     }
 
     return (
-      <div ref={this.gridRef} onKeyDown={this.handleKeyDown} onCopy={this.handleCopy} onPaste={this.handlePasteEvent} className="chofer-grid">
+      <div ref={this.gridRef} onKeyDown={this.handleKeyDown} onCopy={this.handleCopy} onPaste={this.handlePasteEvent} onBlur={(event) => { if (!event.currentTarget.contains(event.relatedTarget)) this.setState({ active: null }); }} tabIndex={0} className="resource-grid">
         <table className="datatable">
           <thead>
             <tr>
@@ -193,6 +203,7 @@ class ChoferGrid extends React.Component {
                       onChange={(value) => this.setState({ draft: value })}
                       onCommit={this.commitEdit}
                       onCancel={this.cancelEdit}
+                      onToggle={(newValue) => this.props.onCellChange(row[rowKey], column.id, newValue)}
                     />
                   ))}
                   <td className="col-acciones" onDoubleClick={(event) => event.stopPropagation()}>

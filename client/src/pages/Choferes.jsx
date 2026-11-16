@@ -109,7 +109,7 @@ const Choferes = () => {
   };
 
   return (
-    <div className="choferes-page">
+    <div className="resource-page">
       <div className="page-header">
         <div className="toolbar">
           <div className="toolbar-left">
@@ -218,14 +218,12 @@ const Choferes = () => {
                             className="modal-detail-value"
                           />
                         ) : field.type === 'boolean' ? (
-                          <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                            <input
-                              type="checkbox"
-                              checked={Boolean(selected[field.id])}
-                              onChange={(event) => updateCell(selected.id, field.id, event.target.checked)}
-                            />
-                            <span>{selected[field.id] ? 'Activo' : 'Inactivo'}</span>
-                          </label>
+                          <input
+                            type="checkbox"
+                            className="toggle-switch"
+                            checked={Boolean(selected[field.id])}
+                            onChange={(event) => updateCell(selected.id, field.id, event.target.checked)}
+                          />
                         ) : field.type === 'date' ? (
                           <Input
                             type="date"
