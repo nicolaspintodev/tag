@@ -55,22 +55,7 @@ const Choferes = () => {
     [proveedorOptions],
   );
 
-  const getErrorMessage = (err) => {
-    if (err.status === 500) return 'Error del servidor. Contactá a soporte.';
-    if (err.status === 400) return 'Datos inválidos. Revisá los campos.';
-    if (err.status === 409) return 'El DNI o CUIL ya está registrado.';
-    if (err.status === 404) return 'No se encontró el registro solicitado.';
-    if (err.status === 403) return 'No tenés permisos para realizar esta acción.';
-    if (err.status === 401) return 'Tu sesión expiró. Volvé a iniciar sesión.';
-    const msg = (err.message || '').toLowerCase();
-    if (msg.includes('required')) return 'Un campo obligatorio está vacío.';
-    if (msg.includes('unique') || msg.includes('duplicate')) return 'El valor ya está registrado.';
-    if (msg.includes('email')) return 'El email no es válido.';
-    if (msg.includes('cuil')) return 'El CUIL es inválido.';
-    return 'Ocurrió un error inesperado.';
-  };
-
-  const { rows, saveState, loading, error, setError, reload, updateCell, createRow, deleteRow, restoreRow, flush } =
+  const { rows, saveState, loading, errors, reload, updateCell, createRow, deleteRow, restoreRow, flush, lastAction } =
     useEditableResource(choferes, { rowKey: 'id', canPersist });
 
   const selected = useMemo(() => rows.find((row) => row.id === selectedKey), [rows, selectedKey]);
@@ -158,13 +143,6 @@ const Choferes = () => {
         </div>
       </div>
 
-      {error && (
-        <div className="error-banner" style={{ color: 'var(--color-danger-text)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.4rem 1rem', margin: '0.75rem 1.5rem', fontSize: '0.85rem', borderRadius: 'var(--radius-md)', background: 'var(--color-danger-bg)', border: '1px solid var(--color-danger-text)' }}>
-          <span>{getErrorMessage(error)}</span>
-          <Button variant="outline" size="sm" onClick={() => setError(null)}>Cerrar</Button>
-        </div>
-      )}
-
       <div className="table-container">
         <ChoferGrid
           columns={columns}
@@ -177,13 +155,14 @@ const Choferes = () => {
           onAddRow={createRow}
           saveState={saveState}
           loading={loading}
+          errors={errors}
         />
       </div>
         {rows.length > 0 && (
-          <StateBar key={rows.length} count={rows.length} singular="chofer" plural="choferes" />
+          <StateBar key={rows.length} count={rows.length} singular="chofer" plural="choferes" saveState={saveState} errors={errors} rows={rows} lastAction={lastAction} />
         )}
 
-      <Modal
+<Modal
         open={Boolean(selected)}
         title="Detalle de Chofer"
         onClose={() => setSelectedKey(null)}
@@ -203,6 +182,68 @@ const Choferes = () => {
             {DETAIL_SECTIONS.map((sectionName) => {
               const fields = detailFields.filter((f) => f.section === sectionName);
               if (fields.length === 0) return null;
+              if (sectionName === 'Identificación') {
+                const fieldMap = Object.fromEntries(fields.map((f) => [f.id, f]));
+                const row1 = ['numero', 'dni', 'cuil'];
+                const row2 = ['nombre', 'apellido', 'fecha_nacimiento'];
+                return (
+                  <div key={sectionName} className="modal-detail-section">
+                    <div className="modal-detail-section-title">{sectionName}</div>
+                    <div className="modal-detail-grid" style={{ gridTemplateColumns: 'repeat(3, 1fr)' }}>
+                      {row1.map((id) => fieldMap[id] && (
+                        <div key={id} className="modal-detail-row">
+                          <label className="modal-detail-label">{fieldMap[id].label}</label>
+                          {fieldMap[id].type === 'date' ? (
+                            <Input
+                              type="date"
+                              value={selected[fieldMap[id].id] ? String(selected[fieldMap[id].id]).slice(0, 10) : ''}
+                              onChange={(event) => updateCell(selected.id, fieldMap[id].id, event.target.value)}
+                              className="modal-detail-value"
+                            />
+                          ) : (
+                            <Input
+                              type="text"
+                              value={selected[fieldMap[id].id] ?? ''}
+                              onChange={(event) => updateCell(selected.id, fieldMap[id].id, event.target.value)}
+                              className="modal-detail-value"
+                            />
+                          )}
+                          {fieldMap[id].validate && fieldMap[id].validate(selected[fieldMap[id].id], selected) && (
+                            <span style={{ color: 'var(--color-danger-text)', fontSize: '0.7rem' }}>
+                              {fieldMap[id].validate(selected[fieldMap[id].id], selected)}
+                            </span>
+                          )}
+                        </div>
+                      ))}
+                      {row2.map((id) => fieldMap[id] && (
+                        <div key={id} className="modal-detail-row">
+                          <label className="modal-detail-label">{fieldMap[id].label}</label>
+                          {fieldMap[id].type === 'date' ? (
+                            <Input
+                              type="date"
+                              value={selected[fieldMap[id].id] ? String(selected[fieldMap[id].id]).slice(0, 10) : ''}
+                              onChange={(event) => updateCell(selected.id, fieldMap[id].id, event.target.value)}
+                              className="modal-detail-value"
+                            />
+                          ) : (
+                            <Input
+                              type="text"
+                              value={selected[fieldMap[id].id] ?? ''}
+                              onChange={(event) => updateCell(selected.id, fieldMap[id].id, event.target.value)}
+                              className="modal-detail-value"
+                            />
+                          )}
+                          {fieldMap[id].validate && fieldMap[id].validate(selected[fieldMap[id].id], selected) && (
+                            <span style={{ color: 'var(--color-danger-text)', fontSize: '0.7rem' }}>
+                              {fieldMap[id].validate(selected[fieldMap[id].id], selected)}
+                            </span>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                );
+              }
               return (
                 <div key={sectionName} className="modal-detail-section">
                   <div className="modal-detail-section-title">{sectionName}</div>

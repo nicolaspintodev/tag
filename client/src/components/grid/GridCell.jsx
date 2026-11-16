@@ -17,7 +17,7 @@ const toBoolean = (val) => {
   return Boolean(val);
 };
 
-const GridCell = ({ column, value, draft, row, isActive, isEditing, onSelect, onStartEdit, onChange, onCommit, onCancel, onToggle, isNewRow }) => {
+const GridCell = ({ column, value, draft, row, isActive, isEditing, onSelect, onStartEdit, onChange, onCommit, onCancel, onToggle, serverError, rowError }) => {
   const ref = useRef(null);
 
   useEffect(() => {
@@ -63,15 +63,17 @@ const GridCell = ({ column, value, draft, row, isActive, isEditing, onSelect, on
     onToggle?.(!toBoolean(value));
   };
 
-  const error = column.validate ? column.validate(value, row) : null;
-  const showError = error && !isNewRow;
-  const severity = showError ? (column.warn ? 'cell-warning' : 'cell-error') : '';
-  const className = `grid-cell ${isActive ? 'active' : ''} ${isEditing ? 'editing' : ''} ${severity} ${column.className ?? ''}`.trim();
+  const validationError = column.validate ? column.validate(value, row) : null;
+  const hasServerError = serverError || rowError;
+  // No agregar cell-error/cell-warning aquí; el padre (tr) maneja el color de toda la fila
+  const hasServerErrorClass = hasServerError ? 'has-server-error' : '';
+  const className = `grid-cell ${isActive ? 'active' : ''} ${isEditing ? 'editing' : ''} ${hasServerErrorClass} ${column.className ?? ''}`.trim();
+  const errorTitle = serverError || rowError || validationError;
 
   if (!column.editable) {
     const displayValue = column.id === 'cuit' ? formatCuit(value) : value;
     return (
-      <td className={className} title={error || undefined} onClick={onSelect} onDoubleClick={handleDoubleClick}>
+      <td className={className} title={errorTitle || undefined} onClick={onSelect} onDoubleClick={handleDoubleClick}>
         {column.render ? column.render(value, row) : displayValue}
       </td>
     );
@@ -83,7 +85,7 @@ const GridCell = ({ column, value, draft, row, isActive, isEditing, onSelect, on
     return (
       <td
         className={className}
-        title={error || undefined}
+        title={errorTitle || undefined}
         onClick={isBooleanType ? handleToggleClick : onSelect}
         onDoubleClick={handleDoubleClick}
         onKeyDown={handleKeyDownDisplay}

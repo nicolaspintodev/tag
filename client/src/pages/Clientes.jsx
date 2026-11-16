@@ -21,22 +21,7 @@ const Clientes = () => {
   const [selectedKey, setSelectedKey] = useState(null);
   const [toDelete, setToDelete] = useState(null);
 
-  const getErrorMessage = (err) => {
-    if (err.status === 500) return 'Error del servidor. Contactá a soporte.'
-    if (err.status === 400) return 'Datos inválidos. Revisá los campos.'
-    if (err.status === 409) return 'El CUIT ya está registrado.'
-    if (err.status === 404) return 'No se encontró el registro solicitado.'
-    if (err.status === 403) return 'No tenés permisos para realizar esta acción.'
-    if (err.status === 401) return 'Tu sesión expiró. Volvé a iniciar sesión.'
-    const msg = (err.message || '').toLowerCase()
-    if (msg.includes('required')) return 'Un campo obligatorio está vacío.'
-    if (msg.includes('unique') || msg.includes('duplicate')) return 'El valor ya está registrado.'
-    if (msg.includes('email')) return 'El email no es válido.'
-    if (msg.includes('cuit')) return 'El CUIT es inválido.'
-    return 'Ocurrió un error inesperado.'
-  }
-
-  const { rows, saveState, loading, error, setError, reload, updateCell, createRow, deleteRow, restoreRow, flush } =
+  const { rows, saveState, loading, errors, reload, updateCell, createRow, deleteRow, restoreRow, flush, lastAction } =
     useEditableResource(clientes, { rowKey: 'id', canPersist });
 
   const selected = useMemo(() => rows.find((row) => row.id === selectedKey), [rows, selectedKey]);
@@ -96,13 +81,6 @@ const Clientes = () => {
       </div>
       </div>
 
-      {error && (
-        <div className="error-banner" style={{ color: 'var(--color-danger-text)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.4rem 1rem', margin: '0.75rem 1.5rem', fontSize: '0.85rem', borderRadius: 'var(--radius-md)', background: 'var(--color-danger-bg)', border: '1px solid var(--color-danger-text)' }}>
-          <span>{getErrorMessage(error)}</span>
-          <Button variant="outline" size="sm" onClick={() => setError(null)}>Cerrar</Button>
-        </div>
-      )}
-
       <div className="table-container">
         <ClientGrid
           columns={GRID_COLUMNS}
@@ -115,10 +93,11 @@ const Clientes = () => {
           onAddRow={createRow}
           saveState={saveState}
           loading={loading}
+          errors={errors}
         />
 </div>
       {rows.length > 0 && (
-        <StateBar key={rows.length} count={rows.length} singular="cliente" plural="clientes" />
+        <StateBar key={rows.length} count={rows.length} singular="cliente" plural="clientes" saveState={saveState} errors={errors} rows={rows} lastAction={lastAction} />
       )}
       <Modal
         open={Boolean(selected)}

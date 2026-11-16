@@ -13,7 +13,7 @@ class ChoferGrid extends React.Component {
   constructor(props) {
     super(props);
     this.gridRef = React.createRef();
-    this.state = { active: null, editing: null, draft: '' };
+    this.state = { active: null, editing: null, draft: '', savedRowKey: null };
     this.focusGrid = this.focusGrid.bind(this);
     this.selectCell = this.selectCell.bind(this);
     this.commitEdit = this.commitEdit.bind(this);
@@ -30,24 +30,41 @@ class ChoferGrid extends React.Component {
     this.gridRef.current?.focus();
   }
 
+  scrollActiveIntoView() {
+    const cellEl = this.gridRef.current?.querySelector('.grid-cell.active');
+    if (cellEl) {
+      cellEl.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+    }
+  }
+
   selectCell(pos) {
-    this.setState({ active: pos }, () => this.focusGrid());
+    this.setState({ active: pos }, () => { this.focusGrid(); this.scrollActiveIntoView(); });
   }
 
   commitEdit(stay) {
-    const { columns, rows, rowKey } = this.props;
+    const { columns, rows, rowKey, saveState } = this.props;
     const { editing } = this.state;
     const current = editing;
     if (!current) return;
     const column = columns[current.col];
     const row = rows[current.row];
+    const rowId = row?.[rowKey];
     if (row && column) this.props.onCellChange(row[rowKey], column.id, this.state.draft);
     this.setState({ editing: null });
+    
+    // Trigger row saved pulse animation (250ms)
+    if (rowId && saveState[rowId] === 'saved') {
+      this.setState({ savedRowKey: rowId }, () => {
+        setTimeout(() => this.setState({ savedRowKey: null }), 250);
+      });
+    }
+    
     if (!stay) {
       const dims = { rowCount: this.props.rows.length, columns: this.props.columns };
-      this.setState({ active: moveCell(current, 'right', dims) });
+      this.setState({ active: moveCell(current, 'right', dims) }, () => { this.focusGrid(); this.scrollActiveIntoView(); });
+    } else {
+      this.focusGrid();
     }
-    this.focusGrid();
   }
 
   cancelEdit() {
@@ -56,7 +73,7 @@ class ChoferGrid extends React.Component {
   }
 
   startEditAt(pos, initialValue) {
-    this.setState({ active: pos, editing: pos, draft: initialValue || '' }, () => this.focusGrid());
+    this.setState({ active: pos, editing: pos, draft: initialValue || '' }, () => { this.focusGrid(); this.scrollActiveIntoView(); });
   }
 
   move(direction) {
@@ -68,12 +85,12 @@ class ChoferGrid extends React.Component {
       const newKey = onAddRow?.();
       if (newKey) {
         const first = firstEditableCol(columns);
-        this.setState({ active: { row: rows.length, col: first } }, () => this.focusGrid());
+        this.setState({ active: { row: rows.length, col: first } }, () => { this.focusGrid(); this.scrollActiveIntoView(); });
         return;
       }
     }
 
-    this.setState({ active: moveCell(active, direction, dims) }, () => this.focusGrid());
+    this.setState({ active: moveCell(active, direction, dims) }, () => { this.focusGrid(); this.scrollActiveIntoView(); });
   }
 
   handlePaste(text) {
@@ -183,10 +200,22 @@ class ChoferGrid extends React.Component {
               const isNewRow = String(rowId).startsWith('new-');
               const state = isNewRow ? 'new' : (this.props.saveState?.[row[rowKey]] || '');
               const archived = row.deleted_at;
+              const serverRowError = this.props.errors?.[row[rowKey]]?._row;
+              const hasValidationError = columns.some((col) => col.validate && !col.warn && col.validate(row[col.accessor], row));
+              const hasValidationWarning = columns.some((col) => col.validate && col.warn && col.validate(row[col.accessor], row));
+              const hasRowError = serverRowError || hasValidationError;
+              const hasRowWarning = hasValidationWarning;
+              const isSavedPulse = this.state.savedRowKey === rowId;
+              const displayRowNum = rowIndex + 1;
+              const rowClass = [
+                hasRowError ? 'has-row-error' : (hasRowWarning ? 'has-row-warning' : ''),
+                isSavedPulse ? 'row-saved-pulse' : ''
+              ].filter(Boolean).join(' ');
               return (
-                <tr key={row.id}>
+                <tr key={row.id} className={rowClass}>
                   <td className="col-estado" onDoubleClick={(event) => event.stopPropagation()}>
                     <span className="state-dot" style={{ backgroundColor: STATE_COLOR[state] }} title={SAVE_LABEL[state] || ''} />
+                    <span className="row-number">{displayRowNum}</span>
                   </td>
                   {columns.map((column, colIndex) => (
                       <GridCell
@@ -204,6 +233,8 @@ class ChoferGrid extends React.Component {
                       onCommit={this.commitEdit}
                       onCancel={this.cancelEdit}
                       onToggle={(newValue) => this.props.onCellChange(row[rowKey], column.id, newValue)}
+                      serverError={this.props.errors?.[row[rowKey]]?.[column.id]}
+                      rowError={this.props.errors?.[row[rowKey]]?._row}
                     />
                   ))}
                   <td className="col-acciones" onDoubleClick={(event) => event.stopPropagation()}>
