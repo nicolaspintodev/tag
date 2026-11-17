@@ -157,7 +157,13 @@ const Viajes = () => {
     const sectionName = activeTab === 'operativo' ? 'Operativo' : 'Comercial';
     const fields = detailFields.filter((f) => f.section === sectionName);
 
+    const isDisabled = (field) => {
+      if (!field.disabled) return false;
+      return typeof field.disabled === 'function' ? field.disabled(selected) : field.disabled;
+    };
+
     const renderInput = (field) => {
+      const disabled = isDisabled(field);
       if (field.type === 'select') {
         return (
           <Select
@@ -165,7 +171,7 @@ const Viajes = () => {
             options={field.options}
             onChange={(event) => updateCell(selected.id, field.id, event.target.value)}
             className="modal-detail-value"
-            disabled={field.disabled && field.disabled(selected)}
+            disabled={disabled}
           />
         );
       }
@@ -175,7 +181,7 @@ const Viajes = () => {
             type="checkbox"
             checked={Boolean(selected[field.id])}
             onChange={(event) => handleBooleanChange(selected.id, field.id, event.target.checked)}
-            disabled={field.disabled && field.disabled(selected)}
+            disabled={disabled}
           />
         );
       }
@@ -231,29 +237,29 @@ const Viajes = () => {
     };
 
     if (sectionName === 'Comercial') {
-      const leftFields = fields.filter(f => f.id === 'observaciones');
-      const rightFields = fields.filter(f => f.id === 'facturado' || f.id === 'liquidado');
       const topFields = fields.filter(f => f.id === 'precio_pactado' || f.id === 'costo_proveedor');
+      const obsField = fields.find(f => f.id === 'observaciones');
+      const bottomFields = fields.filter(f => f.id === 'facturado' || f.id === 'liquidado');
 
       return (
         <div className="modal-detail-section">
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
               {topFields.map((field) => (
                 <div key={field.id} className="modal-detail-row">
                   <label className="modal-detail-label">{field.label}</label>
                   {renderInput(field)}
                 </div>
               ))}
-              {leftFields.map((field) => (
-                <div key={field.id} className="modal-detail-row" style={{ flex: 1 }}>
-                  <label className="modal-detail-label">{field.label}</label>
-                  {renderInput(field)}
-                </div>
-              ))}
             </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', paddingTop: '0.5rem' }}>
-              {rightFields.map((field) => (
+            {obsField && (
+              <div className="modal-detail-row" style={{ gridColumn: '1 / -1' }}>
+                <label className="modal-detail-label">{obsField.label}</label>
+                {renderInput(obsField)}
+              </div>
+            )}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+              {bottomFields.map((field) => (
                 <div key={field.id} className="modal-detail-row">
                   <label className="modal-detail-label">{field.label}</label>
                   {renderInput(field)}
