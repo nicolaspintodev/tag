@@ -17,12 +17,6 @@ const ESTADO_OPTIONS = [
   { value: 'terminado', label: 'Terminado' },
 ];
 
-const dateRender = (v) => {
-  if (!v) return '-';
-  const date = new Date(v);
-  return date.toLocaleDateString('es-AR');
-};
-
 const vehiculoRender = (v, row) => {
   if (row.tractora) {
     return `${row.tractora.marca} ${row.tractora.modelo} (${row.tractora.patente})`;
@@ -83,9 +77,8 @@ const estadoBadgeRender = (v, row) => {
 export const buildViajesGridColumns = () => {
   return [
     { id: 'codigo_viaje', accessor: 'codigo_viaje', header: 'Código', type: 'text', width: '110px', className: 'mono' },
-    { id: 'fecha_salida', accessor: 'fecha_salida', header: 'Fecha Salida', type: 'date', width: '120px', className: 'mono', render: dateRender },
-    { id: 'chofer_id', accessor: 'chofer_id', header: 'Chofer', type: 'text', width: '180px', render: choferRender },
     { id: 'cliente_id', accessor: 'cliente_id', header: 'Cliente', type: 'text', width: '180px', render: clienteRender },
+    { id: 'chofer_id', accessor: 'chofer_id', header: 'Chofer', type: 'text', width: '180px', render: choferRender },
     { id: 'vehiculo', accessor: 'vehiculo', header: 'Vehículo', type: 'text', width: '250px', render: vehiculoRender },
     { id: 'origen', accessor: 'origen', header: 'Origen', type: 'text', editable: true, width: '150px', className: 'truncate' },
     { id: 'destino', accessor: 'destino', header: 'Destino', type: 'text', editable: true, width: '150px', className: 'truncate' },
