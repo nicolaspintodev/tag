@@ -157,10 +157,9 @@ const Viajes = () => {
     const sectionName = activeTab === 'operativo' ? 'Operativo' : 'Comercial';
     const fields = detailFields.filter((f) => f.section === sectionName);
 
-    const renderField = (field) => {
-      let inputElement;
+    const renderInput = (field) => {
       if (field.type === 'select') {
-        inputElement = (
+        return (
           <Select
             value={selected[field.id] ?? ''}
             options={field.options}
@@ -169,8 +168,9 @@ const Viajes = () => {
             disabled={field.disabled && field.disabled(selected)}
           />
         );
-      } else if (field.type === 'boolean') {
-        inputElement = (
+      }
+      if (field.type === 'boolean') {
+        return (
           <input
             type="checkbox"
             className="toggle-switch"
@@ -179,45 +179,9 @@ const Viajes = () => {
             disabled={field.disabled && field.disabled(selected)}
           />
         );
-      } else if (field.type === 'currency') {
-        inputElement = (
-          <Input
-            type="text"
-            value={selected[field.id] ?? ''}
-            onChange={(event) => updateCell(selected.id, field.id, event.target.value)}
-            className="modal-detail-value"
-          />
-        );
-      } else if (field.type === 'date') {
-        inputElement = (
-          <Input
-            type="date"
-            value={selected[field.id] ? String(selected[field.id]).slice(0, 10) : ''}
-            onChange={(event) => updateCell(selected.id, field.id, event.target.value)}
-            className="modal-detail-value"
-          />
-        );
-      } else if (field.type === 'textarea') {
-        inputElement = (
-          <Input
-            type="text"
-            value={selected[field.id] ?? ''}
-            onChange={(event) => updateCell(selected.id, field.id, event.target.value)}
-            className="modal-detail-value"
-            style={{ minHeight: '80px', resize: 'vertical' }}
-          />
-        );
-      } else if (field.type === 'time') {
-        inputElement = (
-          <Input
-            type="time"
-            value={selected[field.id] ?? ''}
-            onChange={(event) => updateCell(selected.id, field.id, event.target.value)}
-            className="modal-detail-value"
-          />
-        );
-      } else {
-        inputElement = (
+      }
+      if (field.type === 'currency') {
+        return (
           <Input
             type="text"
             value={selected[field.id] ?? ''}
@@ -226,17 +190,44 @@ const Viajes = () => {
           />
         );
       }
-
+      if (field.type === 'date') {
+        return (
+          <Input
+            type="date"
+            value={selected[field.id] ? String(selected[field.id]).slice(0, 10) : ''}
+            onChange={(event) => updateCell(selected.id, field.id, event.target.value)}
+            className="modal-detail-value"
+          />
+        );
+      }
+      if (field.type === 'textarea') {
+        return (
+          <Input
+            type="text"
+            value={selected[field.id] ?? ''}
+            onChange={(event) => updateCell(selected.id, field.id, event.target.value)}
+            className="modal-detail-value"
+            style={{ minHeight: '80px', resize: 'vertical' }}
+          />
+        );
+      }
+      if (field.type === 'time') {
+        return (
+          <Input
+            type="time"
+            value={selected[field.id] ?? ''}
+            onChange={(event) => updateCell(selected.id, field.id, event.target.value)}
+            className="modal-detail-value"
+          />
+        );
+      }
       return (
-        <div key={field.id} className="modal-detail-row">
-          <label className="modal-detail-label">{field.label}</label>
-          {inputElement}
-          {field.validate && field.validate(selected[field.id], selected) && (
-            <span style={{ color: 'var(--color-danger-text)', fontSize: '0.7rem' }}>
-              {field.validate(selected[field.id], selected)}
-            </span>
-          )}
-        </div>
+        <Input
+          type="text"
+          value={selected[field.id] ?? ''}
+          onChange={(event) => updateCell(selected.id, field.id, event.target.value)}
+          className="modal-detail-value"
+        />
       );
     };
 
@@ -252,13 +243,13 @@ const Viajes = () => {
               {topFields.map((field) => (
                 <div key={field.id} className="modal-detail-row">
                   <label className="modal-detail-label">{field.label}</label>
-                  {renderField(field)}
+                  {renderInput(field)}
                 </div>
               ))}
               {leftFields.map((field) => (
                 <div key={field.id} className="modal-detail-row" style={{ flex: 1 }}>
                   <label className="modal-detail-label">{field.label}</label>
-                  {renderField(field)}
+                  {renderInput(field)}
                 </div>
               ))}
             </div>
@@ -266,7 +257,7 @@ const Viajes = () => {
               {rightFields.map((field) => (
                 <div key={field.id} className="modal-detail-row">
                   <label className="modal-detail-label">{field.label}</label>
-                  {renderField(field)}
+                  {renderInput(field)}
                 </div>
               ))}
             </div>
@@ -277,18 +268,21 @@ const Viajes = () => {
 
     return (
       <div className="modal-detail-section">
-        <div className="modal-detail-grid" style={{ gridTemplateColumns: 'repeat(2, 1fr)' }}>
-          {fields.map((field) => (
-            <div key={field.id} className="modal-detail-row">
-              <label className="modal-detail-label">{field.label}</label>
-              {renderField(field)}
-              {field.validate && field.validate(selected[field.id], selected) && (
-                <span style={{ color: 'var(--color-danger-text)', fontSize: '0.7rem' }}>
-                  {field.validate(selected[field.id], selected)}
-                </span>
-              )}
-            </div>
-          ))}
+        <div className="modal-detail-grid" style={{ gridTemplateColumns: 'repeat(2, 1fr)', gridAutoFlow: 'dense' }}>
+          {fields.map((field) => {
+            const colSpan = field.colSpan === 2 ? '1 / -1' : 'auto';
+            return (
+              <div key={field.id} className="modal-detail-row" style={{ gridColumn: colSpan }}>
+                <label className="modal-detail-label">{field.label}</label>
+                {renderInput(field)}
+                {field.validate && field.validate(selected[field.id], selected) && (
+                  <span style={{ color: 'var(--color-danger-text)', fontSize: '0.7rem' }}>
+                    {field.validate(selected[field.id], selected)}
+                  </span>
+                )}
+              </div>
+            );
+          })}
         </div>
       </div>
     );
