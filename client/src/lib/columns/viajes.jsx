@@ -112,8 +112,8 @@ export const buildViajesDetailFields = (choferOptions = [], clienteOptions = [],
     { id: 'precio_pactado', label: 'Precio del viaje', type: 'currency', required: true, section: 'Comercial' },
     { id: 'costo_proveedor', label: 'Costo', type: 'currency', section: 'Comercial' },
     { id: 'observaciones', label: 'Observaciones', type: 'textarea', section: 'Comercial' },
-    { id: 'facturado', label: 'Facturado', type: 'boolean', section: 'Comercial' },
-    { id: 'liquidado', label: 'Liquidado', type: 'boolean', section: 'Comercial' },
+    { id: 'facturado', label: 'Facturado', type: 'boolean', section: 'Comercial', disabled: true },
+    { id: 'liquidado', label: 'Liquidado', type: 'boolean', section: 'Comercial', disabled: true },
   ];
 };
 

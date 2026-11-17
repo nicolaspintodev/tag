@@ -173,7 +173,6 @@ const Viajes = () => {
         return (
           <input
             type="checkbox"
-            className="toggle-switch"
             checked={Boolean(selected[field.id])}
             onChange={(event) => handleBooleanChange(selected.id, field.id, event.target.checked)}
             disabled={field.disabled && field.disabled(selected)}
