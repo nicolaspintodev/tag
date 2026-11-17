@@ -8,7 +8,7 @@ import Input from '../components/ui/Input';
 import Select from '../components/ui/Select';
 import StateBar from '../components/ui/StateBar';
 import { useEditableResource } from '../hooks/useEditableResource';
-import { viajes, choferes as choferesResource, clientes as clientesResource, unidades as unidadesResource } from '../api/resources';
+import { viajes, choferes as choferesResource, clientes as clientesResource, proveedores as proveedoresResource, unidades as unidadesResource } from '../api/resources';
 import {
   buildViajesGridColumns,
   buildViajesDetailFields,
@@ -38,6 +38,7 @@ const Viajes = () => {
   const [toDelete, setToDelete] = useState(null);
   const [choferes, setChoferes] = useState([]);
   const [clientes, setClientes] = useState([]);
+  const [proveedores, setProveedores] = useState([]);
   const [unidades, setUnidades] = useState([]);
 
   useEffect(() => {
@@ -45,17 +46,20 @@ const Viajes = () => {
     Promise.all([
       choferesResource.list(),
       clientesResource.list(),
+      proveedoresResource.list(),
       unidadesResource.list(),
-    ]).then(([choferesData, clientesData, unidadesData]) => {
+    ]).then(([choferesData, clientesData, proveedoresData, unidadesData]) => {
       if (!cancelado) {
         setChoferes(Array.isArray(choferesData) ? choferesData : []);
         setClientes(Array.isArray(clientesData) ? clientesData : []);
+        setProveedores(Array.isArray(proveedoresData) ? proveedoresData : []);
         setUnidades(Array.isArray(unidadesData) ? unidadesData : []);
       }
     }).catch(() => {
       if (!cancelado) {
         setChoferes([]);
         setClientes([]);
+        setProveedores([]);
         setUnidades([]);
       }
     });
@@ -66,8 +70,9 @@ const Viajes = () => {
   const detailFields = useMemo(() => buildViajesDetailFields(
     choferes.map(c => ({ value: c.id, label: `${c.nombre} ${c.apellido}` })),
     clientes.map(c => ({ value: c.id, label: c.razon_social })),
+    proveedores.map(p => ({ value: p.id, label: p.razon_social })),
     unidades.map(u => ({ value: u.id, label: `${u.marca} ${u.modelo} (${u.patente})`, tipo: u.tipo }))
-  ), [choferes, clientes, unidades]);
+  ), [choferes, clientes, proveedores, unidades]);
 
   const estadoOptions = useMemo(() => [
     { value: '', label: 'Todos los estados' },
