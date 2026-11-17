@@ -63,7 +63,7 @@ class ViajeApiTest extends TestCase
             'fecha_salida' => '2026-07-15',
             'precio_pactado' => 780000,
             'costo_proveedor' => 0,
-            'estado' => 'pendiente',
+            'estado' => 'planificado',
         ], $overrides));
     }
 
@@ -73,24 +73,24 @@ class ViajeApiTest extends TestCase
 
     public function test_cambiar_estado_viaje(): void
     {
-        $viaje = $this->crearViaje(['estado' => 'pendiente']);
+        $viaje = $this->crearViaje(['estado' => 'planificado']);
 
         $response = $this->patchJson("/api/viajes/{$viaje->id}/estado", [
-            'estado' => 'en_curso',
+            'estado' => 'iniciado',
         ]);
 
         $response->assertOk()
-            ->assertJsonFragment(['estado' => 'en_curso']);
+            ->assertJsonFragment(['estado' => 'iniciado']);
 
         $this->assertDatabaseHas('viajes', [
             'id' => $viaje->id,
-            'estado' => 'en_curso',
+            'estado' => 'iniciado',
         ]);
     }
 
     public function test_cambiar_estado_invalido(): void
     {
-        $viaje = $this->crearViaje(['estado' => 'pendiente']);
+        $viaje = $this->crearViaje(['estado' => 'planificado']);
 
         $response = $this->patchJson("/api/viajes/{$viaje->id}/estado", [
             'estado' => 'estado_inexistente',
@@ -111,7 +111,7 @@ class ViajeApiTest extends TestCase
         $response = $this->getJson('/api/viajes');
 
         $response->assertOk()
-            ->assertJsonCount(2, 'data');
+            ->assertJsonCount(2);
     }
 
     public function test_store_crea_viaje(): void
@@ -164,6 +164,7 @@ class ViajeApiTest extends TestCase
             'destino' => 'Mendoza',
             'fecha_salida' => '2026-07-20',
             'precio_pactado' => 900000,
+            'estado' => 'iniciado',
         ]);
 
         $response->assertOk()
@@ -189,7 +190,7 @@ class ViajeApiTest extends TestCase
         $response = $this->getJson('/api/viajes');
 
         $response->assertOk()
-            ->assertJsonCount(1, 'data');
+            ->assertJsonCount(1);
     }
 
     public function test_restore_recupera_viaje(): void
@@ -222,6 +223,7 @@ class ViajeApiTest extends TestCase
             'origen' => 'CABA',
             'destino' => 'Rosario',
             'fecha_salida' => '2026-07-20',
+            'precio_pactado' => 500000,
             'unidades' => [$this->unidad->id, $unidad2->id],
         ]);
 

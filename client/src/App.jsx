@@ -5,6 +5,8 @@ import Login from './pages/Login';
 import Placeholder from './pages/Placeholder';
 import Clientes from './pages/Clientes';
 import Choferes from './pages/Choferes';
+import Unidades from './pages/Unidades';
+import Viajes from './pages/Viajes';
 import AppShell from './components/layout/AppShell';
 import { clearToken, fetchCurrentUser, getToken, logout } from './api';
 import { clearTabMarker, markTabUnloading, resolveTabLifecycle } from './session';
@@ -95,10 +97,10 @@ const App = () => {
       <Route element={<AppShell onLogout={() => handleLogout('manual')} />}>
         <Route index element={<Navigate to="/clientes" replace />} />
         <Route path="/clientes" element={<Clientes />} />
-        <Route path="/viajes" element={<Placeholder title="Viajes" />} />
+        <Route path="/viajes" element={<Viajes />} />
         <Route path="/proveedores" element={<Placeholder title="Proveedores" />} />
         <Route path="/choferes" element={<Choferes />} />
-        <Route path="/unidades" element={<Placeholder title="Unidades" />} />
+        <Route path="/unidades" element={<Unidades />} />
         <Route path="/liquidaciones" element={<Placeholder title="Liquidaciones" />} />
         <Route path="/facturas" element={<Placeholder title="Facturas" />} />
         <Route path="/gastos" element={<Placeholder title="Gastos" />} />

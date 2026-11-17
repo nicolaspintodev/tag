@@ -47,7 +47,7 @@ class DocumentoApiTest extends TestCase
             'destino' => 'Rosario',
             'fecha_salida' => '2026-07-15',
             'precio_pactado' => 780000,
-            'estado' => 'pendiente',
+            'estado' => 'planificado',
         ]);
     }
 

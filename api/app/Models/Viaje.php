@@ -40,6 +40,9 @@ class Viaje extends Model
         'cliente_id',
         'proveedor_id',
         'estado',
+        'facturado',
+        'liquidado',
+        'estado_facturacion',
         'origen',
         'destino',
         'fecha_salida',
@@ -62,6 +65,9 @@ class Viaje extends Model
     {
         return [
             'estado' => EstadoViaje::class,
+            'facturado' => 'boolean',
+            'liquidado' => 'boolean',
+            'estado_facturacion' => 'string',
             'fecha_salida' => 'date',
             'fecha_llegada' => 'date',
             'precio_pactado' => 'decimal:2',
@@ -84,6 +90,31 @@ class Viaje extends Model
         $costoProveedorBase = $this->costo_proveedor ?? 0;
 
         return (float) $costoProveedorBase - (float) $anticipos + (float) $terceroReintegro;
+    }
+
+    public function getEstadoFacturacionAttribute(): string
+    {
+        return $this->attributes['estado_facturacion'] ?? 'pendiente';
+    }
+
+    public function getFacturadoAttribute(): bool
+    {
+        return $this->estado->value === 'terminado' && $this->attributes['facturado'] ?? false;
+    }
+
+    public function getLiquidadoAttribute(): bool
+    {
+        return $this->estado->value === 'terminado' && $this->attributes['liquidado'] ?? false;
+    }
+
+    public function getPuedeFacturarseAttribute(): bool
+    {
+        return $this->estado->value === 'terminado' && !$this->attributes['facturado'];
+    }
+
+    public function getPuedeLiquidarseAttribute(): bool
+    {
+        return $this->estado->value === 'terminado' && !$this->attributes['liquidado'];
     }
 
     // ---------- Relaciones ----------

@@ -40,3 +40,15 @@ export const runValidators = (validators, value, row) => {
   }
   return null;
 };
+
+export const positiveNumber = (value) => {
+  if (value === null || value === undefined || String(value).trim() === '') return null;
+  const num = Number(String(value).replace(/[^0-9.-]/g, ''));
+  return num > 0 ? null : 'Debe ser mayor a 0';
+};
+
+export const currency = (value) => {
+  if (value === null || value === undefined || String(value).trim() === '') return null;
+  const num = Number(String(value).replace(/[^0-9.-]/g, ''));
+  return isNaN(num) ? 'Valor inválido' : null;
+};
