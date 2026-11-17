@@ -240,10 +240,55 @@ const Viajes = () => {
       );
     };
 
+    if (sectionName === 'Comercial') {
+      const leftFields = fields.filter(f => f.id === 'observaciones');
+      const rightFields = fields.filter(f => f.id === 'facturado' || f.id === 'liquidado');
+      const topFields = fields.filter(f => f.id === 'precio_pactado' || f.id === 'costo_proveedor');
+
+      return (
+        <div className="modal-detail-section">
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+              {topFields.map((field) => (
+                <div key={field.id} className="modal-detail-row">
+                  <label className="modal-detail-label">{field.label}</label>
+                  {renderField(field)}
+                </div>
+              ))}
+              {leftFields.map((field) => (
+                <div key={field.id} className="modal-detail-row" style={{ flex: 1 }}>
+                  <label className="modal-detail-label">{field.label}</label>
+                  {renderField(field)}
+                </div>
+              ))}
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', paddingTop: '0.5rem' }}>
+              {rightFields.map((field) => (
+                <div key={field.id} className="modal-detail-row">
+                  <label className="modal-detail-label">{field.label}</label>
+                  {renderField(field)}
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      );
+    }
+
     return (
       <div className="modal-detail-section">
         <div className="modal-detail-grid" style={{ gridTemplateColumns: 'repeat(2, 1fr)' }}>
-          {fields.map(renderField)}
+          {fields.map((field) => (
+            <div key={field.id} className="modal-detail-row">
+              <label className="modal-detail-label">{field.label}</label>
+              {renderField(field)}
+              {field.validate && field.validate(selected[field.id], selected) && (
+                <span style={{ color: 'var(--color-danger-text)', fontSize: '0.7rem' }}>
+                  {field.validate(selected[field.id], selected)}
+                </span>
+              )}
+            </div>
+          ))}
         </div>
       </div>
     );

@@ -96,17 +96,17 @@ export const buildViajesGridColumns = () => {
 export const buildViajesDetailFields = (choferOptions = [], clienteOptions = [], proveedorOptions = [PROPIO_OPTION], unidadOptions = []) => {
   return [
     // Operativo
-    { id: 'origen', label: 'Origen', type: 'text', required: true, section: 'Operativo' },
-    { id: 'destino', label: 'Destino', type: 'text', required: true, section: 'Operativo' },
-    { id: 'fecha_salida', label: 'Fecha Salida', type: 'date', required: true, section: 'Operativo' },
-    { id: 'fecha_llegada', label: 'Fecha Llegada', type: 'date', section: 'Operativo' },
-    { id: 'cliente_id', label: 'Cliente', type: 'select', options: [{ value: '', label: 'Seleccionar...' }, ...clienteOptions], required: true, section: 'Operativo' },
-    { id: 'proveedor_id', label: 'Proveedor', type: 'select', options: [{ value: '', label: 'Propio' }, ...proveedorOptions.slice(1)], section: 'Operativo' },
-    { id: 'chofer_id', label: 'Chofer', type: 'select', options: [{ value: '', label: 'Seleccionar...' }, ...choferOptions], required: true, section: 'Operativo' },
-    { id: 'tractora_id', label: 'Tractora', type: 'select', options: [{ value: '', label: 'Seleccionar...' }, ...unidadOptions.filter(u => u.tipo === 'tractora')], required: true, section: 'Operativo' },
-    { id: 'acoplado_id', label: 'Acoplado/SEM', type: 'select', options: [{ value: '', label: 'Sin acoplado' }, ...unidadOptions.filter(u => ['acoplado', 'semirremolque'].includes(u.tipo))], section: 'Operativo' },
-    { id: 'peso_carga', label: 'Peso Carga (kg)', type: 'number', section: 'Operativo' },
-    { id: 'estado', label: 'Estado', type: 'select', options: ESTADO_OPTIONS, section: 'Operativo' },
+    { id: 'origen', label: 'Origen', type: 'text', required: true, section: 'Operativo', colSpan: 1 },
+    { id: 'destino', label: 'Destino', type: 'text', required: true, section: 'Operativo', colSpan: 1 },
+    { id: 'fecha_salida', label: 'Fecha Salida', type: 'date', required: true, section: 'Operativo', colSpan: 1 },
+    { id: 'fecha_llegada', label: 'Fecha Llegada', type: 'date', section: 'Operativo', colSpan: 1 },
+    { id: 'cliente_id', label: 'Cliente', type: 'select', options: [{ value: '', label: 'Seleccionar...' }, ...clienteOptions], required: true, section: 'Operativo', colSpan: 1 },
+    { id: 'proveedor_id', label: 'Proveedor', type: 'select', options: [{ value: '', label: 'Propio' }, ...proveedorOptions.slice(1)], section: 'Operativo', colSpan: 1 },
+    { id: 'chofer_id', label: 'Chofer', type: 'select', options: [{ value: '', label: 'Seleccionar...' }, ...choferOptions], required: true, section: 'Operativo', colSpan: 2 },
+    { id: 'tractora_id', label: 'Tractora', type: 'select', options: [{ value: '', label: 'Seleccionar...' }, ...unidadOptions.filter(u => u.tipo === 'tractora')], required: true, section: 'Operativo', colSpan: 1 },
+    { id: 'acoplado_id', label: 'Acoplado/SEM', type: 'select', options: [{ value: '', label: 'Sin acoplado' }, ...unidadOptions.filter(u => ['acoplado', 'semirremolque'].includes(u.tipo))], section: 'Operativo', colSpan: 1 },
+    { id: 'peso_carga', label: 'Peso Carga (kg)', type: 'number', section: 'Operativo', colSpan: 1 },
+    { id: 'estado', label: 'Estado', type: 'select', options: ESTADO_OPTIONS, section: 'Operativo', colSpan: 1 },
 
     // Comercial
     { id: 'precio_pactado', label: 'Precio del viaje', type: 'currency', required: true, section: 'Comercial' },
