@@ -57,6 +57,10 @@ class ViajeController extends Controller
             $query->where('estado_facturacion', $request->get('estado_facturacion'));
         }
 
+        if ($request->filled('estado')) {
+            $query->where('estado', $request->get('estado'));
+        }
+
         if ($request->filled('facturado')) {
             $query->where('facturado', $request->boolean('facturado'));
         }

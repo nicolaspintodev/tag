@@ -30,8 +30,8 @@ const Viajes = () => {
   const [search, setSearch] = useState('');
   const [archivados, setArchivados] = useState(false);
   const [estadoFilter, setEstadoFilter] = useState('');
-  const [facturadoFilter, setFacturadoFilter] = useState('all'); // 'all' | 'true' | 'false'
-  const [liquidadoFilter, setLiquidadoFilter] = useState('all');
+  const [facturadoFilter, setFacturadoFilter] = useState(false); // false=all, true=facturado
+  const [liquidadoFilter, setLiquidadoFilter] = useState(false);
   const [fechaDesde, setFechaDesde] = useState('');
   const [fechaHasta, setFechaHasta] = useState('');
   const [selectedKey, setSelectedKey] = useState(null);
@@ -98,8 +98,8 @@ const Viajes = () => {
       search: searchValue || undefined,
       archivados: archivadosValue ? 1 : undefined,
       estado: estadoValue || undefined,
-      facturado: facturadoValue === 'all' ? undefined : facturadoValue,
-      liquidado: liquidadoValue === 'all' ? undefined : liquidadoValue,
+      facturado: facturadoValue === true ? 'true' : undefined,
+      liquidado: liquidadoValue === true ? 'true' : undefined,
       fecha_desde: fechaDesdeValue || undefined,
       fecha_hasta: fechaHastaValue || undefined,
     });
@@ -120,16 +120,14 @@ const Viajes = () => {
     fetchRows({ estadoValue: value });
   };
 
-  const handleFacturadoFilterChange = () => {
-    const next = facturadoFilter === 'all' ? 'true' : facturadoFilter === 'true' ? 'false' : 'all';
-    setFacturadoFilter(next);
-    fetchRows({ facturadoValue: next });
+  const handleFacturadoFilterChange = (checked) => {
+    setFacturadoFilter(checked);
+    fetchRows({ facturadoValue: checked });
   };
 
-  const handleLiquidadoFilterChange = () => {
-    const next = liquidadoFilter === 'all' ? 'true' : liquidadoFilter === 'true' ? 'false' : 'all';
-    setLiquidadoFilter(next);
-    fetchRows({ liquidadoValue: next });
+  const handleLiquidadoFilterChange = (checked) => {
+    setLiquidadoFilter(checked);
+    fetchRows({ liquidadoValue: checked });
   };
 
   const handleFechaDesdeChange = (value) => {
@@ -345,52 +343,22 @@ const Viajes = () => {
               className="filter-select"
               style={{ width: '150px', marginLeft: '0.5rem' }}
             />
-            <button
-              type="button"
-              onClick={handleFacturadoFilterChange}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.3rem',
-                padding: '0.25rem 0.5rem',
-                border: '1px solid var(--border-color)',
-                borderRadius: '4px',
-                background: 'var(--bg-secondary)',
-                color: 'var(--text-primary)',
-                fontSize: '0.8rem',
-                cursor: 'pointer',
-                marginLeft: '0.5rem',
-              }}
-            >
-              <span style={{ color: facturadoFilter === 'true' ? 'var(--color-success-text)' : facturadoFilter === 'false' ? 'var(--color-danger-text)' : 'var(--text-muted)' }}>
-                ●
-              </span>
-              Facturado:
-              <span style={{ textTransform: 'capitalize' }}>{facturadoFilter === 'all' ? 'Todos' : facturadoFilter === 'true' ? 'Sí' : 'No'}</span>
-            </button>
-            <button
-              type="button"
-              onClick={handleLiquidadoFilterChange}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.3rem',
-                padding: '0.25rem 0.5rem',
-                border: '1px solid var(--border-color)',
-                borderRadius: '4px',
-                background: 'var(--bg-secondary)',
-                color: 'var(--text-primary)',
-                fontSize: '0.8rem',
-                cursor: 'pointer',
-                marginLeft: '0.5rem',
-              }}
-            >
-              <span style={{ color: liquidadoFilter === 'true' ? 'var(--color-success-text)' : liquidadoFilter === 'false' ? 'var(--color-danger-text)' : 'var(--text-muted)' }}>
-                ●
-              </span>
-              Liquidado:
-              <span style={{ textTransform: 'capitalize' }}>{liquidadoFilter === 'all' ? 'Todos' : liquidadoFilter === 'true' ? 'Sí' : 'No'}</span>
-            </button>
+            <label style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', fontSize: '0.85rem', color: 'var(--text-muted)', marginLeft: '0.5rem' }}>
+              <input
+                type="checkbox"
+                checked={facturadoFilter}
+                onChange={(event) => handleFacturadoFilterChange(event.target.checked)}
+              />
+              Facturado
+            </label>
+            <label style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', fontSize: '0.85rem', color: 'var(--text-muted)', marginLeft: '0.5rem' }}>
+              <input
+                type="checkbox"
+                checked={liquidadoFilter}
+                onChange={(event) => handleLiquidadoFilterChange(event.target.checked)}
+              />
+              Liquidado
+            </label>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', marginLeft: '0.5rem' }}>
               <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Desde</label>
               <Input type="date" value={fechaDesde} onChange={(e) => handleFechaDesdeChange(e.target.value)} style={{ width: '140px' }} />
@@ -432,7 +400,7 @@ const Viajes = () => {
             <Button variant="outline" size="sm" onClick={() => { setSelectedKey(null); setActiveTab('operativo'); }}>
               Cerrar
             </Button>
-            <Button size="sm" onClick={async () => { await flush(); setSelectedKey(null); setActiveTab('operativo'); }}>
+            <Button size="sm" onClick={async () => { await flush(); await fetchRows(); setSelectedKey(null); setActiveTab('operativo'); }}>
               Guardar
             </Button>
           </div>
