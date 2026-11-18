@@ -39,6 +39,8 @@ class Viaje extends Model
         'chofer_id',
         'cliente_id',
         'proveedor_id',
+        'tractora_id',
+        'acoplado_id',
         'estado',
         'facturado',
         'liquidado',
@@ -143,6 +145,16 @@ class Viaje extends Model
     public function proveedor(): BelongsTo
     {
         return $this->belongsTo(Proveedor::class);
+    }
+
+    public function tractora(): BelongsTo
+    {
+        return $this->belongsTo(Unidad::class, 'tractora_id');
+    }
+
+    public function acoplado(): BelongsTo
+    {
+        return $this->belongsTo(Unidad::class, 'acoplado_id');
     }
 
     public function carga(): HasOne
