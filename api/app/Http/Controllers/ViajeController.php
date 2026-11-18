@@ -143,6 +143,74 @@ class ViajeController extends Controller
 
             // Carga
             'carga.peso_kg' => 'nullable|numeric|min:0',
+
+            // Reglas de negocio
+            'chofer_id' => ['required', 'exists:choferes,id', function ($attribute, $value, $fail) use ($request) {
+                $estado = $request->input('estado', 'planificado');
+                if ($estado === 'iniciado') {
+                    $conflict = \App\Models\Viaje::where('chofer_id', $value)
+                        ->where('estado', 'iniciado')
+                        ->exists();
+                    if ($conflict) {
+                        $fail('El chofer ya tiene un viaje Iniciado.');
+                    }
+                }
+            }],
+            'tractora_id' => ['nullable', 'exists:unidades,id', function ($attribute, $value, $fail) use ($request) {
+                $estado = $request->input('estado', 'planificado');
+                if ($estado === 'iniciado') {
+                    if (empty($value)) {
+                        $fail('Un viaje Iniciado debe tener una tractora asignada.');
+                    }
+                    $conflict = \App\Models\Viaje::where('tractora_id', $value)
+                        ->where('estado', 'iniciado')
+                        ->exists();
+                    if ($conflict) {
+                        $fail('La tractora ya está en un viaje Iniciado.');
+                    }
+                }
+            }],
+            'acoplado_id' => ['nullable', 'exists:unidades,id', function ($attribute, $value, $fail) use ($request) {
+                $estado = $request->input('estado', 'planificado');
+                $tractoraId = $request->input('tractora_id');
+                if ($estado === 'iniciado') {
+                    if (!empty($value) && empty($tractoraId)) {
+                        $fail('No se puede asignar acoplado sin tractora.');
+                    }
+                    if (!empty($value)) {
+                        $conflict = \App\Models\Viaje::where('acoplado_id', $value)
+                            ->where('estado', 'iniciado')
+                            ->exists();
+                        if ($conflict) {
+                            $fail('El acoplado ya está en un viaje Iniciado.');
+                        }
+                    }
+                } else {
+                    // Validar acoplado sin tractora en cualquier estado
+                    if (!empty($value) && empty($tractoraId)) {
+                        $fail('No se puede asignar acoplado sin tractora.');
+                    }
+                }
+            }],
+            'estado' => ['nullable', 'in:planificado,iniciado,terminado', function ($attribute, $value, $fail) use ($request) {
+                $facturado = (bool) $request->input('facturado', false);
+                $liquidado = (bool) $request->input('liquidado', false);
+                if (($facturado || $liquidado) && $value !== 'terminado') {
+                    $fail('Solo los viajes Terminados pueden ser facturados/liquidados.');
+                }
+            }],
+            'facturado' => ['nullable', 'boolean', function ($attribute, $value, $fail) use ($request) {
+                $estado = $request->input('estado', 'planificado');
+                if ($value && $estado !== 'terminado') {
+                    $fail('Solo los viajes Terminados pueden ser facturados.');
+                }
+            }],
+            'liquidado' => ['nullable', 'boolean', function ($attribute, $value, $fail) use ($request) {
+                $estado = $request->input('estado', 'planificado');
+                if ($value && $estado !== 'terminado') {
+                    $fail('Solo los viajes Terminados pueden ser liquidados.');
+                }
+            }],
         ]);
 
         if (empty($validated['estado'])) {
@@ -224,6 +292,78 @@ class ViajeController extends Controller
 
             // Carga
             'carga.peso_kg' => 'nullable|numeric|min:0',
+
+            // Reglas de negocio
+            'chofer_id' => ['nullable', 'exists:choferes,id', function ($attribute, $value, $fail) use ($request, $viaje) {
+                $estado = $request->input('estado', $viaje->estado->value);
+                if ($estado === 'iniciado' && !empty($value)) {
+                    $conflict = \App\Models\Viaje::where('chofer_id', $value)
+                        ->where('estado', 'iniciado')
+                        ->where('id', '!=', $viaje->id)
+                        ->exists();
+                    if ($conflict) {
+                        $fail('El chofer ya tiene un viaje Iniciado.');
+                    }
+                }
+            }],
+            'tractora_id' => ['nullable', 'exists:unidades,id', function ($attribute, $value, $fail) use ($request, $viaje) {
+                $estado = $request->input('estado', $viaje->estado->value);
+                $tractoraId = $request->input('tractora_id', $viaje->tractora_id);
+                if ($estado === 'iniciado') {
+                    if (empty($value) && empty($tractoraId)) {
+                        $fail('Un viaje Iniciado debe tener una tractora asignada.');
+                    }
+                    $conflict = \App\Models\Viaje::where('tractora_id', $value)
+                        ->where('estado', 'iniciado')
+                        ->where('id', '!=', $viaje->id)
+                        ->exists();
+                    if ($conflict) {
+                        $fail('La tractora ya está en un viaje Iniciado.');
+                    }
+                }
+            }],
+            'acoplado_id' => ['nullable', 'exists:unidades,id', function ($attribute, $value, $fail) use ($request, $viaje) {
+                $estado = $request->input('estado', $viaje->estado->value);
+                $tractoraId = $request->input('tractora_id', $viaje->tractora_id);
+                if ($estado === 'iniciado') {
+                    if (!empty($value) && empty($tractoraId)) {
+                        $fail('No se puede asignar acoplado sin tractora.');
+                    }
+                    if (!empty($value)) {
+                        $conflict = \App\Models\Viaje::where('acoplado_id', $value)
+                            ->where('estado', 'iniciado')
+                            ->where('id', '!=', $viaje->id)
+                            ->exists();
+                        if ($conflict) {
+                            $fail('El acoplado ya está en un viaje Iniciado.');
+                        }
+                    }
+                } else {
+                    // Validar acoplado sin tractora en cualquier estado
+                    if (!empty($value) && empty($tractoraId)) {
+                        $fail('No se puede asignar acoplado sin tractora.');
+                    }
+                }
+            }],
+            'estado' => ['nullable', 'in:planificado,iniciado,terminado', function ($attribute, $value, $fail) use ($request, $viaje) {
+                $facturado = (bool) $request->input('facturado', $viaje->facturado);
+                $liquidado = (bool) $request->input('liquidado', $viaje->liquidado);
+                if (($facturado || $liquidado) && $value !== 'terminado') {
+                    $fail('Solo los viajes Terminados pueden ser facturados/liquidados.');
+                }
+            }],
+            'facturado' => ['nullable', 'boolean', function ($attribute, $value, $fail) use ($request, $viaje) {
+                $estado = $request->input('estado', $viaje->estado->value);
+                if ($value && $estado !== 'terminado') {
+                    $fail('Solo los viajes Terminados pueden ser facturados.');
+                }
+            }],
+            'liquidado' => ['nullable', 'boolean', function ($attribute, $value, $fail) use ($request, $viaje) {
+                $estado = $request->input('estado', $viaje->estado->value);
+                if ($value && $estado !== 'terminado') {
+                    $fail('Solo los viajes Terminados pueden ser liquidados.');
+                }
+            }],
         ]);
 
         $updateData = [

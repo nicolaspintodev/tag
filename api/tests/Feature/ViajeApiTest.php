@@ -50,6 +50,14 @@ class ViajeApiTest extends TestCase
             'patente' => 'ABC-123',
             'anio' => 2024,
         ]);
+
+        $this->tractora = Unidad::create([
+            'marca' => 'Scania',
+            'modelo' => 'R450',
+            'patente' => 'TRA-001',
+            'anio' => 2023,
+            'tipo' => 'tractora',
+        ]);
     }
 
     private function crearViaje(array $overrides = []): Viaje
@@ -58,6 +66,7 @@ class ViajeApiTest extends TestCase
             'chofer_id' => $this->chofer->id,
             'cliente_id' => $this->cliente->id,
             'proveedor_id' => null,
+            'tractora_id' => $this->tractora->id,
             'origen' => 'CABA',
             'destino' => 'Rosario',
             'fecha_salida' => '2026-07-15',
@@ -77,6 +86,7 @@ class ViajeApiTest extends TestCase
 
         $response = $this->patchJson("/api/viajes/{$viaje->id}/estado", [
             'estado' => 'iniciado',
+            'tractora_id' => $this->tractora->id,
         ]);
 
         $response->assertOk()
@@ -165,6 +175,7 @@ class ViajeApiTest extends TestCase
             'fecha_salida' => '2026-07-20',
             'precio_pactado' => 900000,
             'estado' => 'iniciado',
+            'tractora_id' => $this->tractora->id,
         ]);
 
         $response->assertOk()
