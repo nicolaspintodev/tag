@@ -30,8 +30,8 @@ const Viajes = () => {
   const [search, setSearch] = useState('');
   const [archivados, setArchivados] = useState(false);
   const [estadoFilter, setEstadoFilter] = useState('');
-  const [facturadoFilter, setFacturadoFilter] = useState(null); // null=all, true=sí, false=no
-  const [liquidadoFilter, setLiquidadoFilter] = useState(null);
+  const [facturadoFilter, setFacturadoFilter] = useState('all'); // 'all' | 'true' | 'false'
+  const [liquidadoFilter, setLiquidadoFilter] = useState('all');
   const [fechaDesde, setFechaDesde] = useState('');
   const [fechaHasta, setFechaHasta] = useState('');
   const [selectedKey, setSelectedKey] = useState(null);
@@ -98,8 +98,8 @@ const Viajes = () => {
       search: searchValue || undefined,
       archivados: archivadosValue ? 1 : undefined,
       estado: estadoValue || undefined,
-      facturado: facturadoValue === true ? 'true' : facturadoValue === false ? 'false' : undefined,
-      liquidado: liquidadoValue === true ? 'true' : liquidadoValue === false ? 'false' : undefined,
+      facturado: facturadoValue === 'all' ? undefined : facturadoValue,
+      liquidado: liquidadoValue === 'all' ? undefined : liquidadoValue,
       fecha_desde: fechaDesdeValue || undefined,
       fecha_hasta: fechaHastaValue || undefined,
     });
@@ -120,16 +120,16 @@ const Viajes = () => {
     fetchRows({ estadoValue: value });
   };
 
-  const handleFacturadoFilterChange = (checked) => {
-    const value = checked ? true : null; // true=sí, null=todos
-    setFacturadoFilter(value);
-    fetchRows({ facturadoValue: value });
+  const handleFacturadoFilterChange = () => {
+    const next = facturadoFilter === 'all' ? 'true' : facturadoFilter === 'true' ? 'false' : 'all';
+    setFacturadoFilter(next);
+    fetchRows({ facturadoValue: next });
   };
 
-  const handleLiquidadoFilterChange = (checked) => {
-    const value = checked ? true : null;
-    setLiquidadoFilter(value);
-    fetchRows({ liquidadoValue: value });
+  const handleLiquidadoFilterChange = () => {
+    const next = liquidadoFilter === 'all' ? 'true' : liquidadoFilter === 'true' ? 'false' : 'all';
+    setLiquidadoFilter(next);
+    fetchRows({ liquidadoValue: next });
   };
 
   const handleFechaDesdeChange = (value) => {
@@ -176,13 +176,34 @@ const Viajes = () => {
         );
       }
       if (field.type === 'boolean') {
+        const isChecked = Boolean(selected[field.id]);
         return (
-          <input
-            type="checkbox"
-            checked={Boolean(selected[field.id])}
-            onChange={(event) => handleBooleanChange(selected.id, field.id, event.target.checked)}
-            disabled={disabled}
-          />
+          <label style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: '0.5rem',
+            cursor: disabled ? 'not-allowed' : 'pointer',
+            opacity: disabled ? 0.5 : 1,
+            width: '100%',
+          }}>
+            <span style={{ fontWeight: 500, fontSize: '0.875rem', whiteSpace: 'nowrap' }}>
+              {field.label}
+            </span>
+            <input
+              type="checkbox"
+              checked={isChecked}
+              onChange={(event) => handleBooleanChange(selected.id, field.id, event.target.checked)}
+              disabled={disabled}
+              style={{
+                width: '22px',
+                height: '22px',
+                accentColor: 'var(--color-success)',
+                cursor: disabled ? 'not-allowed' : 'pointer',
+                flexShrink: 0,
+              }}
+            />
+          </label>
         );
       }
       if (field.type === 'currency') {
@@ -325,22 +346,52 @@ const Viajes = () => {
               className="filter-select"
               style={{ width: '150px', marginLeft: '0.5rem' }}
             />
-            <label style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', fontSize: '0.85rem', color: 'var(--text-muted)', marginLeft: '0.5rem' }}>
-              <input
-                type="checkbox"
-                checked={facturadoFilter === true}
-                onChange={(event) => handleFacturadoFilterChange(event.target.checked)}
-              />
-              Facturado
-            </label>
-            <label style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', fontSize: '0.85rem', color: 'var(--text-muted)', marginLeft: '0.5rem' }}>
-              <input
-                type="checkbox"
-                checked={liquidadoFilter === true}
-                onChange={(event) => handleLiquidadoFilterChange(event.target.checked)}
-              />
-              Liquidado
-            </label>
+            <button
+              type="button"
+              onClick={handleFacturadoFilterChange}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.3rem',
+                padding: '0.25rem 0.5rem',
+                border: '1px solid var(--border-color)',
+                borderRadius: '4px',
+                background: 'var(--bg-secondary)',
+                color: 'var(--text-primary)',
+                fontSize: '0.8rem',
+                cursor: 'pointer',
+                marginLeft: '0.5rem',
+              }}
+            >
+              <span style={{ color: facturadoFilter === 'true' ? 'var(--color-success-text)' : facturadoFilter === 'false' ? 'var(--color-danger-text)' : 'var(--text-muted)' }}>
+                ●
+              </span>
+              Facturado:
+              <span style={{ textTransform: 'capitalize' }}>{facturadoFilter === 'all' ? 'Todos' : facturadoFilter === 'true' ? 'Sí' : 'No'}</span>
+            </button>
+            <button
+              type="button"
+              onClick={handleLiquidadoFilterChange}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.3rem',
+                padding: '0.25rem 0.5rem',
+                border: '1px solid var(--border-color)',
+                borderRadius: '4px',
+                background: 'var(--bg-secondary)',
+                color: 'var(--text-primary)',
+                fontSize: '0.8rem',
+                cursor: 'pointer',
+                marginLeft: '0.5rem',
+              }}
+            >
+              <span style={{ color: liquidadoFilter === 'true' ? 'var(--color-success-text)' : liquidadoFilter === 'false' ? 'var(--color-danger-text)' : 'var(--text-muted)' }}>
+                ●
+              </span>
+              Liquidado:
+              <span style={{ textTransform: 'capitalize' }}>{liquidadoFilter === 'all' ? 'Todos' : liquidadoFilter === 'true' ? 'Sí' : 'No'}</span>
+            </button>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', marginLeft: '0.5rem' }}>
               <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Desde</label>
               <Input type="date" value={fechaDesde} onChange={(e) => handleFechaDesdeChange(e.target.value)} style={{ width: '140px' }} />
