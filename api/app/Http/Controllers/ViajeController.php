@@ -61,12 +61,12 @@ class ViajeController extends Controller
             $query->where('estado', $request->get('estado'));
         }
 
-        if ($request->filled('facturado')) {
-            $query->where('facturado', $request->boolean('facturado'));
+        if ($request->filled('facturado') && $request->boolean('facturado')) {
+            $query->where('facturado', true);
         }
 
-        if ($request->filled('liquidado')) {
-            $query->where('liquidado', $request->boolean('liquidado'));
+        if ($request->filled('liquidado') && $request->boolean('liquidado')) {
+            $query->where('liquidado', true);
         }
 
         if ($request->filled('sort_by') && $request->filled('sort_dir')) {
