@@ -181,8 +181,7 @@ const Viajes = () => {
           <label style={{
             display: 'flex',
             alignItems: 'center',
-            justifyContent: 'space-between',
-            gap: '0.5rem',
+            gap: '0.25rem',
             cursor: disabled ? 'not-allowed' : 'pointer',
             opacity: disabled ? 0.5 : 1,
             width: '100%',
@@ -201,6 +200,7 @@ const Viajes = () => {
                 accentColor: 'var(--color-success)',
                 cursor: disabled ? 'not-allowed' : 'pointer',
                 flexShrink: 0,
+                opacity: disabled ? 1 : 1,
               }}
             />
           </label>
