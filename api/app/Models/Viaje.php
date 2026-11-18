@@ -94,19 +94,14 @@ class Viaje extends Model
         return (float) $costoProveedorBase - (float) $anticipos + (float) $terceroReintegro;
     }
 
-    public function getEstadoFacturacionAttribute(): string
-    {
-        return $this->attributes['estado_facturacion'] ?? 'pendiente';
-    }
-
     public function getFacturadoAttribute(): bool
     {
-        return $this->estado->value === 'terminado' && $this->attributes['facturado'] ?? false;
+        return (bool) $this->attributes['facturado'];
     }
 
     public function getLiquidadoAttribute(): bool
     {
-        return $this->estado->value === 'terminado' && $this->attributes['liquidado'] ?? false;
+        return (bool) $this->attributes['liquidado'];
     }
 
     public function getPuedeFacturarseAttribute(): bool
