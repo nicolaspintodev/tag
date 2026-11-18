@@ -192,15 +192,15 @@ const Viajes = () => {
             <input
               type="checkbox"
               checked={isChecked}
-              onChange={(event) => handleBooleanChange(selected.id, field.id, event.target.checked)}
-              disabled={disabled}
+              onChange={(event) => {
+                if (disabled) return;
+                handleBooleanChange(selected.id, field.id, event.target.checked);
+              }}
               style={{
                 width: '22px',
                 height: '22px',
                 accentColor: 'var(--color-success)',
-                cursor: disabled ? 'not-allowed' : 'pointer',
                 flexShrink: 0,
-                opacity: disabled ? 1 : 1,
               }}
             />
           </label>
@@ -282,7 +282,6 @@ const Viajes = () => {
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
               {bottomFields.map((field) => (
                 <div key={field.id} className="modal-detail-row">
-                  <label className="modal-detail-label">{field.label}</label>
                   {renderInput(field)}
                 </div>
               ))}
