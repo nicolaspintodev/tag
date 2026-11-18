@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Validation\ValidationException;
 
 class Viaje extends Model
 {
@@ -20,6 +21,17 @@ class Viaje extends Model
             if (is_null($viaje->nro_viaje)) {
                 $viaje->nro_viaje = (self::max('nro_viaje') ?? 0) + 1;
             }
+        });
+
+        static::saving(function (Viaje $viaje) {
+            // Auto-set terminado cuando se marcan facturado/liquidado
+            if (($viaje->isDirty('facturado') && $viaje->facturado) ||
+                ($viaje->isDirty('liquidado') && $viaje->liquidado)) {
+                $viaje->estado = EstadoViaje::TERMINADO;
+            }
+
+            // Validar reglas de negocio
+            $viaje->validateBusinessRules();
         });
     }
 
@@ -39,7 +51,12 @@ class Viaje extends Model
         'chofer_id',
         'cliente_id',
         'proveedor_id',
+        'tractora_id',
+        'acoplado_id',
         'estado',
+        'facturado',
+        'liquidado',
+        'estado_facturacion',
         'origen',
         'destino',
         'fecha_salida',
@@ -62,6 +79,9 @@ class Viaje extends Model
     {
         return [
             'estado' => EstadoViaje::class,
+            'facturado' => 'boolean',
+            'liquidado' => 'boolean',
+            'estado_facturacion' => 'string',
             'fecha_salida' => 'date',
             'fecha_llegada' => 'date',
             'precio_pactado' => 'decimal:2',
@@ -84,6 +104,26 @@ class Viaje extends Model
         $costoProveedorBase = $this->costo_proveedor ?? 0;
 
         return (float) $costoProveedorBase - (float) $anticipos + (float) $terceroReintegro;
+    }
+
+    public function getFacturadoAttribute(): bool
+    {
+        return (bool) ($this->attributes['facturado'] ?? false);
+    }
+
+    public function getLiquidadoAttribute(): bool
+    {
+        return (bool) ($this->attributes['liquidado'] ?? false);
+    }
+
+    public function getPuedeFacturarseAttribute(): bool
+    {
+        return $this->estado->value === 'terminado' && !$this->attributes['facturado'];
+    }
+
+    public function getPuedeLiquidarseAttribute(): bool
+    {
+        return $this->estado->value === 'terminado' && !$this->attributes['liquidado'];
     }
 
     // ---------- Relaciones ----------
@@ -112,6 +152,16 @@ class Viaje extends Model
     public function proveedor(): BelongsTo
     {
         return $this->belongsTo(Proveedor::class);
+    }
+
+    public function tractora(): BelongsTo
+    {
+        return $this->belongsTo(Unidad::class, 'tractora_id');
+    }
+
+    public function acoplado(): BelongsTo
+    {
+        return $this->belongsTo(Unidad::class, 'acoplado_id');
     }
 
     public function carga(): HasOne
@@ -167,5 +217,70 @@ class Viaje extends Model
     public function modificador(): BelongsTo
     {
         return $this->belongsTo(User::class, 'updated_by');
+    }
+
+    public function validateBusinessRules(): void
+    {
+        $errors = [];
+
+        // Regla: iniciado requiere chofer Y tractora
+        if ($this->estado === EstadoViaje::INICIADO) {
+            if (empty($this->chofer_id)) {
+                $errors['chofer_id'] = 'Un viaje Iniciado debe tener un chofer asignado.';
+            }
+            if (empty($this->tractora_id)) {
+                $errors['tractora_id'] = 'Un viaje Iniciado debe tener una tractora asignada.';
+            }
+
+            // Exclusividad de recursos solo en iniciado
+            $this->validateResourceExclusivity($errors);
+        }
+
+        // Regla: no acoplado sin tractora
+        if ($this->acoplado_id && empty($this->tractora_id)) {
+            $errors['acoplado_id'] = 'No se puede asignar acoplado sin tractora.';
+        }
+
+        // Regla: facturado/liquidado solo en terminado
+        if (($this->facturado || $this->liquidado) && $this->estado !== EstadoViaje::TERMINADO) {
+            $errors['estado'] = 'Solo los viajes Terminados pueden ser facturados/liquidados.';
+        }
+
+        if (!empty($errors)) {
+            throw ValidationException::withMessages($errors);
+        }
+    }
+
+    protected function validateResourceExclusivity(array &$errors): void
+    {
+        if ($this->chofer_id) {
+            $existing = self::where('chofer_id', $this->chofer_id)
+                ->where('estado', EstadoViaje::INICIADO)
+                ->where('id', '!=', $this->id ?? 0)
+                ->exists();
+            if ($existing) {
+                $errors['chofer_id'] = 'El chofer ya tiene un viaje Iniciado.';
+            }
+        }
+
+        if ($this->tractora_id) {
+            $existing = self::where('tractora_id', $this->tractora_id)
+                ->where('estado', EstadoViaje::INICIADO)
+                ->where('id', '!=', $this->id ?? 0)
+                ->exists();
+            if ($existing) {
+                $errors['tractora_id'] = 'La tractora ya está en un viaje Iniciado.';
+            }
+        }
+
+        if ($this->acoplado_id) {
+            $existing = self::where('acoplado_id', $this->acoplado_id)
+                ->where('estado', EstadoViaje::INICIADO)
+                ->where('id', '!=', $this->id ?? 0)
+                ->exists();
+            if ($existing) {
+                $errors['acoplado_id'] = 'El acoplado ya está en un viaje Iniciado.';
+            }
+        }
     }
 }

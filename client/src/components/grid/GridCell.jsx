@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import Input from '../ui/Input';
 import Select from '../ui/Select';
+import { runValidators } from '../../lib/validations';
 
 const PRINTABLE_KEY_REGEX = /^[^ -~]$/;
 
@@ -63,7 +64,11 @@ const GridCell = ({ column, value, draft, row, isActive, isEditing, onSelect, on
     onToggle?.(!toBoolean(value));
   };
 
-  const validationError = column.validate ? column.validate(value, row) : null;
+  const validationError = column.validate
+    ? (Array.isArray(column.validate)
+        ? runValidators(column.validate, value, row)
+        : column.validate(value, row))
+    : null;
   const hasServerError = serverError || rowError;
   // No agregar cell-error/cell-warning aquí; el padre (tr) maneja el color de toda la fila
   const hasServerErrorClass = hasServerError ? 'has-server-error' : '';

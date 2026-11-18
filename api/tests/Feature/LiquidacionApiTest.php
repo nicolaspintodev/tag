@@ -64,7 +64,7 @@ class LiquidacionApiTest extends TestCase
             'fecha_salida' => '2026-07-15',
             'precio_pactado' => 780000,
             'costo_proveedor' => 230000,
-            'estado' => 'finalizado',
+            'estado' => 'terminado',
         ], $overrides));
     }
 
