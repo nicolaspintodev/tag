@@ -1,4 +1,4 @@
-import { Search, ChevronDown, ChevronUp } from 'lucide-react';
+import { Search } from 'lucide-react';
 import Input from '../ui/Input';
 import Select from '../ui/Select';
 import Button from '../ui/Button';
@@ -9,34 +9,18 @@ const TIPO_OPTIONS = [
   { value: 'chofer', label: 'Chofer (próximamente)', disabled: true },
 ];
 
-const SORT_COLUMNS = [
-  { value: '', label: 'Sin orden' },
-  { value: 'codigo_viaje', label: 'Código' },
-  { value: 'fecha_salida', label: 'Fecha' },
-  { value: 'origen_destino', label: 'Origen → Destino' },
-  { value: 'peso_carga', label: 'Peso (kg)' },
-  { value: 'precio_pactado', label: 'Precio' },
-];
-
-const SORT_DIRECTIONS = [
-  { value: 'desc', label: 'Descendente' },
-  { value: 'asc', label: 'Ascendente' },
-];
-
 export default function LiquidacionToolbar({
   tipo,
   cliente,
   proveedor,
   fecha_emision,
   filters,
-  sort,
   onTipoChange,
   onEntityPick,
   onEntityClear,
   onFechaChange,
   onSearchChange,
   onFilterDateChange,
-  onSortChange,
 }) {
   const currentEntity = tipo === 'cliente' ? cliente : proveedor;
   const entityLabel = tipo === 'cliente' ? 'cliente' : 'proveedor';
@@ -119,25 +103,6 @@ export default function LiquidacionToolbar({
             onChange={(e) => onFilterDateChange({ fecha_hasta: e.target.value })}
             className="date-filter-input"
           />
-        </div>
-
-        <div className="liquidacion-toolbar-group sort-group">
-          <label className="toolbar-label">Ordenar</label>
-          <div className="sort-controls">
-            <Select
-              value={sort.column || ''}
-              options={SORT_COLUMNS}
-              onChange={(e) => onSortChange({ column: e.target.value || null, direction: sort.direction })}
-              className="sort-column-select"
-            />
-            <Select
-              value={sort.direction}
-              options={SORT_DIRECTIONS}
-              onChange={(e) => onSortChange({ column: sort.column, direction: e.target.value })}
-              className="sort-direction-select"
-              disabled={!sort.column}
-            />
-          </div>
         </div>
       </div>
     </div>

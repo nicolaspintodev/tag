@@ -34,7 +34,6 @@ export default function LiquidacionWizard() {
   const [saveState] = useState({});
   const [lastAction, setLastAction] = useState(null);
   const [filters, setFilters] = useState({ fecha_desde: '', fecha_hasta: '', search: '' });
-  const [sort, setSort] = useState({ column: 'precio_pactado', direction: 'desc' });
   const [selectedIds, setSelectedIds] = useState([]);
   const [modalOpen, setModalOpen] = useState(false);
 
@@ -57,11 +56,10 @@ export default function LiquidacionWizard() {
     const draft = {
       ...data,
       filters,
-      sort,
       selectedIds,
     };
     localStorage.setItem(STORAGE_KEY, JSON.stringify(draft));
-  }, [data, filters, sort, selectedIds]);
+  }, [data, filters, selectedIds]);
 
   const clearDraft = useCallback(() => {
     localStorage.removeItem(STORAGE_KEY);
@@ -164,10 +162,6 @@ export default function LiquidacionWizard() {
     setFilters(prev => ({ ...prev, ...newFilters }));
   }, []);
 
-  const handleSortChange = useCallback((newSort) => {
-    setSort(prev => ({ ...prev, ...newSort }));
-  }, []);
-
   const handleSelectionChange = useCallback((newSelectedIds) => {
     setSelectedIds(newSelectedIds);
     setData(prev => ({ ...prev, viaje_ids: newSelectedIds }));
@@ -239,23 +233,8 @@ export default function LiquidacionWizard() {
         (v.proveedor?.razon_social?.toLowerCase().includes(search))
       );
     }
-    if (sort.column) {
-      result = [...result].sort((a, b) => {
-        let aVal = a[sort.column];
-        let bVal = b[sort.column];
-        if (sort.column === 'origen_destino') {
-          aVal = `${a.origen || ''} → ${a.destino || ''}`;
-          bVal = `${b.origen || ''} → ${b.destino || ''}`;
-        }
-        if (aVal == null && bVal == null) return 0;
-        if (aVal == null) return 1;
-        if (bVal == null) return -1;
-        const cmp = aVal > bVal ? 1 : -1;
-        return sort.direction === 'asc' ? cmp : -cmp;
-      });
-    }
     return result;
-  }, [data.viajesData, filters.search, sort.column, sort.direction]);
+  }, [data.viajesData, filters.search]);
 
   const { subtotal } = computeTotals(rows.filter(v => selectedIds.includes(v.id)));
 
@@ -288,14 +267,12 @@ export default function LiquidacionWizard() {
             proveedor={data.proveedor}
             fecha_emision={data.fecha_emision}
             filters={filters}
-            sort={sort}
             onTipoChange={handleTipoChange}
             onEntityPick={handleEntityPick}
             onEntityClear={handleEntityClear}
             onFechaChange={handleFechaChange}
             onSearchChange={handleSearchChange}
             onFilterDateChange={handleFilterDateChange}
-            onSortChange={handleSortChange}
           />
 
           <div className="wizard-content" style={{
