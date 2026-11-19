@@ -15,8 +15,13 @@ export default function WizardStep1({ data, updateData }) {
       try {
         const [c, p] = await Promise.all([clientesResource.list(), proveedoresResource.list()]);
         if (!cancelled) {
-          setClientes(Array.isArray(c) ? c : []);
-          setProveedores(Array.isArray(p) ? p : []);
+          // Handle paginated response or direct array
+          const clientesData = Array.isArray(c) ? c : (c?.data ? c.data : []);
+          const proveedoresData = Array.isArray(p) ? p : (p?.data ? p.data : []);
+          console.log('Clientes loaded:', clientesData);
+          console.log('Proveedores loaded:', proveedoresData);
+          setClientes(clientesData);
+          setProveedores(proveedoresData);
         }
       } catch (err) {
         console.error('Failed to load clientes/proveedores:', err);
@@ -43,7 +48,14 @@ export default function WizardStep1({ data, updateData }) {
 
   const isClienteSelected = data.tipo === 'cliente';
   const isProveedorSelected = data.tipo === 'proveedor';
-  const hasSelection = data.cliente_id || data.proveedor_id;
+  
+  // Show error only when:
+  // 1. No tipo selected at all
+  // 2. Tipo is cliente but no cliente_id selected
+  // 3. Tipo is proveedor but no proveedor_id selected
+  const showError = !data.tipo || 
+    (data.tipo === 'cliente' && !data.cliente_id) || 
+    (data.tipo === 'proveedor' && !data.proveedor_id);
 
   if (loading) {
     return (
@@ -71,7 +83,6 @@ export default function WizardStep1({ data, updateData }) {
 
   return (
     <div className="wizard-step">
-      <h2 className="wizard-step-title">1. Tipo y Destinatario</h2>
       <p className="wizard-step-subtitle">Tipo de liquidación</p>
 
       <div className="tipo-cards">
@@ -150,9 +161,13 @@ export default function WizardStep1({ data, updateData }) {
         </div>
       )}
 
-      {!hasSelection && (
+      {showError && (
         <p style={{ color: 'var(--color-danger-text)', fontSize: '0.8125rem', marginTop: '0.5rem' }}>
-          Seleccioná un tipo y un destinatario para continuar.
+          {data.tipo === 'cliente' 
+            ? 'Seleccioná un cliente para continuar.'
+            : data.tipo === 'proveedor'
+              ? 'Seleccioná un proveedor para continuar.'
+              : 'Seleccioná un tipo de liquidación para continuar.'}
         </p>
       )}
     </div>

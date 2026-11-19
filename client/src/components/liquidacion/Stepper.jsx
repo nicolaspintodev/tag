@@ -6,9 +6,6 @@ const STEPS = [
 ];
 
 export default function Stepper({ activeStep }) {
-  const completedSteps = activeStep - 1;
-  const progressWidth = completedSteps > 0 ? `${(completedSteps / (STEPS.length - 1)) * 100}%` : '0%';
-
   const getStepStatus = (stepKey) => {
     if (stepKey < activeStep) return 'completed';
     if (stepKey === activeStep) return 'active';
@@ -17,7 +14,6 @@ export default function Stepper({ activeStep }) {
 
   return (
     <div className="wizard-stepper">
-      <div className="wizard-stepper-progress" style={{ width: progressWidth }} />
       {STEPS.map((step) => (
         <div key={step.key} className={`wizard-stepper-step ${getStepStatus(step.key)}`}>
           <div className="wizard-stepper-circle">

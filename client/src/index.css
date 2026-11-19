@@ -1209,29 +1209,7 @@ tr.row-saved-pulse td.col-acciones {
   display: flex;
   align-items: flex-start;
   padding: 1.5rem 2rem 2rem;
-  position: relative;
   background: var(--wizard-card-bg);
-}
-
-.wizard-stepper::before {
-  content: '';
-  position: absolute;
-  top: 34px;
-  left: 10.5%;
-  right: 10.5%;
-  height: 2px;
-  background: var(--stepper-line-inactive);
-  z-index: 0;
-}
-
-.wizard-stepper-progress {
-  position: absolute;
-  top: 34px;
-  left: 10.5%;
-  height: 2px;
-  background: var(--stepper-line-active);
-  z-index: 1;
-  transition: width 0.3s ease;
 }
 
 .wizard-stepper-step {
@@ -1335,7 +1313,7 @@ tr.row-saved-pulse td.col-acciones {
   text-align: center;
 }
 
-.tipo-card:hover {
+.tipo-card:not(.disabled):hover {
   border-color: var(--text-muted);
   box-shadow: var(--shadow-sm);
 }
