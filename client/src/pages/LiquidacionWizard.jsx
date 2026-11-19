@@ -33,7 +33,6 @@ export default function LiquidacionWizard() {
   const [error, setError] = useState(null);
   const [saveState] = useState({});
   const [lastAction, setLastAction] = useState(null);
-  const [filters, setFilters] = useState({ fecha_desde: '', fecha_hasta: '', search: '' });
   const [selectedIds, setSelectedIds] = useState([]);
   const [modalOpen, setModalOpen] = useState(false);
 
@@ -55,11 +54,10 @@ export default function LiquidacionWizard() {
   const saveDraft = useCallback(() => {
     const draft = {
       ...data,
-      filters,
       selectedIds,
     };
     localStorage.setItem(STORAGE_KEY, JSON.stringify(draft));
-  }, [data, filters, selectedIds]);
+  }, [data, selectedIds]);
 
   const clearDraft = useCallback(() => {
     localStorage.removeItem(STORAGE_KEY);
@@ -78,8 +76,6 @@ export default function LiquidacionWizard() {
       const params = {
         tipo,
         [tipo === 'cliente' ? 'cliente_id' : 'proveedor_id']: tipo === 'cliente' ? cliente_id : proveedor_id,
-        ...(filters.fecha_desde && { fecha_desde: filters.fecha_desde }),
-        ...(filters.fecha_hasta && { fecha_hasta: filters.fecha_hasta }),
       };
 
       const response = await viajesResource.disponiblesParaLiquidacion(params);
@@ -97,7 +93,7 @@ export default function LiquidacionWizard() {
     } finally {
       setLoading(false);
     }
-  }, [filters.fecha_desde, filters.fecha_hasta, selectedIds]);
+  }, [selectedIds]);
 
   useEffect(() => {
     fetchViajes();
@@ -152,14 +148,6 @@ export default function LiquidacionWizard() {
 
   const handleFechaChange = useCallback((value) => {
     setData(prev => ({ ...prev, fecha_emision: value }));
-  }, []);
-
-  const handleSearchChange = useCallback((value) => {
-    setFilters(prev => ({ ...prev, search: value }));
-  }, []);
-
-  const handleFilterDateChange = useCallback((newFilters) => {
-    setFilters(prev => ({ ...prev, ...newFilters }));
   }, []);
 
   const handleSelectionChange = useCallback((newSelectedIds) => {
@@ -221,27 +209,19 @@ export default function LiquidacionWizard() {
   const isEdicion = vista === 'edicion';
 
   const columns = useMemo(() => buildSelectionGridColumns(), []);
-  const rows = useMemo(() => {
-    let result = data.viajesData || [];
-    if (filters.search) {
-      const search = filters.search.toLowerCase();
-      result = result.filter(v =>
-        (v.codigo_viaje?.toLowerCase().includes(search)) ||
-        (v.origen?.toLowerCase().includes(search)) ||
-        (v.destino?.toLowerCase().includes(search)) ||
-        (v.cliente?.razon_social?.toLowerCase().includes(search)) ||
-        (v.proveedor?.razon_social?.toLowerCase().includes(search))
-      );
-    }
-    return result;
-  }, [data.viajesData, filters.search]);
+  const rows = useMemo(() => data.viajesData || [], [data.viajesData]);
 
   const { subtotal } = computeTotals(rows.filter(v => selectedIds.includes(v.id)));
 
   return (
     <div className="resource-page" style={{
-      padding: '0',
-      height: '100vh',
+      margin: '1rem',
+      height: 'calc(100vh - 2rem)',
+      width: 'calc(100% - 2rem)',
+      border: '1px solid var(--border-color)',
+      borderRadius: 'var(--radius-lg)',
+      boxShadow: 'var(--shadow-md)',
+      background: 'var(--bg-card)',
       display: 'flex',
       flexDirection: 'column',
       overflow: 'hidden'
@@ -250,10 +230,11 @@ export default function LiquidacionWizard() {
         padding: '1rem 1.5rem',
         borderBottom: '1px solid var(--border-color)',
         display: 'flex',
-        justifyContent: 'flex-end',
+        justifyContent: 'space-between',
         alignItems: 'center',
         flexShrink: 0
       }}>
+        <span className="wizard-header-title">Nueva Liquidación</span>
         <button className="wizard-close-btn" onClick={() => navigate('/liquidaciones')} title="Volver">
           <X size={20} />
         </button>
@@ -266,13 +247,10 @@ export default function LiquidacionWizard() {
             cliente={data.cliente}
             proveedor={data.proveedor}
             fecha_emision={data.fecha_emision}
-            filters={filters}
             onTipoChange={handleTipoChange}
             onEntityPick={handleEntityPick}
             onEntityClear={handleEntityClear}
             onFechaChange={handleFechaChange}
-            onSearchChange={handleSearchChange}
-            onFilterDateChange={handleFilterDateChange}
           />
 
           <div className="wizard-content" style={{

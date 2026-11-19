@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
-import { Loader2, Check, X } from 'lucide-react';
+import { Loader2, Check } from 'lucide-react';
 import Modal from '../ui/Modal';
-import Button from '../ui/Button';
 import { clientes as clientesResource, proveedores as proveedoresResource } from '../../api/resources';
 import { viajes as viajesResource } from '../../api/resources';
 
@@ -62,17 +61,9 @@ export default function EntityPickerModal({
     <Modal
       open={open}
       onClose={onClose}
-      title=""
-      size="lg"
-      className="modal-fullscreen"
+      title={`Seleccionar ${tipo === 'cliente' ? 'Cliente' : 'Proveedor'}`}
     >
       <div className="entity-picker-modal" style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-        <div className="entity-picker-header">
-          <span className="entity-picker-title">Nueva Liquidación</span>
-          <button type="button" className="entity-picker-close" onClick={onClose} aria-label="Cerrar">
-            <X size={20} />
-          </button>
-        </div>
         {loading ? (
           <div className="entity-picker-loading">
             <Loader2 size={24} className="spin" />

@@ -1,4 +1,3 @@
-import { Search } from 'lucide-react';
 import Input from '../ui/Input';
 import Select from '../ui/Select';
 import Button from '../ui/Button';
@@ -14,13 +13,10 @@ export default function LiquidacionToolbar({
   cliente,
   proveedor,
   fecha_emision,
-  filters,
   onTipoChange,
   onEntityPick,
   onEntityClear,
   onFechaChange,
-  onSearchChange,
-  onFilterDateChange,
 }) {
   const currentEntity = tipo === 'cliente' ? cliente : proveedor;
   const entityLabel = tipo === 'cliente' ? 'cliente' : 'proveedor';
@@ -29,7 +25,7 @@ export default function LiquidacionToolbar({
   return (
     <div className="liquidacion-toolbar">
       <div className="liquidacion-toolbar-line">
-        <div className="liquidacion-toolbar-group">
+        <div className="liquidacion-toolbar-group toolbar-left">
           <label className="toolbar-label">TIPO</label>
           <div className="select-wrapper">
             <Select
@@ -42,9 +38,7 @@ export default function LiquidacionToolbar({
               className="tipo-select"
             />
           </div>
-        </div>
 
-        <div className="liquidacion-toolbar-group">
           <Button variant="outline" onClick={onEntityPick} className="entity-pick-btn">
             {pickButtonLabel}
           </Button>
@@ -58,7 +52,7 @@ export default function LiquidacionToolbar({
           )}
         </div>
 
-        <div className="liquidacion-toolbar-group">
+        <div className="liquidacion-toolbar-group toolbar-right">
           <label className="toolbar-label">Fecha emisión</label>
           <Input
             type="date"
@@ -66,42 +60,6 @@ export default function LiquidacionToolbar({
             onChange={(e) => onFechaChange(e.target.value)}
             className="fecha-input"
             required
-          />
-        </div>
-      </div>
-
-      <div className="liquidacion-toolbar-line">
-        <div className="liquidacion-toolbar-group search-group">
-          <label className="toolbar-label visually-hidden">Buscar</label>
-          <div className="search-input-wrapper">
-            <Search size={16} className="search-icon" />
-            <Input
-              type="text"
-              placeholder="Buscar..."
-              value={filters.search || ''}
-              onChange={(e) => onSearchChange(e.target.value)}
-              className="search-input"
-            />
-          </div>
-        </div>
-
-        <div className="liquidacion-toolbar-group date-filter-group">
-          <label className="toolbar-label">Desde</label>
-          <Input
-            type="date"
-            value={filters.fecha_desde || ''}
-            onChange={(e) => onFilterDateChange({ fecha_desde: e.target.value })}
-            className="date-filter-input"
-          />
-        </div>
-
-        <div className="liquidacion-toolbar-group date-filter-group">
-          <label className="toolbar-label">Hasta</label>
-          <Input
-            type="date"
-            value={filters.fecha_hasta || ''}
-            onChange={(e) => onFilterDateChange({ fecha_hasta: e.target.value })}
-            className="date-filter-input"
           />
         </div>
       </div>
