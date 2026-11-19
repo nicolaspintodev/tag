@@ -187,7 +187,7 @@ class Viaje extends Model
     public function liquidaciones(): BelongsToMany
     {
         return $this->belongsToMany(Liquidacion::class, 'liquidacion_viaje', 'viaje_id', 'liquidacion_id')
-            ->withPivot('monto')
+            ->withPivot('monto', 'iva_monto')
             ->withTimestamps();
     }
 

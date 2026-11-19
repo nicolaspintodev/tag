@@ -239,4 +239,137 @@ class LiquidacionWizardTest extends TestCase
 
         $this->assertDatabaseHas('viajes', ['id' => $viaje->id, 'liquidado' => true]);
     }
+
+    /** @test */
+    public function test_disponibles_por_entidad_cliente(): void
+    {
+        $cliente1 = Cliente::create([
+            'razon_social' => 'Cliente Uno',
+            'cuit' => '30-55555555-5',
+        ]);
+        $cliente2 = Cliente::create([
+            'razon_social' => 'Cliente Dos',
+            'cuit' => '30-66666666-6',
+        ]);
+
+        // 3 disponibles para cliente1
+        for ($i = 0; $i < 3; $i++) {
+            Viaje::create([
+                'cliente_id' => $cliente1->id,
+                'estado' => 'terminado',
+                'liquidado' => false,
+                'precio_pactado' => 100000,
+                'origen' => 'CABA',
+                'destino' => 'Rosario',
+                'fecha_salida' => '2026-07-15',
+            ]);
+        }
+
+        // 1 en otra liquidación mismo tipo (debe excluirse)
+        $liq = Liquidacion::create(['tipo' => 'cliente', 'cliente_id' => $cliente1->id, 'estado' => 'borrador', 'fecha_emision' => now()->toDateString(), 'numero' => 'LIQ-C-0002']);
+        $vExcluido = Viaje::create(['cliente_id' => $cliente1->id, 'estado' => 'terminado', 'liquidado' => false, 'precio_pactado' => 75000, 'origen' => 'CABA', 'destino' => 'Rosario', 'fecha_salida' => '2026-07-15']);
+        $liq->viajes()->attach($vExcluido->id, ['monto' => 50000]);
+
+        // 1 liquidado (debe excluirse)
+        Viaje::create(['cliente_id' => $cliente1->id, 'estado' => 'terminado', 'liquidado' => true, 'precio_pactado' => 60000, 'origen' => 'CABA', 'destino' => 'Rosario', 'fecha_salida' => '2026-07-15']);
+
+        // 1 planificado (debe excluirse)
+        Viaje::create(['cliente_id' => $cliente1->id, 'estado' => 'planificado', 'liquidado' => false, 'precio_pactado' => 60000, 'origen' => 'CABA', 'destino' => 'Rosario', 'fecha_salida' => '2026-07-15']);
+
+        // 2 para cliente2 (no deben aparecer en respuesta de cliente1)
+        for ($i = 0; $i < 2; $i++) {
+            Viaje::create([
+                'cliente_id' => $cliente2->id,
+                'estado' => 'terminado',
+                'liquidado' => false,
+                'precio_pactado' => 100000,
+                'origen' => 'CABA',
+                'destino' => 'Rosario',
+                'fecha_salida' => '2026-07-15',
+            ]);
+        }
+
+        $response = $this->getJson('/api/viajes/disponibles-por-entidad?tipo=cliente&fecha_desde=2026-07-01&fecha_hasta=2026-07-31');
+
+        $response->assertOk()
+            ->assertJsonCount(2)
+            ->assertJsonFragment(['id' => $cliente1->id, 'cantidad' => 3])
+            ->assertJsonFragment(['id' => $cliente2->id, 'cantidad' => 2]);
+    }
+
+    /** @test */
+    public function test_disponibles_por_entidad_proveedor(): void
+    {
+        $prov1 = Proveedor::create([
+            'razon_social' => 'Proveedor Uno',
+            'cuit' => '30-77777777-7',
+        ]);
+        $prov2 = Proveedor::create([
+            'razon_social' => 'Proveedor Dos',
+            'cuit' => '30-88888888-8',
+        ]);
+
+        for ($i = 0; $i < 2; $i++) {
+            Viaje::create([
+                'proveedor_id' => $prov1->id,
+                'estado' => 'terminado',
+                'liquidado' => false,
+                'costo_proveedor' => 80000,
+                'origen' => 'CABA',
+                'destino' => 'Rosario',
+                'fecha_salida' => '2026-07-15',
+            ]);
+        }
+        for ($i = 0; $i < 5; $i++) {
+            Viaje::create([
+                'proveedor_id' => $prov2->id,
+                'estado' => 'terminado',
+                'liquidado' => false,
+                'costo_proveedor' => 80000,
+                'origen' => 'CABA',
+                'destino' => 'Rosario',
+                'fecha_salida' => '2026-07-15',
+            ]);
+        }
+
+        $response = $this->getJson('/api/viajes/disponibles-por-entidad?tipo=proveedor');
+
+        $response->assertOk()
+            ->assertJsonCount(2)
+            ->assertJsonFragment(['id' => $prov1->id, 'cantidad' => 2])
+            ->assertJsonFragment(['id' => $prov2->id, 'cantidad' => 5]);
+    }
+
+    /** @test */
+    public function test_disponibles_por_entidad_respeta_fechas(): void
+    {
+        $cliente = Cliente::create([
+            'razon_social' => 'Cliente Fechas',
+            'cuit' => '30-99999999-9',
+        ]);
+        Viaje::create([
+            'cliente_id' => $cliente->id,
+            'estado' => 'terminado',
+            'liquidado' => false,
+            'precio_pactado' => 100000,
+            'origen' => 'CABA',
+            'destino' => 'Rosario',
+            'fecha_salida' => '2026-01-15',
+        ]);
+        Viaje::create([
+            'cliente_id' => $cliente->id,
+            'estado' => 'terminado',
+            'liquidado' => false,
+            'precio_pactado' => 50000,
+            'origen' => 'CABA',
+            'destino' => 'Rosario',
+            'fecha_salida' => '2026-07-15',
+        ]);
+
+        $response = $this->getJson('/api/viajes/disponibles-por-entidad?tipo=cliente&fecha_desde=2026-07-01&fecha_hasta=2026-07-31');
+
+        $response->assertOk()
+            ->assertJsonCount(1)
+            ->assertJsonFragment(['id' => $cliente->id, 'cantidad' => 1]);
+    }
 }

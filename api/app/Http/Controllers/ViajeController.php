@@ -520,4 +520,43 @@ class ViajeController extends Controller
 
         return response()->json($viajes);
     }
+
+    public function disponiblesPorEntidad(Request $request)
+    {
+        $validated = $request->validate([
+            'tipo' => 'required|string|in:cliente,proveedor',
+            'fecha_desde' => 'nullable|date',
+            'fecha_hasta' => 'nullable|date',
+        ]);
+
+        $tipo = $validated['tipo'];
+        $column = $tipo === 'cliente' ? 'cliente_id' : 'proveedor_id';
+
+        $query = Viaje::query()
+            ->where('estado', 'terminado')
+            ->where('liquidado', false);
+
+        $subQuery = \DB::table('liquidacion_viaje')
+            ->join('liquidaciones', 'liquidaciones.id', '=', 'liquidacion_viaje.liquidacion_id')
+            ->where('liquidaciones.tipo', $tipo)
+            ->select('liquidacion_viaje.viaje_id');
+        $query->whereNotIn('viajes.id', $subQuery);
+
+        if ($request->filled('fecha_desde')) {
+            $query->whereDate('fecha_salida', '>=', $validated['fecha_desde']);
+        }
+        if ($request->filled('fecha_hasta')) {
+            $query->whereDate('fecha_salida', '<=', $validated['fecha_hasta']);
+        }
+
+        $counts = $query->selectRaw("{$column} as id, count(*) as cantidad")
+            ->whereNotNull($column)
+            ->groupBy($column)
+            ->orderBy('cantidad', 'desc')
+            ->get()
+            ->map(fn($r) => ['id' => (int)$r->id, 'cantidad' => (int)$r->cantidad])
+            ->values();
+
+        return response()->json($counts);
+    }
 }
