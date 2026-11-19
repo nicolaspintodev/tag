@@ -2,8 +2,6 @@ import { useEffect, useState, useCallback } from 'react';
 import { Building2, Truck } from 'lucide-react';
 import LiquidacionSelectionGrid from '../../components/grid/LiquidacionSelectionGrid';
 import { buildSelectionGridColumns } from '../../lib/columns/liquidacion';
-import Button from '../../components/ui/Button';
-import Select from '../../components/ui/Select';
 import Input from '../../components/ui/Input';
 
 export default function WizardStep3({ data, updateData }) {
@@ -80,41 +78,44 @@ export default function WizardStep3({ data, updateData }) {
 
   return (
     <div className="wizard-step">
-      <h3 style={{ marginBottom: '1rem', color: 'var(--text-primary)' }}>3. Seleccionar Viajes</h3>
+      <h2 className="wizard-step-title">3. Seleccionar Viajes</h2>
+      <p className="wizard-step-subtitle">Filtrá y seleccioná los viajes a incluir en la liquidación</p>
 
-      <div style={{ display: 'flex', gap: '1rem', marginBottom: '1rem', flexWrap: 'wrap', alignItems: 'end' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-muted)', fontSize: '0.85rem' }}>
-          <span>{data.tipo === 'cliente' ? <Building2 size={16} /> : <Truck size={16} />}</span>
-          <strong>{tipoLabel}:</strong>
-          {destinatario?.razon_social || '(seleccionar en paso anterior)'}
+      <div className="wizard-section">
+        <div style={{ display: 'flex', gap: '1rem', marginBottom: '1rem', flexWrap: 'wrap', alignItems: 'end' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-muted)', fontSize: '0.85rem' }}>
+            <span>{data.tipo === 'cliente' ? <Building2 size={16} /> : <Truck size={16} />}</span>
+            <strong>{tipoLabel}:</strong>
+            {destinatario?.razon_social || '(seleccionar en paso anterior)'}
+          </div>
+
+          <div className="wizard-field" style={{ marginBottom: 0, flex: 1, minWidth: '200px' }}>
+            <label className="wizard-field-label">Fecha Desde</label>
+            <Input type="date" value={filters.fecha_desde} onChange={(e) => handleFilterChange({ fecha_desde: e.target.value })} className="wizard-field-select" />
+          </div>
+          <div className="wizard-field" style={{ marginBottom: 0, flex: 1, minWidth: '200px' }}>
+            <label className="wizard-field-label">Fecha Hasta</label>
+            <Input type="date" value={filters.fecha_hasta} onChange={(e) => handleFilterChange({ fecha_hasta: e.target.value })} className="wizard-field-select" />
+          </div>
         </div>
 
-        <div>
-          <label style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'block', marginBottom: '0.2rem' }}>Fecha Desde</label>
-          <Input type="date" value={filters.fecha_desde} onChange={(e) => handleFilterChange({ fecha_desde: e.target.value })} style={{ width: '150px' }} />
-        </div>
-        <div>
-          <label style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'block', marginBottom: '0.2rem' }}>Fecha Hasta</label>
-          <Input type="date" value={filters.fecha_hasta} onChange={(e) => handleFilterChange({ fecha_hasta: e.target.value })} style={{ width: '150px' }} />
-        </div>
+        <LiquidacionSelectionGrid
+          columns={columns}
+          rows={rows}
+          rowKey="id"
+          selectedIds={selectedIds}
+          onSelectionChange={handleSelectionChange}
+          onFilterChange={handleFilterChange}
+          onSort={handleSort}
+          loading={loading}
+          filters={filters}
+          sortColumn={sort.column}
+          sortDirection={sort.direction}
+        />
       </div>
 
-      <LiquidacionSelectionGrid
-        columns={columns}
-        rows={rows}
-        rowKey="id"
-        selectedIds={selectedIds}
-        onSelectionChange={handleSelectionChange}
-        onFilterChange={handleFilterChange}
-        onSort={handleSort}
-        loading={loading}
-        filters={filters}
-        sortColumn={sort.column}
-        sortDirection={sort.direction}
-      />
-
       {selectedIds.length > 0 && (
-        <div style={{ marginTop: '1rem', padding: '1rem', background: 'var(--color-success-bg)', borderRadius: '6px', color: 'var(--color-success-text)' }}>
+        <div style={{ marginTop: '1rem', padding: '1rem', background: 'var(--color-success-bg)', borderRadius: 'var(--radius-md)', color: 'var(--color-success-text)' }}>
           <strong>{selectedIds.length} viajes seleccionados</strong> — Continúa al siguiente paso para revisar montos.
         </div>
       )}

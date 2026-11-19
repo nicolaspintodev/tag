@@ -3,7 +3,6 @@ import { Calculator, AlertTriangle } from 'lucide-react';
 import LiquidacionMontosGrid from '../../components/grid/LiquidacionMontosGrid';
 import { buildMontosGridColumns } from '../../lib/columns/liquidacion';
 import { formatCurrency, parseCurrency } from '../../lib/currency';
-import Button from '../../components/ui/Button';
 
 const IVA_DEFAULT = 0.21;
 
@@ -71,34 +70,49 @@ export default function WizardStep4({ data, updateData, onSubmit }) {
 
   return (
     <div className="wizard-step">
-      <h3 style={{ marginBottom: '1rem', color: 'var(--text-primary)' }}>4. Revisar Montos y Confirmar</h3>
+      <h2 className="wizard-step-title">4. Revisar Montos</h2>
+      <p className="wizard-step-subtitle">Verificá los importes y el IVA de cada viaje</p>
 
       {hasWarnings && (
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.75rem', background: 'var(--color-warning-bg)', color: 'var(--color-warning-text)', borderRadius: '6px', marginBottom: '1rem', fontSize: '0.85rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.75rem', background: 'var(--color-warning-bg)', color: 'var(--color-warning-text)', borderRadius: 'var(--radius-md)', marginBottom: '1rem', fontSize: '0.85rem' }}>
           <AlertTriangle size={16} /> Algunos montos tienen valores negativos. Revisá IVA y Monto Final.
         </div>
       )}
 
-      <LiquidacionMontosGrid
-        columns={buildMontosGridColumns()}
-        rows={rows}
-        rowKey="id"
-        onCellChange={handleCellChange}
-        readonly={false}
-        loading={false}
-      />
+      <div className="wizard-section">
+        <LiquidacionMontosGrid
+          columns={buildMontosGridColumns()}
+          rows={rows}
+          rowKey="id"
+          onCellChange={handleCellChange}
+          readonly={false}
+          loading={false}
+        />
+      </div>
 
-      <div style={{ marginTop: '1.5rem', padding: '1rem', background: 'var(--bg-tertiary)', borderRadius: '6px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <div>
-          <strong>Resumen:</strong> {rows.length} viajes • Subtotal: {formatCurrency(totals.subtotal)} • IVA: {formatCurrency(totals.ivaTotal)} • <strong style={{ color: 'var(--color-primary)' }}>Total: {formatCurrency(totals.total)}</strong>
-        </div>
-        <div style={{ display: 'flex', gap: '0.5rem' }}>
-          <Button variant="outline" onClick={() => onSubmit('borrador')} disabled={rows.length === 0}>
-            Guardar Borrador
-          </Button>
-          <Button onClick={() => onSubmit('pendiente')} disabled={rows.length === 0}>
-            Crear Liquidación
-          </Button>
+      <div className="wizard-section" style={{ background: 'var(--bg-hover)', borderRadius: 'var(--radius-md)', padding: '1rem' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
+          <div>
+            <strong>Resumen:</strong> {rows.length} viajes • Subtotal: {formatCurrency(totals.subtotal)} • IVA: {formatCurrency(totals.ivaTotal)} • <strong style={{ color: 'var(--color-primary)' }}>Total: {formatCurrency(totals.total)}</strong>
+          </div>
+          <div style={{ display: 'flex', gap: '0.5rem' }}>
+            <button
+              type="button"
+              className="wizard-btn wizard-btn-outline"
+              onClick={() => onSubmit('borrador')}
+              disabled={rows.length === 0}
+            >
+              Guardar Borrador
+            </button>
+            <button
+              type="button"
+              className="wizard-btn wizard-btn-primary"
+              onClick={() => onSubmit('pendiente')}
+              disabled={rows.length === 0}
+            >
+              Crear Liquidación
+            </button>
+          </div>
         </div>
       </div>
     </div>

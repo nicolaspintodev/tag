@@ -2,36 +2,39 @@ import Input from '../../components/ui/Input';
 
 export default function WizardStep2({ data, updateData }) {
   return (
-    <div className="wizard-step" style={{ maxWidth: '600px' }}>
-      <h3 style={{ marginBottom: '1.5rem', color: 'var(--text-primary)' }}>2. Datos de la Liquidación</h3>
+    <div className="wizard-step">
+      <h2 className="wizard-step-title">2. Datos Liquidación</h2>
+      <p className="wizard-step-subtitle">Fecha de emisión y observaciones</p>
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-        <div>
-          <label style={{ display: 'block', fontWeight: 500, marginBottom: '0.4rem' }}>Fecha de emisión *</label>
-          <Input
-            type="date"
-            value={data.fecha_emision}
-            onChange={(e) => updateData({ fecha_emision: e.target.value })}
-            required
-            style={{ width: '100%', maxWidth: '250px' }}
-          />
-        </div>
-
-        <div>
-          <label style={{ display: 'block', fontWeight: 500, marginBottom: '0.4rem' }}>Notas</label>
-          <Input
-            type="text"
-            value={data.notas || ''}
-            onChange={(e) => updateData({ notas: e.target.value })}
-            placeholder="Observaciones internas..."
-            style={{ width: '100%', maxWidth: '600px' }}
-          />
+      <div className="wizard-section">
+        <h3 className="wizard-section-title">Información principal</h3>
+        <div className="wizard-field-row">
+          <div className="wizard-field">
+            <label className="wizard-field-label">Fecha de emisión <span style={{ color: 'var(--color-danger-text)' }}>*</span></label>
+            <Input
+              type="date"
+              value={data.fecha_emision}
+              onChange={(e) => updateData({ fecha_emision: e.target.value })}
+              required
+              className="wizard-field-select"
+            />
+          </div>
+          <div className="wizard-field">
+            <label className="wizard-field-label">Notas</label>
+            <Input
+              type="text"
+              value={data.notas || ''}
+              onChange={(e) => updateData({ notas: e.target.value })}
+              placeholder="Observaciones internas..."
+              className="wizard-field-select"
+            />
+          </div>
         </div>
       </div>
 
-      <div style={{ marginTop: '1rem', color: 'var(--text-muted)', fontSize: '0.85rem' }}>
+      <p className="wizard-field-help">
         La fecha de emisión se usará como referencia para la liquidación.
-      </div>
+      </p>
     </div>
   );
 }

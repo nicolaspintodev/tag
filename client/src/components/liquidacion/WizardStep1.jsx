@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Building2, Truck } from 'lucide-react';
-import Select from '../../components/ui/Select';
+import { Building2, Truck, Check } from 'lucide-react';
 import { clientes as clientesResource, proveedores as proveedoresResource } from '../../api/resources';
 
 export default function WizardStep1({ data, updateData }) {
@@ -26,59 +25,95 @@ export default function WizardStep1({ data, updateData }) {
   const clienteOptions = [{ value: '', label: 'Seleccionar cliente...' }, ...clientes.map(c => ({ value: c.id, label: c.razon_social }))];
   const proveedorOptions = [{ value: '', label: 'Seleccionar proveedor...' }, ...proveedores.map(p => ({ value: p.id, label: p.razon_social }))];
 
+  const isClienteSelected = data.tipo === 'cliente';
+  const isProveedorSelected = data.tipo === 'proveedor';
+  const hasSelection = data.cliente_id || data.proveedor_id;
+
   return (
-    <div className="wizard-step" style={{ maxWidth: '600px' }}>
-      <h3 style={{ marginBottom: '1.5rem', color: 'var(--text-primary)' }}>1. Tipo y Destinatario</h3>
+    <div className="wizard-step">
+      <h2 className="wizard-step-title">1. Tipo y Destinatario</h2>
+      <p className="wizard-step-subtitle">Tipo de liquidación</p>
 
-      <fieldset style={{ border: 'none', marginBottom: '1.25rem' }}>
-        <legend style={{ fontWeight: 600, marginBottom: '0.75rem' }}>Tipo de liquidación</legend>
-        <div style={{ display: 'flex', gap: '1rem' }}>
-          <label style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem', padding: '1rem', border: '2px solid', borderRadius: '8px', cursor: 'pointer', flex: 1, borderColor: data.tipo === 'cliente' ? 'var(--color-primary)' : 'var(--border-color)', background: data.tipo === 'cliente' ? 'var(--color-primary-bg)' : 'transparent' }}>
-            <Building2 size={28} style={{ color: data.tipo === 'cliente' ? 'var(--color-primary)' : 'var(--text-muted)' }} />
-            <span style={{ fontWeight: 600 }}>Cliente</span>
-            <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Cobrar a cliente</span>
-            <input type="radio" name="tipo" value="cliente" checked={data.tipo === 'cliente'} onChange={() => handleTipoChange('cliente')} style={{ display: 'none' }} />
-          </label>
-          <label style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem', padding: '1rem', border: '2px solid', borderRadius: '8px', cursor: 'pointer', flex: 1, borderColor: data.tipo === 'proveedor' ? 'var(--color-primary)' : 'var(--border-color)', background: data.tipo === 'proveedor' ? 'var(--color-primary-bg)' : 'transparent' }}>
-            <Truck size={28} style={{ color: data.tipo === 'proveedor' ? 'var(--color-primary)' : 'var(--text-muted)' }} />
-            <span style={{ fontWeight: 600 }}>Proveedor</span>
-            <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Pagar a chofer/proveedor</span>
-            <input type="radio" name="tipo" value="proveedor" checked={data.tipo === 'proveedor'} onChange={() => handleTipoChange('proveedor')} style={{ display: 'none' }} />
-          </label>
-        </div>
-      </fieldset>
+      <div className="tipo-cards">
+        <label className={`tipo-card ${isClienteSelected ? 'selected' : ''}`}>
+          <input
+            type="radio"
+            name="tipo"
+            value="cliente"
+            checked={isClienteSelected}
+            onChange={() => handleTipoChange('cliente')}
+            style={{ display: 'none' }}
+          />
+          <div className="tipo-card-icon">
+            <Building2 size={28} style={{ color: isClienteSelected ? 'var(--text-invert)' : 'var(--text-muted)' }} />
+          </div>
+          <span className="tipo-card-title">Cliente</span>
+          <span className="tipo-card-subtitle">Cobrar a cliente</span>
+          <div className="tipo-card-check">
+            <Check size={12} />
+          </div>
+        </label>
+        <label className={`tipo-card ${isProveedorSelected ? 'selected' : ''}`}>
+          <input
+            type="radio"
+            name="tipo"
+            value="proveedor"
+            checked={isProveedorSelected}
+            onChange={() => handleTipoChange('proveedor')}
+            style={{ display: 'none' }}
+          />
+          <div className="tipo-card-icon">
+            <Truck size={28} style={{ color: isProveedorSelected ? 'var(--text-invert)' : 'var(--text-muted)' }} />
+          </div>
+          <span className="tipo-card-title">Proveedor</span>
+          <span className="tipo-card-subtitle">Pagar a chofer/proveedor</span>
+          <div className="tipo-card-check">
+            <Check size={12} />
+          </div>
+        </label>
+      </div>
 
-      {data.tipo === 'cliente' && (
-        <div style={{ marginTop: '0.75rem' }}>
-          <label style={{ display: 'block', fontWeight: 500, marginBottom: '0.4rem', fontSize: '0.9rem' }}>Cliente</label>
-          <Select
+      {isClienteSelected && (
+        <div className="wizard-field">
+          <label className="wizard-field-label">Cliente</label>
+          <select
+            className="wizard-field-select"
             value={data.cliente_id || ''}
             options={clienteOptions}
             onChange={(e) => updateData({ cliente_id: e.target.value || null })}
             placeholder="Seleccionar cliente..."
             required={true}
-            style={{ width: '100%', maxWidth: '400px' }}
+            disabled={clientes.length === 0}
           />
+          <span className="wizard-field-help">
+            Se filtrarán viajes terminados sin liquidar de este cliente.
+          </span>
         </div>
       )}
 
-      {data.tipo === 'proveedor' && (
-        <div style={{ marginTop: '0.75rem' }}>
-          <label style={{ display: 'block', fontWeight: 500, marginBottom: '0.4rem', fontSize: '0.9rem' }}>Proveedor</label>
-          <Select
+      {isProveedorSelected && (
+        <div className="wizard-field">
+          <label className="wizard-field-label">Proveedor</label>
+          <select
+            className="wizard-field-select"
             value={data.proveedor_id || ''}
             options={proveedorOptions}
             onChange={(e) => updateData({ proveedor_id: e.target.value || null })}
             placeholder="Seleccionar proveedor..."
             required={true}
-            style={{ width: '100%', maxWidth: '400px' }}
+            disabled={proveedores.length === 0}
           />
+          <span className="wizard-field-help">
+            Se filtrarán viajes terminados sin liquidar de este proveedor.
+          </span>
         </div>
       )}
 
-      <div style={{ marginTop: '1rem', color: 'var(--text-muted)', fontSize: '0.85rem' }}>
-        {data.tipo === 'cliente' ? 'Se filtrarán viajes terminados sin liquidar de este cliente.' : 'Se filtrarán viajes terminados sin liquidar de este proveedor.'}
-      </div>
+      {!hasSelection && (
+        <p style={{ color: 'var(--color-danger-text)', fontSize: '0.8125rem', marginTop: '0.5rem' }}>
+          Seleccioná un tipo y un destinatario para continuar.
+        </p>
+      )}
     </div>
   );
 }

@@ -1,17 +1,15 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ChevronLeft, ChevronRight, Save, FileText, X } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Save, FileText } from 'lucide-react';
 import Stepper from '../components/liquidacion/Stepper';
 import WizardStep1 from '../components/liquidacion/WizardStep1';
 import WizardStep2 from '../components/liquidacion/WizardStep2';
 import WizardStep3 from '../components/liquidacion/WizardStep3';
 import WizardStep4 from '../components/liquidacion/WizardStep4';
-import Button from '../components/ui/Button';
 import { liquidaciones as liquidacionesResource } from '../api/resources';
 import StateBar from '../components/ui/StateBar';
 
 const STORAGE_KEY = 'liquidacion_wizard_draft';
-const STEPS = ['tipo', 'header', 'seleccion', 'montos'];
 
 const initialState = {
   tipo: 'cliente',
@@ -107,58 +105,59 @@ export default function LiquidacionWizard() {
   const CurrentStep = StepComponents[step];
   const isLastStep = step === 3;
   const isFirstStep = step === 0;
+  const hasDestinatario = data.cliente_id || data.proveedor_id;
 
   return (
-    <div className="resource-page">
-      <div className="page-header">
-        <div className="toolbar">
-          <div className="toolbar-left">
-            <Button variant="ghost" onClick={() => navigate('/liquidaciones')}>
-              <X size={16} /> Volver
-            </Button>
+    <div className="wizard-container">
+      <div className="wizard-card">
+        <div className="wizard-header">
+          <strong className="wizard-header-title">TAG Logística</strong>
+          <div className="wizard-header-actions">
+            <button className="wizard-back-btn" onClick={() => navigate('/liquidaciones')}>
+              <ChevronLeft size={16} /> Volver
+            </button>
           </div>
         </div>
-      </div>
 
-      <Stepper activeStep={step + 1} />
+        <Stepper activeStep={step + 1} />
 
-      <div className="wizard-content" style={{ minHeight: '400px' }}>
-        <CurrentStep
-          data={data}
-          updateData={updateData}
-          error={error}
-          onSubmit={submit}
-        />
-      </div>
-
-      <div className="wizard-footer" style={{
-        position: 'sticky', bottom: 0, left: 0, right: 0,
-        padding: '1rem 1.5rem', background: 'var(--bg-secondary)',
-        borderTop: '1px solid var(--border-color)',
-        display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-        zIndex: 100, gap: '1rem'
-      }}>
-        <div>
-          {!isFirstStep && (
-            <Button variant="outline" onClick={prevStep} disabled={loading}>
-              <ChevronLeft size={16} /> Anterior
-            </Button>
-          )}
+        <div className="wizard-content">
+          <CurrentStep
+            data={data}
+            updateData={updateData}
+            error={error}
+            onSubmit={submit}
+          />
         </div>
-        <div style={{ display: 'flex', gap: '0.5rem', marginLeft: 'auto' }}>
-          {!isLastStep ? (
-            <Button onClick={nextStep} disabled={loading}>
-              Siguiente <ChevronRight size={16} />
-            </Button>
-          ) : (
-            <>
-              <Button variant="outline" onClick={handleSaveBorrador} disabled={loading || data.viaje_ids.length === 0}>
-                <Save size={16} /> Guardar Borrador
-              </Button>
-              <Button onClick={handleCrear} disabled={loading || data.viaje_ids.length === 0}>
-                <FileText size={16} /> Crear Liquidación
-              </Button>
-            </>
+
+        <div className="wizard-footer">
+          {!isFirstStep && (
+            <button
+              type="button"
+              className="wizard-btn wizard-btn-outline"
+              onClick={prevStep}
+              disabled={loading}
+            >
+              <ChevronLeft size={16} /> Anterior
+            </button>
+          )}
+          <button
+            type="button"
+            className={`wizard-btn ${isLastStep ? 'wizard-btn-outline' : 'wizard-btn-primary'}`}
+            onClick={isLastStep ? handleSaveBorrador : nextStep}
+            disabled={loading || (isLastStep && !hasDestinatario) || (!isLastStep && step === 0 && !hasDestinatario)}
+          >
+            {isLastStep ? 'Guardar Borrador' : 'Siguiente >'}
+          </button>
+          {isLastStep && (
+            <button
+              type="button"
+              className="wizard-btn wizard-btn-primary"
+              onClick={handleCrear}
+              disabled={loading || !hasDestinatario}
+            >
+              <FileText size={16} /> Crear Liquidación
+            </button>
           )}
         </div>
       </div>
