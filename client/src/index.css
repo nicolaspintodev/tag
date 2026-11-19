@@ -1120,3 +1120,10 @@ tr.row-saved-pulse td.col-estado,
 tr.row-saved-pulse td.col-acciones {
   animation: row-saved-pulse 250ms ease-out;
 }
+
+.resource-grid .row-selected { background: var(--color-primary-bg); }
+.resource-grid .checkbox-col { text-align: center; }
+.resource-grid .grid-cell.readonly { background: var(--bg-tertiary); color: var(--text-muted); }
+.grid-toolbar { background: var(--bg-secondary); }
+.sortable { cursor: pointer; user-select: none; }
+.sortable:hover { background: var(--bg-tertiary); }

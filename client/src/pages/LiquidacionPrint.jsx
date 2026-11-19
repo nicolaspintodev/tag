@@ -14,11 +14,6 @@ const currencyRender = (v) => {
   return new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', minimumFractionDigits: 0 }).format(v);
 };
 
-const tipoBadge = (tipo) => {
-  if (tipo === 'cliente') return <span style={{ background: 'var(--color-primary-bg)', color: 'var(--color-primary)', padding: '0.15rem 0.5rem', borderRadius: '9999px', fontSize: '0.7rem', fontWeight: 600 }}>Cliente</span>;
-  return <span style={{ background: 'var(--color-info-bg)', color: 'var(--color-info-text)', padding: '0.15rem 0.5rem', borderRadius: '9999px', fontSize: '0.7rem', fontWeight: 600 }}>Proveedor</span>;
-};
-
 export default function LiquidacionPrint() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -98,7 +93,7 @@ export default function LiquidacionPrint() {
             </tr>
           </thead>
           <tbody>
-            {viajes.map((v, i) => (
+            {viajes.map((v) => (
               <tr key={v.id} style={{ borderBottom: '1px solid #eee', pageBreakInside: 'avoid' }}>
                 <td style={{ padding: '0.3rem', borderRight: '1px solid #ddd', fontFamily: 'monospace' }}>{v.codigo_viaje}</td>
                 <td style={{ padding: '0.3rem', borderRight: '1px solid #ddd' }}>{dateRender(v.fecha_salida)}</td>
