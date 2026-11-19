@@ -68,7 +68,8 @@ export default function WizardStep3({ data, updateData }) {
   columns.forEach(col => {
     if (col.id === 'cliente_id') {
       col.filterable = true;
-      col.filterOptions = [{ value: '', label: 'Todos' }, ...new Set(rows.map(r => r.cliente?.razon_social).filter(Boolean)).map(v => ({ value: v, label: v }))];
+      const clienteNombres = [...new Set(rows.map(r => r.cliente?.razon_social).filter(Boolean))];
+      col.filterOptions = [{ value: '', label: 'Todos' }, ...clienteNombres.map(v => ({ value: v, label: v }))];
     }
     if (col.id === 'fecha_salida') col.filterable = false;
     if (col.id === 'precio_pactado') { col.sortable = true; }
