@@ -1543,6 +1543,10 @@ tr.row-saved-pulse td.col-acciones {
   margin-bottom: 0.5rem;
 }
 
+.liquidacion-toolbar-line:first-child {
+  gap: 0.5rem;
+}
+
 .liquidacion-toolbar-line:last-child {
   margin-bottom: 0;
 }
@@ -1552,7 +1556,7 @@ tr.row-saved-pulse td.col-acciones {
   align-items: center;
   gap: 0.5rem;
   flex: 1;
-  min-width: 180px;
+  min-width: 160px;
 }
 
 .toolbar-label {
