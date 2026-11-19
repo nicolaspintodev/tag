@@ -162,4 +162,81 @@ class LiquidacionWizardTest extends TestCase
             ->assertJsonCount(1)
             ->assertJsonPath('0.id', $viajeEnRango->id);
     }
+
+    /** @test */
+    public function test_store_liquidacion_con_iva_monto(): void
+    {
+        $cliente = Cliente::create([
+            'razon_social' => 'Cliente Test 2',
+            'cuit' => '30-33333333-3',
+        ]);
+        $viaje1 = Viaje::create([
+            'cliente_id' => $cliente->id,
+            'estado' => 'terminado',
+            'liquidado' => false,
+            'precio_pactado' => 100000,
+            'origen' => 'CABA',
+            'destino' => 'Rosario',
+            'fecha_salida' => '2026-07-15',
+        ]);
+        $viaje2 = Viaje::create([
+            'cliente_id' => $cliente->id,
+            'estado' => 'terminado',
+            'liquidado' => false,
+            'precio_pactado' => 200000,
+            'origen' => 'CABA',
+            'destino' => 'Rosario',
+            'fecha_salida' => '2026-07-15',
+        ]);
+
+        $response = $this->postJson('/api/liquidaciones', [
+            'tipo' => 'cliente',
+            'cliente_id' => $cliente->id,
+            'fecha_emision' => now()->toDateString(),
+            'estado' => 'borrador',
+            'viajes' => [
+                ['viaje_id' => $viaje1->id, 'monto' => 100000, 'iva_monto' => 21000],
+                ['viaje_id' => $viaje2->id, 'monto' => 200000, 'iva_monto' => 42000],
+            ],
+        ]);
+
+        $response->assertCreated()
+            ->assertJsonPath('estado', 'borrador')
+            ->assertJsonPath('total', '300000.00');
+
+        $this->assertDatabaseHas('liquidacion_viaje', [
+            'liquidacion_id' => $response->json('id'),
+            'viaje_id' => $viaje1->id,
+            'monto' => 100000,
+            'iva_monto' => 21000,
+        ]);
+    }
+
+    /** @test */
+    public function test_store_liquidacion_pendiente_marca_viajes_liquidados(): void
+    {
+        $cliente = Cliente::create([
+            'razon_social' => 'Cliente Test 3',
+            'cuit' => '30-44444444-4',
+        ]);
+        $viaje = Viaje::create([
+            'cliente_id' => $cliente->id,
+            'estado' => 'terminado',
+            'liquidado' => false,
+            'precio_pactado' => 100000,
+            'origen' => 'CABA',
+            'destino' => 'Rosario',
+            'fecha_salida' => '2026-07-15',
+        ]);
+
+        $this->postJson('/api/liquidaciones', [
+            'tipo' => 'cliente',
+            'cliente_id' => $cliente->id,
+            'fecha_emision' => now()->toDateString(),
+            'estado' => 'pendiente',
+            'viajes' => [['viaje_id' => $viaje->id, 'monto' => 100000, 'iva_monto' => 21000]],
+        ]);
+
+        $this->assertDatabaseHas('viajes', ['id' => $viaje->id, 'liquidado' => true]);
+    }
 }

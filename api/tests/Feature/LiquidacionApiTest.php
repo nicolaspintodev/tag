@@ -236,13 +236,13 @@ class LiquidacionApiTest extends TestCase
 
     public function test_store_con_viajes(): void
     {
-        $viaje = $this->crearViaje(['cliente_id' => $this->cliente->id]);
+        $viaje = $this->crearViaje(['cliente_id' => $this->cliente->id, 'estado' => 'terminado', 'liquidado' => false]);
 
         $response = $this->postJson('/api/liquidaciones', [
             'tipo' => 'cliente',
             'cliente_id' => $this->cliente->id,
             'fecha_emision' => '2026-07-15',
-            'viaje_ids' => [$viaje->id],
+            'viajes' => [['viaje_id' => $viaje->id, 'monto' => 100000, 'iva_monto' => 21000]],
         ]);
 
         $response->assertCreated();

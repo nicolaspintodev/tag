@@ -46,8 +46,11 @@ class LiquidacionController extends Controller
             'proveedor_id' => 'nullable|exists:proveedores,id',
             'fecha_emision' => 'required|date',
             'notas' => 'nullable|string',
-            'viaje_ids' => 'nullable|array',
-            'viaje_ids.*' => 'exists:viajes,id',
+            'estado' => 'nullable|string|in:borrador,pendiente',
+            'viajes' => 'nullable|array',
+            'viajes.*.viaje_id' => 'required|exists:viajes,id',
+            'viajes.*.monto' => 'nullable|numeric|min:0',
+            'viajes.*.iva_monto' => 'nullable|numeric|min:0',
         ]);
 
         if ($validated['tipo'] === 'cliente' && empty($validated['cliente_id'])) {
@@ -57,22 +60,33 @@ class LiquidacionController extends Controller
             return response()->json(['message' => 'proveedor_id es requerido para liquidaciones de proveedor'], 422);
         }
 
-        $viajeIds = $validated['viaje_ids'] ?? [];
-        unset($validated['viaje_ids']);
+        $viajesData = $validated['viajes'] ?? [];
+        unset($validated['viajes']);
 
         $validated['numero'] = $this->generateNumero($validated['tipo']);
         $validated['total'] = 0;
-        $validated['estado'] = 'borrador';
+        $validated['estado'] = $validated['estado'] ?? 'borrador';
 
         $liquidacion = Liquidacion::create($validated);
 
-        if (! empty($viajeIds)) {
-            $viajes = Viaje::whereIn('id', $viajeIds)->get();
-            foreach ($viajes as $v) {
-                $monto = $validated['tipo'] === 'proveedor' ? ($v->costo_proveedor_ajustado ?? $v->costo_viaje ?? 0) : $v->precio_pactado;
-                $liquidacion->viajes()->attach($v->id, ['monto' => $monto]);
+        if (! empty($viajesData)) {
+            $itemsToAttach = [];
+            foreach ($viajesData as $item) {
+                $viaje = Viaje::findOrFail($item['viaje_id']);
+                $monto = $item['monto'] ?? ($liquidacion->tipo === 'proveedor'
+                    ? ($viaje->costo_proveedor_ajustado ?? $viaje->costo_viaje ?? 0)
+                    : $viaje->precio_pactado);
+                $ivaMonto = $item['iva_monto'] ?? 0;
+
+                $itemsToAttach[$viaje->id] = ['monto' => $monto, 'iva_monto' => $ivaMonto];
             }
+            $liquidacion->viajes()->attach($itemsToAttach);
             $this->recalcularTotal($liquidacion);
+        }
+
+        // Si estado es pendiente, marcar viajes como liquidados
+        if ($liquidacion->estado === 'pendiente') {
+            $liquidacion->viajes()->update(['liquidado' => true]);
         }
 
         return response()->json($liquidacion->load(['cliente', 'proveedor', 'viajes']), 201);
@@ -181,6 +195,7 @@ class LiquidacionController extends Controller
             'viajes' => 'required|array',
             'viajes.*.viaje_id' => 'required|exists:viajes,id',
             'viajes.*.monto' => 'nullable|numeric|min:0',
+            'viajes.*.iva_monto' => 'nullable|numeric|min:0',
         ]);
 
         foreach ($validated['viajes'] as $item) {
@@ -188,8 +203,9 @@ class LiquidacionController extends Controller
             $monto = $item['monto'] ?? ($liquidacion->tipo === 'proveedor'
                 ? ($viaje->costo_proveedor_ajustado ?? $viaje->costo_viaje ?? 0)
                 : $viaje->precio_pactado);
+            $ivaMonto = $item['iva_monto'] ?? 0;
 
-            $liquidacion->viajes()->attach($item['viaje_id'], ['monto' => $monto]);
+            $liquidacion->viajes()->attach($item['viaje_id'], ['monto' => $monto, 'iva_monto' => $ivaMonto]);
         }
 
         $this->recalcularTotal($liquidacion);
