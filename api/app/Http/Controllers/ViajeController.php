@@ -3,8 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Models\Carga;
+use App\Models\Liquidacion;
 use App\Models\Viaje;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class ViajeController extends Controller
 {
@@ -468,5 +470,54 @@ class ViajeController extends Controller
         $viaje->update(['estado' => $validated['estado']]);
 
         return response()->json($viaje->fresh(['cliente', 'proveedor', 'unidades', 'chofer']));
+    }
+
+    public function disponiblesParaLiquidacion(Request $request)
+    {
+        $validated = $request->validate([
+            'tipo' => 'required|string|in:cliente,proveedor',
+            'cliente_id' => 'required_if:tipo,cliente|exists:clientes,id',
+            'proveedor_id' => 'required_if:tipo,proveedor|exists:proveedores,id',
+            'fecha_desde' => 'nullable|date',
+            'fecha_hasta' => 'nullable|date',
+            'ordenar_precio' => 'nullable|string|in:asc,desc',
+        ]);
+
+        $tipo = $validated['tipo'];
+        $targetId = $tipo === 'cliente' ? $validated['cliente_id'] : $validated['proveedor_id'];
+
+        $query = Viaje::query()
+            ->where('estado', 'terminado')
+            ->where('liquidado', false);
+
+        if ($tipo === 'cliente') {
+            $query->where('cliente_id', $targetId);
+        } else {
+            $query->where('proveedor_id', $targetId);
+        }
+
+        // Excluir viajes ya en otra liquidación del mismo tipo
+        $subQuery = DB::table('liquidacion_viaje')
+            ->join('liquidaciones', 'liquidaciones.id', '=', 'liquidacion_viaje.liquidacion_id')
+            ->where('liquidaciones.tipo', $tipo)
+            ->select('liquidacion_viaje.viaje_id');
+
+        $query->whereNotIn('viajes.id', $subQuery);
+
+        if ($request->filled('fecha_desde')) {
+            $query->whereDate('fecha_salida', '>=', $validated['fecha_desde']);
+        }
+        if ($request->filled('fecha_hasta')) {
+            $query->whereDate('fecha_salida', '<=', $validated['fecha_hasta']);
+        }
+
+        $orden = $validated['ordenar_precio'] ?? 'desc';
+        $precioColumn = $tipo === 'cliente' ? 'precio_pactado' : 'costo_proveedor';
+        $query->orderBy($precioColumn, $orden === 'asc' ? 'asc' : 'desc');
+
+        $viajes = $query->with(['cliente', 'proveedor', 'unidades', 'chofer', 'documento', 'gastos', 'anticipos'])
+            ->get();
+
+        return response()->json($viajes);
     }
 }

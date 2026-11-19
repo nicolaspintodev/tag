@@ -23,6 +23,10 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::post('/logout', [AuthController::class, 'logout']);
 
+    // Custom viaje routes (must be before apiResource to avoid {viaje} parameter matching)
+    Route::get('/viajes/disponibles-para-liquidacion', [ViajeController::class, 'disponiblesParaLiquidacion']);
+    Route::patch('/viajes/{viaje}/estado', [ViajeController::class, 'cambiarEstado']);
+
     // Resources with Restore capability
     $resources = [
         'viajes' => ViajeController::class,
@@ -40,7 +44,6 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::apiResource($name, $controller);
         Route::post("/{$name}/{id}/restore", [$controller, 'restore']);
     }
-    Route::patch('/viajes/{viaje}/estado', [ViajeController::class, 'cambiarEstado']);
 
     // Liquidaciones (with custom endpoints)
     Route::apiResource('liquidaciones', LiquidacionController::class);
