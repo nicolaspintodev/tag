@@ -1,13 +1,14 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ChevronLeft, ChevronRight, Save, FileText } from 'lucide-react';
-import Stepper from '../components/liquidacion/Stepper';
-import WizardStep1 from '../components/liquidacion/WizardStep1';
-import WizardStep2 from '../components/liquidacion/WizardStep2';
-import WizardStep3 from '../components/liquidacion/WizardStep3';
-import WizardStep4 from '../components/liquidacion/WizardStep4';
-import { liquidaciones as liquidacionesResource } from '../api/resources';
+import { ChevronLeft, Save, FileText } from 'lucide-react';
+import { liquidaciones as liquidacionesResource, viajes as viajesResource } from '../api/resources';
 import StateBar from '../components/ui/StateBar';
+import LiquidacionToolbar from '../components/liquidacion/LiquidacionToolbar';
+import EntityPickerModal from '../components/liquidacion/EntityPickerModal';
+import LiquidacionPreview from '../components/liquidacion/LiquidacionPreview';
+import LiquidacionSelectionGrid from '../components/grid/LiquidacionSelectionGrid';
+import { buildSelectionGridColumns } from '../lib/columns/liquidacion';
+import { deriveMontos, computeTotals } from '../lib/liquidacion';
 
 const STORAGE_KEY = 'liquidacion_wizard_draft';
 
@@ -15,6 +16,8 @@ const initialState = {
   tipo: 'cliente',
   cliente_id: null,
   proveedor_id: null,
+  cliente: null,
+  proveedor: null,
   fecha_emision: new Date().toISOString().slice(0, 10),
   notas: '',
   viaje_ids: [],
@@ -24,12 +27,19 @@ const initialState = {
 
 export default function LiquidacionWizard() {
   const navigate = useNavigate();
-  const [step, setStep] = useState(0);
+  const [vista, setVista] = useState('edicion');
   const [data, setData] = useState(initialState);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [saveState] = useState({});
   const [lastAction, setLastAction] = useState(null);
+  const [filters, setFilters] = useState({ fecha_desde: '', fecha_hasta: '', search: '' });
+  const [sort, setSort] = useState({ column: 'precio_pactado', direction: 'desc' });
+  const [selectedIds, setSelectedIds] = useState([]);
+  const [modalOpen, setModalOpen] = useState(false);
+
+  const dataRef = useRef(data);
+  dataRef.current = data;
 
   useEffect(() => {
     const saved = localStorage.getItem(STORAGE_KEY);
@@ -37,7 +47,6 @@ export default function LiquidacionWizard() {
       try {
         const parsed = JSON.parse(saved);
         setData(prev => ({ ...prev, ...parsed }));
-        if (parsed._step !== undefined) setStep(parsed._step);
       } catch (e) {
         console.warn('Failed to parse wizard draft', e);
       }
@@ -45,8 +54,14 @@ export default function LiquidacionWizard() {
   }, []);
 
   const saveDraft = useCallback(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify({ ...data, _step: step }));
-  }, [data, step]);
+    const draft = {
+      ...data,
+      filters,
+      sort,
+      selectedIds,
+    };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(draft));
+  }, [data, filters, sort, selectedIds]);
 
   const clearDraft = useCallback(() => {
     localStorage.removeItem(STORAGE_KEY);
@@ -54,19 +69,126 @@ export default function LiquidacionWizard() {
 
   useEffect(() => {
     saveDraft();
-  }, [data, step, saveDraft]);
+  }, [saveDraft]);
 
-  const nextStep = () => {
-    if (step < 3) setStep(step + 1);
-  };
+  const fetchViajes = useCallback(async () => {
+    const { tipo, cliente_id, proveedor_id } = dataRef.current;
+    if (!cliente_id && !proveedor_id) return;
 
-  const prevStep = () => {
-    if (step > 0) setStep(step - 1);
-  };
+    setLoading(true);
+    try {
+      const params = {
+        tipo,
+        [tipo === 'cliente' ? 'cliente_id' : 'proveedor_id']: tipo === 'cliente' ? cliente_id : proveedor_id,
+        ...(filters.fecha_desde && { fecha_desde: filters.fecha_desde }),
+        ...(filters.fecha_hasta && { fecha_hasta: filters.fecha_hasta }),
+      };
 
-  const updateData = (patch) => {
-    setData(prev => ({ ...prev, ...patch }));
-  };
+      const response = await viajesResource.disponiblesParaLiquidacion(params);
+      const viajesArray = Array.isArray(response) ? response : [];
+
+      setData(prev => ({ ...prev, viajesData: viajesArray }));
+
+      if (selectedIds.length > 0) {
+        const newMontos = deriveMontos(viajesArray.filter(v => selectedIds.includes(v.id)));
+        setData(prev => ({ ...prev, montos: { ...prev.montos, ...newMontos } }));
+      }
+    } catch (err) {
+      console.error('Error fetching viajes:', err);
+      setData(prev => ({ ...prev, viajesData: [] }));
+    } finally {
+      setLoading(false);
+    }
+  }, [filters.fecha_desde, filters.fecha_hasta, selectedIds]);
+
+  useEffect(() => {
+    fetchViajes();
+  }, [fetchViajes]);
+
+  const handleTipoChange = useCallback((newTipo) => {
+    setData(prev => ({
+      ...prev,
+      tipo: newTipo,
+      cliente_id: null,
+      proveedor_id: null,
+      cliente: null,
+      proveedor: null,
+      viaje_ids: [],
+      selectedIds: [],
+      montos: {},
+      viajesData: [],
+    }));
+    setSelectedIds([]);
+  }, []);
+
+  const handleEntityPick = useCallback(() => {
+    setModalOpen(true);
+  }, []);
+
+  const handleEntityClear = useCallback(() => {
+    setData(prev => ({
+      ...prev,
+      [prev.tipo === 'cliente' ? 'cliente_id' : 'proveedor_id']: null,
+      [prev.tipo === 'cliente' ? 'cliente' : 'proveedor']: null,
+      viaje_ids: [],
+      selectedIds: [],
+      montos: {},
+      viajesData: [],
+    }));
+    setSelectedIds([]);
+  }, []);
+
+  const handleEntitySelect = useCallback((entity) => {
+    setData(prev => ({
+      ...prev,
+      [prev.tipo === 'cliente' ? 'cliente_id' : 'proveedor_id']: entity.id,
+      [prev.tipo === 'cliente' ? 'cliente' : 'proveedor']: entity,
+      viaje_ids: [],
+      selectedIds: [],
+      montos: {},
+      viajesData: [],
+    }));
+    setSelectedIds([]);
+    setModalOpen(false);
+  }, []);
+
+  const handleFechaChange = useCallback((value) => {
+    setData(prev => ({ ...prev, fecha_emision: value }));
+  }, []);
+
+  const handleSearchChange = useCallback((value) => {
+    setFilters(prev => ({ ...prev, search: value }));
+  }, []);
+
+  const handleFilterDateChange = useCallback((newFilters) => {
+    setFilters(prev => ({ ...prev, ...newFilters }));
+  }, []);
+
+  const handleSortChange = useCallback((newSort) => {
+    setSort(prev => ({ ...prev, ...newSort }));
+  }, []);
+
+  const handleSelectionChange = useCallback((newSelectedIds) => {
+    setSelectedIds(newSelectedIds);
+    setData(prev => ({ ...prev, viaje_ids: newSelectedIds }));
+
+    if (newSelectedIds.length > 0) {
+      const newMontos = deriveMontos(data.viajesData.filter(v => newSelectedIds.includes(v.id)));
+      setData(prev => ({ ...prev, montos: { ...prev.montos, ...newMontos } }));
+    }
+  }, [data.viajesData]);
+
+  const goToPreview = useCallback(() => {
+    if (data.cliente_id || data.proveedor_id) {
+      if (selectedIds.length > 0) {
+        setVista('preview');
+      }
+    }
+  }, [data.cliente_id, data.proveedor_id, selectedIds.length]);
+
+  const goToEdicion = useCallback(() => {
+    setVista('edicion');
+  }, []);
 
   const submit = async (estado) => {
     setLoading(true);
@@ -89,7 +211,7 @@ export default function LiquidacionWizard() {
       const response = await liquidacionesResource.create(payload);
       clearDraft();
       setLastAction({ type: 'saved', message: `Liquidación ${response.numero} creada como ${estado}` });
-      navigate(`/liquidaciones/${response.id}`);
+      navigate('/liquidaciones');
     } catch (err) {
       setError(err.message || 'Error al crear liquidación');
       setLastAction({ type: 'error', message: err.message });
@@ -101,65 +223,173 @@ export default function LiquidacionWizard() {
   const handleSaveBorrador = () => submit('borrador');
   const handleCrear = () => submit('pendiente');
 
-  const StepComponents = [WizardStep1, WizardStep2, WizardStep3, WizardStep4];
-  const CurrentStep = StepComponents[step];
-  const isLastStep = step === 3;
-  const isFirstStep = step === 0;
   const hasDestinatario = data.cliente_id || data.proveedor_id;
+  const isEdicion = vista === 'edicion';
+
+  const columns = useMemo(() => buildSelectionGridColumns(), []);
+  const rows = useMemo(() => {
+    let result = data.viajesData || [];
+    if (filters.search) {
+      const search = filters.search.toLowerCase();
+      result = result.filter(v =>
+        (v.codigo_viaje?.toLowerCase().includes(search)) ||
+        (v.origen?.toLowerCase().includes(search)) ||
+        (v.destino?.toLowerCase().includes(search)) ||
+        (v.cliente?.razon_social?.toLowerCase().includes(search)) ||
+        (v.proveedor?.razon_social?.toLowerCase().includes(search))
+      );
+    }
+    if (sort.column) {
+      result = [...result].sort((a, b) => {
+        let aVal = a[sort.column];
+        let bVal = b[sort.column];
+        if (sort.column === 'origen_destino') {
+          aVal = `${a.origen || ''} → ${a.destino || ''}`;
+          bVal = `${b.origen || ''} → ${b.destino || ''}`;
+        }
+        if (aVal == null && bVal == null) return 0;
+        if (aVal == null) return 1;
+        if (bVal == null) return -1;
+        const cmp = aVal > bVal ? 1 : -1;
+        return sort.direction === 'asc' ? cmp : -cmp;
+      });
+    }
+    return result;
+  }, [data.viajesData, filters.search, sort.column, sort.direction]);
+
+  const { subtotal } = computeTotals(rows.filter(v => selectedIds.includes(v.id)));
 
   return (
-    <div className="wizard-container">
-      <div className="wizard-card">
-        <div className="wizard-header">
-          <button className="wizard-back-btn" onClick={() => navigate('/liquidaciones')}>
-            <ChevronLeft size={16} /> Volver
-          </button>
-        </div>
+    <div className="resource-page" style={{
+      padding: '0',
+      height: '100vh',
+      display: 'flex',
+      flexDirection: 'column',
+      overflow: 'hidden'
+    }}>
+      <div className="wizard-header" style={{
+        padding: '1rem 1.5rem',
+        borderBottom: '1px solid var(--border-color)',
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        flexShrink: 0
+      }}>
+        <button className="wizard-back-btn" onClick={() => navigate('/liquidaciones')}>
+          <ChevronLeft size={16} /> Volver
+        </button>
+      </div>
 
-        <Stepper activeStep={step + 1} />
-
-        <div className="wizard-content">
-          <CurrentStep
-            data={data}
-            updateData={updateData}
-            error={error}
-            onSubmit={submit}
+      {isEdicion ? (
+        <>
+          <LiquidacionToolbar
+            tipo={data.tipo}
+            cliente={data.cliente}
+            proveedor={data.proveedor}
+            fecha_emision={data.fecha_emision}
+            filters={filters}
+            sort={sort}
+            onTipoChange={handleTipoChange}
+            onEntityPick={handleEntityPick}
+            onEntityClear={handleEntityClear}
+            onFechaChange={handleFechaChange}
+            onSearchChange={handleSearchChange}
+            onFilterDateChange={handleFilterDateChange}
+            onSortChange={handleSortChange}
           />
-        </div>
 
-        <div className="wizard-footer">
-          {!isFirstStep && (
+          <div className="wizard-content" style={{
+            padding: '1.5rem',
+            flex: '1',
+            overflow: 'auto',
+            minHeight: 0
+          }}>
+            <LiquidacionSelectionGrid
+              columns={columns}
+              rows={rows}
+              rowKey="id"
+              selectedIds={selectedIds}
+              onSelectionChange={handleSelectionChange}
+              loading={loading}
+              hideToolbar={true}
+            />
+
+            {selectedIds.length > 0 && (
+              <div style={{ marginTop: '1rem', padding: '1rem', background: 'var(--color-success-bg)', borderRadius: 'var(--radius-md)', color: 'var(--color-success-text)' }}>
+                <strong>{selectedIds.length} viajes seleccionados</strong> — Subtotal: {new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', minimumFractionDigits: 0 }).format(subtotal)}
+              </div>
+            )}
+          </div>
+        </>
+      ) : (
+        <LiquidacionPreview
+          data={{
+            ...data,
+            updateData: (patch) => setData(prev => ({ ...prev, ...patch })),
+          }}
+          onEdit={goToEdicion}
+          onSubmit={submit}
+          loading={loading}
+          error={error}
+        />
+      )}
+
+      <div className="wizard-footer" style={{
+        padding: '1rem 1.5rem',
+        borderTop: '1px solid var(--border-color)',
+        display: 'flex',
+        justifyContent: 'flex-end',
+        gap: '0.5rem',
+        background: 'var(--bg-secondary)',
+        flexShrink: 0
+      }}>
+        {isEdicion ? (
+          <button
+            type="button"
+            className={`wizard-btn ${hasDestinatario && selectedIds.length > 0 ? 'wizard-btn-primary' : 'wizard-btn-outline'}`}
+            onClick={goToPreview}
+            disabled={loading || !hasDestinatario || selectedIds.length === 0}
+          >
+            {'Vista previa >'}
+          </button>
+        ) : (
+          <>
             <button
               type="button"
               className="wizard-btn wizard-btn-outline"
-              onClick={prevStep}
+              onClick={goToEdicion}
               disabled={loading}
             >
-              <ChevronLeft size={16} /> Anterior
+              <ChevronLeft size={16} /> Editar
             </button>
-          )}
-          <button
-            type="button"
-            className={`wizard-btn ${isLastStep ? 'wizard-btn-outline' : 'wizard-btn-primary'}`}
-            onClick={isLastStep ? handleSaveBorrador : nextStep}
-            disabled={loading || (isLastStep && !hasDestinatario) || (!isLastStep && step === 0 && !hasDestinatario)}
-          >
-            {isLastStep ? 'Guardar Borrador' : 'Siguiente >'}
-          </button>
-          {isLastStep && (
+            <button
+              type="button"
+              className="wizard-btn wizard-btn-outline"
+              onClick={handleSaveBorrador}
+              disabled={loading || selectedIds.length === 0}
+            >
+              <Save size={16} /> Guardar Borrador
+            </button>
             <button
               type="button"
               className="wizard-btn wizard-btn-primary"
               onClick={handleCrear}
-              disabled={loading || !hasDestinatario}
+              disabled={loading || selectedIds.length === 0}
             >
               <FileText size={16} /> Crear Liquidación
             </button>
-          )}
-        </div>
+          </>
+        )}
       </div>
 
       {lastAction && <StateBar key={Date.now()} count={1} singular="liquidación" plural="liquidaciones" saveState={saveState} errors={error ? { _global: error } : {}} rows={[]} lastAction={lastAction} />}
+
+      <EntityPickerModal
+        tipo={data.tipo}
+        open={modalOpen}
+        onClose={() => setModalOpen(false)}
+        onSelect={handleEntitySelect}
+      />
     </div>
   );
 }
