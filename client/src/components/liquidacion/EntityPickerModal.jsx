@@ -64,8 +64,9 @@ export default function EntityPickerModal({
       onClose={onClose}
       title={`Seleccionar ${tipo === 'cliente' ? 'Cliente' : 'Proveedor'}`}
       size="lg"
+      className="modal-fullscreen"
     >
-      <div className="entity-picker-modal">
+      <div className="entity-picker-modal" style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
         {loading ? (
           <div className="entity-picker-loading">
             <Loader2 size={24} className="spin" />

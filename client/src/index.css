@@ -353,6 +353,14 @@ button.btn-ghost:hover {
   to { transform: none; opacity: 1; }
 }
 
+.modal-fullscreen {
+  width: calc(100vw - 8px) !important;
+  height: calc(100vh - 8px) !important;
+  max-height: calc(100vh - 8px) !important;
+  border-radius: var(--radius-lg);
+  margin: 4px;
+}
+
 .modal-header {
   display: flex;
   align-items: center;

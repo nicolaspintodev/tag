@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ChevronLeft, Save, FileText } from 'lucide-react';
+import { X, Save, FileText } from 'lucide-react';
 import { liquidaciones as liquidacionesResource, viajes as viajesResource } from '../api/resources';
 import StateBar from '../components/ui/StateBar';
 import LiquidacionToolbar from '../components/liquidacion/LiquidacionToolbar';
@@ -271,12 +271,12 @@ export default function LiquidacionWizard() {
         padding: '1rem 1.5rem',
         borderBottom: '1px solid var(--border-color)',
         display: 'flex',
-        justifyContent: 'space-between',
+        justifyContent: 'flex-end',
         alignItems: 'center',
         flexShrink: 0
       }}>
-        <button className="wizard-back-btn" onClick={() => navigate('/liquidaciones')}>
-          <ChevronLeft size={16} /> Volver
+        <button className="wizard-close-btn" onClick={() => navigate('/liquidaciones')} title="Volver">
+          <X size={20} />
         </button>
       </div>
 
