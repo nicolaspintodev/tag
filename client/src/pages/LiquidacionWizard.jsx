@@ -127,6 +127,7 @@ export default function LiquidacionWizard() {
           data={data}
           updateData={updateData}
           error={error}
+          onSubmit={submit}
         />
       </div>
 
