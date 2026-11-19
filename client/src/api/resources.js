@@ -37,3 +37,4 @@ export const choferes = makeResource('/choferes');
 export const proveedores = makeResource('/proveedores');
 export const unidades = makeResource('/unidades');
 export const viajes = makeResource('/viajes');
+export const liquidaciones = makeResource('/liquidaciones');

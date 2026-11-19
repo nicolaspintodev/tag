@@ -7,6 +7,9 @@ import Clientes from './pages/Clientes';
 import Choferes from './pages/Choferes';
 import Unidades from './pages/Unidades';
 import Viajes from './pages/Viajes';
+import Liquidaciones from './pages/Liquidaciones';
+import LiquidacionWizard from './pages/LiquidacionWizard';
+import LiquidacionPrint from './pages/LiquidacionPrint';
 import AppShell from './components/layout/AppShell';
 import { clearToken, fetchCurrentUser, getToken, logout } from './api';
 import { clearTabMarker, markTabUnloading, resolveTabLifecycle } from './session';
@@ -101,7 +104,9 @@ const App = () => {
         <Route path="/proveedores" element={<Placeholder title="Proveedores" />} />
         <Route path="/choferes" element={<Choferes />} />
         <Route path="/unidades" element={<Unidades />} />
-        <Route path="/liquidaciones" element={<Placeholder title="Liquidaciones" />} />
+        <Route path="/liquidaciones" element={<Liquidaciones />} />
+        <Route path="/liquidaciones/nueva" element={<LiquidacionWizard />} />
+        <Route path="/liquidaciones/:id/imprimir" element={<LiquidacionPrint />} />
         <Route path="/facturas" element={<Placeholder title="Facturas" />} />
         <Route path="/gastos" element={<Placeholder title="Gastos" />} />
         <Route path="/documentos" element={<Placeholder title="Documentos" />} />
