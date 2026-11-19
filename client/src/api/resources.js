@@ -36,5 +36,20 @@ export const clientes = makeResource('/clientes');
 export const choferes = makeResource('/choferes');
 export const proveedores = makeResource('/proveedores');
 export const unidades = makeResource('/unidades');
-export const viajes = makeResource('/viajes');
+export const viajes = makeResource('/viajes', {
+  disponiblesParaLiquidacion: (params) => {
+    const entries = Object.entries(params).filter(
+      ([, value]) => value !== undefined && value !== null && value !== '',
+    );
+    const qs = new URLSearchParams(entries).toString();
+    return apiFetch(`/viajes/disponibles-para-liquidacion?${qs}`).then(parse);
+  },
+  disponiblesPorEntidad: (params) => {
+    const entries = Object.entries(params).filter(
+      ([, value]) => value !== undefined && value !== null && value !== '',
+    );
+    const qs = new URLSearchParams(entries).toString();
+    return apiFetch(`/viajes/disponibles-por-entidad?${qs}`).then(parse);
+  },
+});
 export const liquidaciones = makeResource('/liquidaciones');
