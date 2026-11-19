@@ -1,20 +1,36 @@
 import { useEffect, useState } from 'react';
-import { Building2, Truck, Check } from 'lucide-react';
+import { Building2, Truck, Check, Loader2 } from 'lucide-react';
 import { clientes as clientesResource, proveedores as proveedoresResource } from '../../api/resources';
 
 export default function WizardStep1({ data, updateData }) {
   const [clientes, setClientes] = useState([]);
   const [proveedores, setProveedores] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     let cancelled = false;
-    Promise.all([clientesResource.list(), proveedoresResource.list()])
-      .then(([c, p]) => {
+    
+    const loadData = async () => {
+      try {
+        const [c, p] = await Promise.all([clientesResource.list(), proveedoresResource.list()]);
         if (!cancelled) {
           setClientes(Array.isArray(c) ? c : []);
           setProveedores(Array.isArray(p) ? p : []);
         }
-      });
+      } catch (err) {
+        console.error('Failed to load clientes/proveedores:', err);
+        if (!cancelled) {
+          setError('No se pudieron cargar los destinatarios. Intente recargar la página.');
+          setClientes([]);
+          setProveedores([]);
+        }
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    };
+    
+    loadData();
     return () => { cancelled = true; };
   }, []);
 
@@ -28,6 +44,30 @@ export default function WizardStep1({ data, updateData }) {
   const isClienteSelected = data.tipo === 'cliente';
   const isProveedorSelected = data.tipo === 'proveedor';
   const hasSelection = data.cliente_id || data.proveedor_id;
+
+  if (loading) {
+    return (
+      <div className="wizard-step" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '200px', gap: '1rem' }}>
+        <Loader2 size={24} className="spin" style={{ color: 'var(--color-primary)' }} />
+        <p style={{ color: 'var(--text-muted)' }}>Cargando destinatarios...</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="wizard-step" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '200px', gap: '1rem', textAlign: 'center', padding: '2rem' }}>
+        <p style={{ color: 'var(--color-danger-text)' }}>{error}</p>
+        <button 
+          type="button" 
+          className="wizard-btn wizard-btn-primary"
+          onClick={() => window.location.reload()}
+        >
+          Reintentar
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div className="wizard-step">
@@ -53,7 +93,7 @@ export default function WizardStep1({ data, updateData }) {
             <Check size={12} />
           </div>
         </label>
-        <label className={`tipo-card ${isProveedorSelected ? 'selected' : ''}`}>
+        <label className={`tipo-card ${isProveedorSelected ? 'selected' : ''} disabled`}>
           <input
             type="radio"
             name="tipo"
@@ -61,6 +101,7 @@ export default function WizardStep1({ data, updateData }) {
             checked={isProveedorSelected}
             onChange={() => handleTipoChange('proveedor')}
             style={{ display: 'none' }}
+            disabled
           />
           <div className="tipo-card-icon">
             <Truck size={28} style={{ color: isProveedorSelected ? 'var(--text-invert)' : 'var(--text-muted)' }} />

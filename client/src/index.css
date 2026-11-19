@@ -1158,7 +1158,7 @@ tr.row-saved-pulse td.col-acciones {
   border-radius: var(--radius-lg);
   box-shadow: var(--wizard-card-shadow);
   border: 1px solid var(--border-color);
-  max-width: 800px;
+  max-width: 1000px;
   margin: 0 auto;
   overflow: hidden;
 }
@@ -1208,7 +1208,7 @@ tr.row-saved-pulse td.col-acciones {
 .wizard-stepper {
   display: flex;
   align-items: flex-start;
-  padding: 1.5rem 2rem 1rem;
+  padding: 1.5rem 2rem 2rem;
   position: relative;
   background: var(--wizard-card-bg);
 }
@@ -1295,7 +1295,7 @@ tr.row-saved-pulse td.col-acciones {
 
 /* Step Content */
 .wizard-content {
-  padding: 0 2rem 1.5rem;
+  padding: 1.5rem 2rem 1.5rem;
   background: var(--wizard-card-bg);
 }
 

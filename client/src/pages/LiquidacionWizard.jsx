@@ -111,12 +111,9 @@ export default function LiquidacionWizard() {
     <div className="wizard-container">
       <div className="wizard-card">
         <div className="wizard-header">
-          <strong className="wizard-header-title">TAG Logística</strong>
-          <div className="wizard-header-actions">
-            <button className="wizard-back-btn" onClick={() => navigate('/liquidaciones')}>
-              <ChevronLeft size={16} /> Volver
-            </button>
-          </div>
+          <button className="wizard-back-btn" onClick={() => navigate('/liquidaciones')}>
+            <ChevronLeft size={16} /> Volver
+          </button>
         </div>
 
         <Stepper activeStep={step + 1} />
