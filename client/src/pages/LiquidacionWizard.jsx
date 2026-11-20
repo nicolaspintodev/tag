@@ -281,9 +281,6 @@ export default function LiquidacionWizard() {
             ...data,
             updateData: (patch) => setData(prev => ({ ...prev, ...patch })),
           }}
-          onEdit={goToEdicion}
-          onSubmit={submit}
-          loading={loading}
           error={error}
         />
       )}

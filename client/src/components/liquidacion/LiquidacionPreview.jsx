@@ -1,47 +1,51 @@
-import { ChevronLeft, Save, FileText, AlertTriangle } from 'lucide-react';
-import Button from '../ui/Button';
+import { AlertTriangle } from 'lucide-react';
 import Input from '../ui/Input';
 import { computeTotals, toNumber } from '../../lib/liquidacion';
+import { buildPreviewMeta } from '../../lib/liquidacionPreview';
+
+const money = (value) => new Intl.NumberFormat('es-AR', {
+  style: 'currency',
+  currency: 'ARS',
+  minimumFractionDigits: 0,
+}).format(value);
 
 export default function LiquidacionPreview({
   data,
-  onEdit,
-  onSubmit,
-  loading,
   error,
 }) {
-  const { tipo, cliente, proveedor, fecha_emision, notas, viaje_ids, viajesData } = data;
+  const { notas, viaje_ids, viajesData } = data;
 
   const selectedViajes = viaje_ids
     .map(id => viajesData.find(v => v.id === id))
     .filter(Boolean);
 
   const { subtotal, ivaTotal, total } = computeTotals(selectedViajes);
-  const destinatario = cliente?.razon_social || proveedor?.razon_social || '-';
-  const tipoLabel = tipo === 'cliente' ? 'Cliente' : 'Proveedor';
+  const previewMeta = buildPreviewMeta(data);
 
-  const hasWarnings = selectedViajes.some(v => (v.precio_pactado ?? 0) < 0);
+  const hasWarnings = selectedViajes.some(v => toNumber(v.precio_pactado) < 0);
 
   return (
     <div className="liquidacion-preview">
       <div className="preview-header">
         <div>
           <h2>Vista previa de liquidación</h2>
-          <Button variant="ghost" size="sm" onClick={onEdit}>
-            <ChevronLeft size={16} /> Editar
-          </Button>
-        </div>
-        <div className="preview-meta">
-          <div><strong>Tipo:</strong> {tipoLabel}</div>
-          <div><strong>Destinatario:</strong> {destinatario}</div>
-          <div><strong>Fecha emisión:</strong> {fecha_emision}</div>
-          <div><strong>Número:</strong> <span className="pending-badge">(pendiente)</span></div>
+          <p className="preview-subtitle">Revisá los datos antes de confirmar la liquidación.</p>
         </div>
       </div>
 
+      <div className="preview-meta">
+        {previewMeta.map(item => (
+          <div className="preview-meta-item" key={item.label}>
+            <span className="preview-meta-label">{item.label}</span>
+            <span className={`preview-meta-value${item.label === 'CUIT' ? ' mono' : ''}`}>{item.value}</span>
+          </div>
+        ))}
+      </div>
+
       <div className="preview-section">
-        <label className="preview-label">Observaciones</label>
+        <label className="preview-label" htmlFor="observaciones-liquidacion">Observaciones</label>
         <Input
+          id="observaciones-liquidacion"
           type="text"
           value={notas || ''}
           onChange={(e) => data.updateData?.({ notas: e.target.value })}
@@ -51,6 +55,7 @@ export default function LiquidacionPreview({
       </div>
 
       <div className="preview-section">
+        <h3 className="preview-section-title">Viajes incluidos</h3>
         <table className="preview-table">
           <thead>
             <tr>
@@ -66,15 +71,15 @@ export default function LiquidacionPreview({
             {selectedViajes.map(v => {
               const precio = toNumber(v.precio_pactado);
               const iva = Math.round(precio * 0.21);
-              const subtotal = precio + iva;
+              const subtotalViaje = precio + iva;
               return (
                 <tr key={v.id}>
-                  <td className="mono">{v.codigo_viaje || '-'}</td>
+                  <td>{v.codigo_viaje || '-'}</td>
                   <td>{v.fecha_salida ? new Date(v.fecha_salida).toLocaleDateString('es-AR') : '-'}</td>
                   <td className="truncate">{(v.origen || '-') + ' → ' + (v.destino || '-')}</td>
-                  <td className="mono">{new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', minimumFractionDigits: 0 }).format(precio)}</td>
-                  <td className="mono">{new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', minimumFractionDigits: 0 }).format(iva)}</td>
-                  <td className="mono">{new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', minimumFractionDigits: 0 }).format(subtotal)}</td>
+                  <td className="mono">{money(precio)}</td>
+                  <td className="mono">{money(iva)}</td>
+                  <td className="mono">{money(subtotalViaje)}</td>
                 </tr>
               );
             })}
@@ -97,29 +102,20 @@ export default function LiquidacionPreview({
         <div className="totals-grid">
           <div className="total-row">
             <span>Subtotal</span>
-            <span className="mono">{new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', minimumFractionDigits: 0 }).format(subtotal)}</span>
+            <span className="mono">{money(subtotal)}</span>
           </div>
           <div className="total-row">
             <span>IVA (21%)</span>
-            <span className="mono">{new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', minimumFractionDigits: 0 }).format(ivaTotal)}</span>
+            <span className="mono">{money(ivaTotal)}</span>
           </div>
           <div className="total-row grand-total">
             <span>TOTAL GENERAL</span>
-            <span className="mono">{new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', minimumFractionDigits: 0 }).format(total)}</span>
+            <span className="mono">{money(total)}</span>
           </div>
         </div>
       </div>
 
       {error && <div className="preview-error">{error}</div>}
-
-      <div className="preview-actions">
-        <Button variant="outline" onClick={() => onSubmit('borrador')} disabled={loading || selectedViajes.length === 0}>
-          <Save size={16} /> Guardar Borrador
-        </Button>
-        <Button onClick={() => onSubmit('pendiente')} disabled={loading || selectedViajes.length === 0}>
-          <FileText size={16} /> Crear Liquidación
-        </Button>
-      </div>
     </div>
   );
 }

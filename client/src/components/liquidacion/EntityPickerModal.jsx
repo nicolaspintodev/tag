@@ -95,7 +95,12 @@ export default function EntityPickerModal({
               <button
                 key={entity.id}
                 className="entity-picker-item"
-                onClick={() => handleSelect({ id: entity.id, razon_social: entity.razon_social })}
+                onClick={() => handleSelect({
+                  id: entity.id,
+                  razon_social: entity.razon_social,
+                  cuit: entity.cuit,
+                  condicion_iva: entity.condicion_iva,
+                })}
                 type="button"
               >
                 <span className="entity-name">{entity.razon_social}</span>
