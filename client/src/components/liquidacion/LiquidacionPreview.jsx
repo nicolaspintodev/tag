@@ -44,7 +44,7 @@ export default function LiquidacionPreview({
         <Input
           type="text"
           value={notas || ''}
-          onChange={(e) => onSubmit?.({ target: { name: 'notas', value: e.target.value } }) || data.updateData?.({ notas: e.target.value })}
+          onChange={(e) => data.updateData?.({ notas: e.target.value })}
           placeholder="Observaciones internas..."
           className="preview-notas-input"
         />

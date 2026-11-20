@@ -1551,6 +1551,13 @@ tr.row-saved-pulse td.col-acciones {
   margin-bottom: 0;
 }
 
+.liquidacion-toolbar .toolbar-right {
+  flex: 0 0 auto;
+  margin-left: auto;
+  justify-content: flex-end;
+  padding-right: 0.25rem;
+}
+
 .liquidacion-toolbar-group {
   display: flex;
   align-items: center;
@@ -1927,17 +1934,18 @@ tr.row-saved-pulse td.col-acciones {
   height: 32px;
   border: none;
   background: transparent;
-  color: var(--color-danger);
+  color: var(--color-danger-text);
   border-radius: var(--radius-md);
   cursor: pointer;
-  transition: background 0.15s ease;
+  transition: background 0.15s ease, color 0.15s ease;
 }
 
 .wizard-close-btn:hover {
-  background: var(--color-danger-bg);
+  background: var(--color-danger-text);
+  color: #fff;
 }
 
 .wizard-close-btn:focus-visible {
-  outline: 2px solid var(--color-danger);
+  outline: 2px solid var(--color-danger-text);
   outline-offset: 2px;
 }

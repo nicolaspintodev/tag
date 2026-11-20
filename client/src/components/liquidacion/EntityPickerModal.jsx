@@ -12,6 +12,7 @@ export default function EntityPickerModal({
 }) {
   const [entities, setEntities] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(null);
   const [localCounts, setLocalCounts] = useState(new Map());
 
   useEffect(() => {
@@ -19,34 +20,47 @@ export default function EntityPickerModal({
 
     let cancelled = false;
     setLoading(true);
+    setLoadError(null);
     setLocalCounts(new Map());
 
     const fetchEntities = async () => {
       try {
-        const [entitiesRes, countsRes] = await Promise.all([
-          tipo === 'cliente' ? clientesResource.list() : proveedoresResource.list(),
-          viajesResource.disponiblesPorEntidad({ tipo }),
-        ]);
+        const entitiesRes = tipo === 'cliente'
+          ? await clientesResource.list()
+          : await proveedoresResource.list();
 
         if (cancelled) return;
 
         const entitiesArray = Array.isArray(entitiesRes) ? entitiesRes : entitiesRes.data || [];
-        const countsArray = Array.isArray(countsRes) ? countsRes : [];
-
-        const countsMap = new Map();
-        countsArray.forEach(c => countsMap.set(c.id, c.cantidad));
-
         setEntities(entitiesArray);
-        setLocalCounts(countsMap);
       } catch (err) {
         console.error('Error loading entities:', err);
-        setEntities([]);
+        if (!cancelled) {
+          setEntities([]);
+          setLoadError('No se pudieron cargar las entidades.');
+        }
       } finally {
         if (!cancelled) setLoading(false);
       }
     };
 
+    const fetchCounts = async () => {
+      try {
+        const countsRes = await viajesResource.disponiblesPorEntidad({ tipo });
+        if (cancelled) return;
+
+        const countsArray = Array.isArray(countsRes) ? countsRes : [];
+        const countsMap = new Map();
+        countsArray.forEach(c => countsMap.set(c.id, c.cantidad));
+        setLocalCounts(countsMap);
+      } catch (err) {
+        console.error('Error loading entity counts:', err);
+      }
+    };
+
     fetchEntities();
+    fetchCounts();
+
     return () => { cancelled = true; };
   }, [open, tipo]);
 
@@ -69,6 +83,8 @@ export default function EntityPickerModal({
             <Loader2 size={24} className="spin" />
             <span>Cargando {tipo === 'cliente' ? 'clientes' : 'proveedores'}...</span>
           </div>
+        ) : loadError ? (
+          <div className="entity-picker-empty">{loadError}</div>
         ) : entities.length === 0 ? (
           <div className="entity-picker-empty">
             No hay {tipo === 'cliente' ? 'clientes' : 'proveedores'} registrados.

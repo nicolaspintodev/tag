@@ -4,7 +4,7 @@ import Button from '../ui/Button';
 
 const TIPO_OPTIONS = [
   { value: 'cliente', label: 'Cliente' },
-  { value: 'proveedor', label: 'Proveedor' },
+  { value: 'proveedor', label: 'Proveedor (próximamente)', disabled: true },
   { value: 'chofer', label: 'Chofer (próximamente)', disabled: true },
 ];
 
@@ -30,7 +30,7 @@ export default function LiquidacionToolbar({
           <div className="select-wrapper">
             <Select
               value={tipo}
-              options={TIPO_OPTIONS.filter(o => !o.disabled || o.value === tipo)}
+              options={TIPO_OPTIONS}
               onChange={(e) => {
                 const newTipo = e.target.value;
                 onTipoChange(newTipo);
