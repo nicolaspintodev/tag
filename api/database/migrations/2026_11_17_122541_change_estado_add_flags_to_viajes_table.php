@@ -15,13 +15,13 @@ return new class extends Migration
             // Cambiar enum estado a nuevos valores
             $table->dropColumn('estado');
             $table->enum('estado', ['planificado', 'iniciado', 'terminado'])
-                  ->default('planificado')
-                  ->after('proveedor_id');
-            
+                ->default('planificado')
+                ->after('proveedor_id');
+
             // Flags facturado y liquidado (solo aplicables si estado = terminado)
             $table->boolean('facturado')->default(false)->after('estado');
             $table->boolean('liquidado')->default(false)->after('facturado');
-            
+
             // Índices para filtros
             $table->index(['estado', 'facturado', 'liquidado']);
         });
@@ -36,8 +36,8 @@ return new class extends Migration
             $table->dropColumn(['facturado', 'liquidado']);
             $table->dropColumn('estado');
             $table->enum('estado', ['pendiente', 'en_curso', 'finalizado', 'liquidado', 'cancelado'])
-                  ->default('pendiente')
-                  ->after('proveedor_id');
+                ->default('pendiente')
+                ->after('proveedor_id');
         });
     }
 };

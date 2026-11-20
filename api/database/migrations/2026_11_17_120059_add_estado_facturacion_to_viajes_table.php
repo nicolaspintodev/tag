@@ -13,9 +13,9 @@ return new class extends Migration
     {
         Schema::table('viajes', function (Blueprint $table) {
             $table->enum('estado_facturacion', ['pendiente', 'facturado'])
-                  ->default('pendiente')
-                  ->after('estado')
-                  ->index();
+                ->default('pendiente')
+                ->after('estado')
+                ->index();
         });
     }
 

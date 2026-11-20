@@ -6,8 +6,8 @@ use App\Models\Chofer;
 use App\Models\Cliente;
 use App\Models\Proveedor;
 use App\Models\Unidad;
-use App\Models\Viaje;
 use App\Models\User;
+use App\Models\Viaje;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 
