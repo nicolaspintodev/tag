@@ -246,7 +246,7 @@ class Viaje extends Model
             $errors['estado'] = 'Solo los viajes Terminados pueden ser facturados/liquidados.';
         }
 
-        if (!empty($errors)) {
+        if (! empty($errors)) {
             throw ValidationException::withMessages($errors);
         }
     }
