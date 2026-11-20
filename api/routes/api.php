@@ -7,6 +7,7 @@ use App\Http\Controllers\ClienteController;
 use App\Http\Controllers\DocumentoController;
 use App\Http\Controllers\FacturaController;
 use App\Http\Controllers\GastoController;
+use App\Http\Controllers\HealthController;
 use App\Http\Controllers\LiquidacionController;
 use App\Http\Controllers\ProveedorController;
 use App\Http\Controllers\UnidadController;
@@ -15,6 +16,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
 Route::post('/login', [AuthController::class, 'login']);
+Route::get('/health', [HealthController::class, 'index']);
 
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('/user', function (Request $request) {
