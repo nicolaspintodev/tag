@@ -4,7 +4,6 @@ declare(strict_types=1);
 namespace App\Http\Requests;
 
 use Illuminate\Http\Request;
-use Symfony\Component\HttpFoundation\InputBag;
 
 class PhpBuiltInServerRequest extends Request
 {
