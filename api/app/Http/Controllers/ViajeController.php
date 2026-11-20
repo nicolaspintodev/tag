@@ -473,4 +473,3 @@ class ViajeController extends Controller
         return response()->json($viaje->fresh(['cliente', 'proveedor', 'unidades', 'chofer']));
     }
 }
-
