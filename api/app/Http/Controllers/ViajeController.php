@@ -6,11 +6,12 @@ namespace App\Http\Controllers;
 
 use App\Models\Carga;
 use App\Models\Viaje;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class ViajeController extends Controller
 {
-    public function index(Request $request): \Illuminate\Http\JsonResponse
+    public function index(Request $request): JsonResponse
     {
         $query = Viaje::select('viajes.*')->with([
             'cliente',
@@ -114,7 +115,7 @@ class ViajeController extends Controller
         return response()->json($viajes);
     }
 
-    public function store(Request $request): \Illuminate\Http\JsonResponse
+    public function store(Request $request): JsonResponse
     {
         $validated = $request->validate([
             'cliente_id' => 'nullable|exists:clientes,id',
@@ -263,7 +264,7 @@ class ViajeController extends Controller
         return response()->json($viaje, 201);
     }
 
-    public function update(Request $request, Viaje $viaje): \Illuminate\Http\JsonResponse
+    public function update(Request $request, Viaje $viaje): JsonResponse
     {
         $validated = $request->validate([
             'cliente_id' => 'nullable|exists:clientes,id',
@@ -429,7 +430,7 @@ class ViajeController extends Controller
         return response()->json($viaje, 200);
     }
 
-    public function show(int $id): \Illuminate\Http\JsonResponse
+    public function show(int $id): JsonResponse
     {
         $viaje = Viaje::withTrashed()->with([
             'cliente',
@@ -446,14 +447,14 @@ class ViajeController extends Controller
         return response()->json($viaje);
     }
 
-    public function destroy(Viaje $viaje): \Illuminate\Http\JsonResponse
+    public function destroy(Viaje $viaje): JsonResponse
     {
         $viaje->delete();
 
         return response()->json(['message' => 'Viaje archivado']);
     }
 
-    public function restore(int $id): \Illuminate\Http\JsonResponse
+    public function restore(int $id): JsonResponse
     {
         $viaje = Viaje::withTrashed()->findOrFail($id);
         $viaje->restore();
@@ -461,7 +462,7 @@ class ViajeController extends Controller
         return response()->json(['message' => 'Viaje restaurado']);
     }
 
-    public function cambiarEstado(Request $request, Viaje $viaje): \Illuminate\Http\JsonResponse
+    public function cambiarEstado(Request $request, Viaje $viaje): JsonResponse
     {
         $validated = $request->validate([
             'estado' => 'required|string|in:planificado,iniciado,terminado',
