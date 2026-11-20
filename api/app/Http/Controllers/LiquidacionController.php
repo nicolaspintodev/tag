@@ -260,6 +260,93 @@ class LiquidacionController extends Controller
         return response()->json($liquidacion->load(['cliente', 'proveedor', 'viajes']));
     }
 
+    public function updateDetalle(Request $request, $id)
+    {
+        $liquidacion = Liquidacion::findOrFail($id);
+
+        if ($liquidacion->estado !== 'borrador') {
+            return response()->json(['message' => 'Solo se puede editar una liquidación en estado borrador'], 422);
+        }
+
+        if ($request->filled('estado') && $request->get('estado') !== 'pendiente') {
+            return response()->json(['message' => 'El único cambio de estado permitido es a pendiente'], 422);
+        }
+
+        $validated = $request->validate([
+            'notas' => 'nullable|string',
+            'fecha_emision' => 'required|date',
+            'viajes' => 'required|array',
+            'viajes.*.viaje_id' => 'required|integer|exists:viajes,id',
+            'viajes.*.monto' => 'required|numeric|min:0',
+            'viajes.*.iva_monto' => 'required|numeric|min:0',
+            'estado' => 'nullable|string|in:pendiente',
+        ]);
+
+        $viajeIds = collect($validated['viajes'])->pluck('viaje_id');
+        if ($viajeIds->count() !== $viajeIds->unique()->count()) {
+            return response()->json(['message' => 'Los viajes no pueden repetirse'], 422);
+        }
+
+        $entityColumn = $liquidacion->tipo === 'cliente' ? 'cliente_id' : 'proveedor_id';
+        $entityId = $liquidacion->tipo === 'cliente' ? $liquidacion->cliente_id : $liquidacion->proveedor_id;
+        $viajes = Viaje::whereIn('id', $viajeIds)->get();
+
+        if ($viajes->count() !== $viajeIds->count()) {
+            return response()->json(['message' => 'Uno de los viajes no existe'], 422);
+        }
+
+        foreach ($viajes as $viaje) {
+            if ((int) $viaje->{$entityColumn} !== (int) $entityId) {
+                return response()->json(['message' => 'Un viaje no pertenece a la entidad de la liquidación'], 422);
+            }
+            if ($viaje->liquidado) {
+                return response()->json(['message' => 'Un viaje ya está liquidado'], 422);
+            }
+        }
+
+        $viajesEnOtras = \DB::table('liquidacion_viaje')
+            ->join('liquidaciones', 'liquidaciones.id', '=', 'liquidacion_viaje.liquidacion_id')
+            ->whereNull('liquidaciones.deleted_at')
+            ->where('liquidaciones.tipo', $liquidacion->tipo)
+            ->where('liquidaciones.id', '!=', $liquidacion->id)
+            ->whereIn('liquidacion_viaje.viaje_id', $viajeIds)
+            ->exists();
+
+        if ($viajesEnOtras) {
+            return response()->json(['message' => 'Un viaje ya está incluido en otra liquidación'], 422);
+        }
+
+        \DB::transaction(function () use ($liquidacion, $validated, $viajeIds) {
+            $liquidacion->update([
+                'notas' => $validated['notas'] ?? null,
+                'fecha_emision' => $validated['fecha_emision'],
+            ]);
+
+            $sync = $viajeIds->mapWithKeys(function ($viajeId) use ($validated) {
+                $item = collect($validated['viajes'])->firstWhere('viaje_id', $viajeId);
+                return [$viajeId => [
+                    'monto' => $item['monto'],
+                    'iva_monto' => $item['iva_monto'],
+                ]];
+            })->all();
+
+            $liquidacion->viajes()->sync($sync);
+            $this->recalcularTotal($liquidacion);
+
+            if (($validated['estado'] ?? null) === 'pendiente') {
+                $liquidacion->update(['estado' => 'pendiente']);
+                Viaje::whereIn('id', $viajeIds)->update(['liquidado' => true]);
+            }
+        });
+
+        return response()->json($liquidacion->load([
+            'cliente',
+            'proveedor',
+            'viajes',
+            'factura',
+        ]));
+    }
+
     private function generateNumero(string $tipo): string
     {
         $prefijo = $tipo === 'cliente' ? 'LIQ-C' : 'LIQ-P';

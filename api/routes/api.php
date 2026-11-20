@@ -54,6 +54,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::delete('/liquidaciones/{id}/viajes/{viajeId}', [LiquidacionController::class, 'quitarViaje']);
     Route::put('/liquidaciones/{id}/viajes/{viajeId}/monto', [LiquidacionController::class, 'actualizarMonto']);
     Route::put('/liquidaciones/{id}/estado', [LiquidacionController::class, 'cambiarEstado']);
+    Route::put('/liquidaciones/{id}/detalle', [LiquidacionController::class, 'updateDetalle']);
     Route::post('/liquidaciones/{id}/facturar', [LiquidacionController::class, 'generarFactura']);
 
     // Documento file uploads
