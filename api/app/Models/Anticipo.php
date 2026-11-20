@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 class Anticipo extends Model
 {
     use SoftDeletes;
+
     protected $table = 'anticipos';
 
     protected $fillable = [

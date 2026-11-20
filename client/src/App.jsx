@@ -1,131 +1,114 @@
-import React, { useState } from 'react';
-import { BrowserRouter as Router, Routes, Route, NavLink, Navigate } from 'react-router-dom';
-import { Truck, Bell, Search, LogOut, Eye, EyeOff, Layout, Users, Briefcase, FileText } from 'lucide-react';
-import './App.css';
+import { useCallback, useEffect, useState } from 'react';
+import { Navigate, Route, Routes } from 'react-router-dom';
 
-import Trips from './pages/Trips';
-import Resources from './pages/Resources';
-import Clients from './pages/Clients';
-import Providers from './pages/Providers';
-import Settlements from './pages/Settlements';
 import Login from './pages/Login';
+import Placeholder from './pages/Placeholder';
+import Clientes from './pages/Clientes';
+import Choferes from './pages/Choferes';
+import Unidades from './pages/Unidades';
+import Viajes from './pages/Viajes';
+import AppShell from './components/layout/AppShell';
+import { clearToken, fetchCurrentUser, getToken, logout } from './api';
+import { clearTabMarker, markTabUnloading, resolveTabLifecycle } from './session';
+import useSessionTimeout from './hooks/useSessionTimeout';
 
-const Header = ({ onLogout, theme, toggleTheme }) => {
-  const [showLogoutModal, setShowLogoutModal] = useState(false);
+const App = () => {
+  const [isAuthenticated, setIsAuthenticated] = useState(() => Boolean(getToken()));
+  const [verificando, setVerificando] = useState(() => Boolean(getToken()));
+  const [motivoCierre, setMotivoCierre] = useState(null);
 
-  return (
-    <>
-      <header className="top-header">
-      <div className="header-title">
-        {/* Titulo removido por pedido del usuario */}
-      </div>
-      <div className="header-actions">
-        <button className="icon-button" title="Buscar"><Search size={20} /></button>
-        <button className="icon-button" title="Modo Protección Visual" onClick={toggleTheme}>
-          {theme === 'light' ? <Eye size={20} /> : <EyeOff size={20} />}
-        </button>
-        <button className="icon-button" title="Notificaciones"><Bell size={20} /></button>
-        <div className="user-profile">
-          <div className="avatar">A</div>
-          <span>Admin</span>
-        </div>
-        <button className="icon-button" style={{ marginLeft: '1rem', color: 'var(--color-danger-text)' }} title="Cerrar Sesión" onClick={() => setShowLogoutModal(true)}>
-          <LogOut size={20} />
-        </button>
-      </div>
-      </header>
+  useEffect(() => {
+    resolveTabLifecycle();
+  }, []);
 
-      {showLogoutModal && (
-        <div style={{
-          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-          backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100
-        }}>
-          <div className="card" style={{ width: '100%', maxWidth: '350px', textAlign: 'center' }}>
-            <h3 style={{ marginBottom: '1rem', fontSize: '1.25rem' }}>Cerrar Sesión</h3>
-            <p style={{ color: 'var(--text-muted)', marginBottom: '1.5rem', fontSize: '0.875rem' }}>¿Estás seguro de que deseas salir del sistema?</p>
-            <div style={{ display: 'flex', gap: '1rem' }}>
-              <button className="outline" style={{ flex: 1 }} onClick={() => setShowLogoutModal(false)}>Cancelar</button>
-              <button style={{ flex: 1, backgroundColor: 'var(--color-danger-text)', color: '#fff' }} onClick={() => { setShowLogoutModal(false); onLogout(); }}>Cerrar Sesión</button>
-            </div>
-          </div>
-        </div>
-      )}
-    </>
-  );
-};
+  useEffect(() => {
+    if (!getToken()) return;
 
-const Navigation = () => {
-  const navItems = [
-    { path: '/trips', label: 'Viajes', icon: Truck },
-    { path: '/resources', label: 'Recursos', icon: Layout },
-    { path: '/clients', label: 'Clientes', icon: Users },
-    { path: '/providers', label: 'Proveedores', icon: Briefcase },
-    { path: '/settlements', label: 'Liquidaciones', icon: FileText },
-  ];
+    let cancelado = false;
 
-  return (
-    <nav className="sidebar-nav">
-      {navItems.map((item) => (
-        <NavLink 
-          key={item.path} 
-          to={item.path} 
-          className={({ isActive }) => `nav-item ${isActive && (item.path !== '/' || window.location.pathname === '/') ? 'active' : ''}`}
-          end={item.path === '/'}
-        >
-          <item.icon size={20} />
-          {item.label}
-        </NavLink>
-      ))}
-    </nav>
-  );
-};
+    fetchCurrentUser()
+      .then((user) => {
+        if (cancelado) return;
+        if (!user) {
+          clearToken();
+          setIsAuthenticated(false);
+        }
+      })
+      .catch(() => {
+        if (cancelado) return;
+        clearToken();
+        setIsAuthenticated(false);
+      })
+      .finally(() => {
+        if (!cancelado) setVerificando(false);
+      });
 
-function App() {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [theme, setTheme] = useState(localStorage.getItem('theme') || 'light');
+    return () => {
+      cancelado = true;
+    };
+  }, []);
 
-  const toggleTheme = () => {
-    const newTheme = theme === 'light' ? 'warm' : 'light';
-    setTheme(newTheme);
-    localStorage.setItem('theme', newTheme);
-    document.documentElement.setAttribute('data-theme', newTheme);
+  useEffect(() => {
+    if (!isAuthenticated) return undefined;
+    window.addEventListener('pagehide', markTabUnloading);
+    return () => window.removeEventListener('pagehide', markTabUnloading);
+  }, [isAuthenticated]);
+
+  const handleLogin = () => {
+    setMotivoCierre(null);
+    setIsAuthenticated(true);
   };
 
-  React.useEffect(() => {
-    document.documentElement.setAttribute('data-theme', theme);
-  }, [theme]);
+  const handleLogout = useCallback(async (motivo = 'manual') => {
+    clearTabMarker();
+    await logout();
+    setIsAuthenticated(false);
+    setMotivoCierre(motivo === 'timeout' ? 'inactividad' : null);
+  }, []);
+
+  const handleTimeout = useCallback(() => {
+    handleLogout('timeout');
+  }, [handleLogout]);
+
+  useSessionTimeout({
+    activo: isAuthenticated,
+    onTimeout: handleTimeout,
+  });
+
+  if (verificando) {
+    return (
+      <div style={{ minHeight: '100vh', display: 'grid', placeItems: 'center', backgroundColor: 'var(--bg-body)', color: 'var(--text-muted)' }}>
+        Verificando sesión…
+      </div>
+    );
+  }
 
   if (!isAuthenticated) {
-    return <Login onLogin={() => setIsAuthenticated(true)} />;
+    return (
+      <Login
+        onLogin={handleLogin}
+        mensaje={motivoCierre === 'inactividad' ? 'Tu sesión se cerró por inactividad. Volvé a ingresar.' : ''}
+      />
+    );
   }
 
   return (
-    <Router>
-      <div className="app-layout">
-        <aside className="sidebar">
-          <div className="sidebar-header">
-            TAG Logística
-          </div>
-          <Navigation />
-        </aside>
-        
-        <main className="main-content">
-          <Header onLogout={() => setIsAuthenticated(false)} theme={theme} toggleTheme={toggleTheme} />
-          <div className="content-area">
-            <Routes>
-              <Route path="/" element={<Navigate to="/trips" replace />} />
-              <Route path="/trips" element={<Trips />} />
-              <Route path="/resources" element={<Resources />} />
-              <Route path="/clients" element={<Clients />} />
-              <Route path="/providers" element={<Providers />} />
-              <Route path="/settlements" element={<Settlements />} />
-              <Route path="*" element={<Navigate to="/trips" replace />} />
-            </Routes>
-          </div>
-        </main>
-      </div>
-    </Router>
+    <Routes>
+      <Route element={<AppShell onLogout={() => handleLogout('manual')} />}>
+        <Route index element={<Navigate to="/clientes" replace />} />
+        <Route path="/clientes" element={<Clientes />} />
+        <Route path="/viajes" element={<Viajes />} />
+        <Route path="/proveedores" element={<Placeholder title="Proveedores" />} />
+        <Route path="/choferes" element={<Choferes />} />
+        <Route path="/unidades" element={<Unidades />} />
+        <Route path="/liquidaciones" element={<Placeholder title="Liquidaciones" />} />
+        <Route path="/facturas" element={<Placeholder title="Facturas" />} />
+        <Route path="/gastos" element={<Placeholder title="Gastos" />} />
+        <Route path="/documentos" element={<Placeholder title="Documentos" />} />
+        <Route path="*" element={<Placeholder title="No encontrado" />} />
+      </Route>
+    </Routes>
   );
-}
+};
 
 export default App;

@@ -6,8 +6,13 @@ Guia para agentes de IA trabajando en este proyecto.
 
 - Canonico: <https://github.com/nicolaspintodev/tag>
 - Legacy (archivado): <https://github.com/pinto0528/TAG>
-- Rama principal: `main`
+- `main`: estable y deployable. Solo recibe releases y hotfixes.
+- `develop`: rama de integracion. Recibe PRs de ramas cortas.
+- Ramas cortas: `feat/...`, `fix/...`, `chore/...`, `docs/...` desde `develop`.
+- Flujo: rama corta -> PR con merge commit -> `develop`; release: `develop` -> PR -> `main` + tag; hotfix: `main` -> PR -> `main` y replica a `develop`.
+- CI: `.github/workflows/ci.yml` corre en `main` y `develop`; en `develop` es informativo y en `main` es bloqueante.
 - No commitear ni pushear sin autorizacion explicita.
+- No pushear directo a `main` ni `develop`.
 
 ## Comandos de Desarrollo
 
@@ -83,7 +88,6 @@ php artisan tinker --execute="echo print_r(\Illuminate\Support\Facades\Schema::g
 - CSS nativo (sin framework CSS)
 - API calls via fetch con `API_BASE_URL` (ver `client/src/apiConfig.js`)
 - Lucide React para iconos
-- Modo Proteccion Visual soportado
 
 ### Base de datos
 - SQLite en desarrollo, MySQL en produccion
@@ -114,14 +118,10 @@ php artisan tinker --execute="echo print_r(\Illuminate\Support\Facades\Schema::g
 - `api/app/Http/Controllers/GastoController.php` — CRUD, auto-recalcula costo_viaje
 - `api/app/Http/Controllers/FacturaController.php` — CRUD, filtrado por liquidacion
 
-### Frontend
-- `client/src/App.jsx` — rutas y layout
-- `client/src/pages/Trips.jsx` — modulo de viajes (1700+ lineas)
-- `client/src/pages/Settlements.jsx` — liquidaciones con wizard
-- `client/src/pages/Billing.jsx` — facturacion
-- `client/src/pages/Resources.jsx` — unidades y choferes
-- `client/src/pages/Clients.jsx` — ABM clientes
-- `client/src/pages/Providers.jsx` — ABM proveedores
+### Frontend (UI legacy)
+- `client/src/App.jsx` — shell mínimo: login + placeholder.
+- `client/src/pages/Login.jsx` — login activo.
+- La UI anterior no está en `develop`; se conserva en la rama `legacy/ui` como referencia hasta la reconstrucción en W1.
 
 ## Bugs Conocidos
 
@@ -131,7 +131,7 @@ php artisan tinker --execute="echo print_r(\Illuminate\Support\Facades\Schema::g
 ## Datos de Prueba
 
 Seeder incluido (`TestSeeder.php`):
-- Admin: admin@tag.com / admin123
+- Admin: admin@tag.com / Admin2026!
 - 2 clientes, 2 proveedores
 - 2 choferes propios + 2 externos
 - 2 unidades propias + 2 externas

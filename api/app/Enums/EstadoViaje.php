@@ -4,9 +4,9 @@ namespace App\Enums;
 
 enum EstadoViaje: string
 {
-    case PENDIENTE = 'pendiente';
-    case EN_CURSO = 'en_curso';
-    case FINALIZADO = 'finalizado';
+    case PLANIFICADO = 'planificado';
+    case INICIADO = 'iniciado';
+    case TERMINADO = 'terminado';
     case LIQUIDADO = 'liquidado';
     case CANCELADO = 'cancelado';
 }

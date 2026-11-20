@@ -1,19 +1,23 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Controllers;
 
-use App\Models\Viaje;
 use App\Models\Carga;
+use App\Models\Viaje;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Validation\ValidationException;
 
 class ViajeController extends Controller
 {
-    public function index(Request $request)
+    public function index(Request $request): JsonResponse
     {
         $query = Viaje::select('viajes.*')->with([
             'cliente',
             'proveedor',
+            'tractora',
+            'acoplado',
             'unidades',
             'chofer',
             'carga',
@@ -52,12 +56,28 @@ class ViajeController extends Controller
             $query->whereDate('fecha_salida', '<=', $request->get('fecha_hasta'));
         }
 
+        if ($request->filled('estado_facturacion')) {
+            $query->where('estado_facturacion', $request->get('estado_facturacion'));
+        }
+
+        if ($request->filled('estado')) {
+            $query->where('estado', $request->get('estado'));
+        }
+
+        if ($request->filled('facturado') && $request->boolean('facturado')) {
+            $query->where('facturado', true);
+        }
+
+        if ($request->filled('liquidado') && $request->boolean('liquidado')) {
+            $query->where('liquidado', true);
+        }
+
         if ($request->filled('sort_by') && $request->filled('sort_dir')) {
             $sortBy = $request->get('sort_by');
             $sortDir = strtolower($request->get('sort_dir'));
 
-            if ($sortBy === 'estado' && in_array($sortDir, ['pendiente', 'en_curso', 'finalizado', 'cancelado'])) {
-                $query->orderByRaw("CASE WHEN estado = ? THEN 0 ELSE 1 END", [$sortDir])
+            if ($sortBy === 'estado' && in_array($sortDir, ['planificado', 'iniciado', 'terminado'])) {
+                $query->orderByRaw('CASE WHEN estado = ? THEN 0 ELSE 1 END', [$sortDir])
                     ->orderBy('viajes.id', 'desc');
             } else {
                 $dir = $sortDir === 'asc' ? 'asc' : 'desc';
@@ -90,29 +110,34 @@ class ViajeController extends Controller
             $query->orderBy('viajes.id', 'desc');
         }
 
-        $viajes = $query->paginate(10);
+        $viajes = $query->get();
+
         return response()->json($viajes);
     }
 
-    public function store(Request $request)
+    public function store(Request $request): JsonResponse
     {
         $validated = $request->validate([
             'cliente_id' => 'nullable|exists:clientes,id',
             'proveedor_id' => 'nullable|exists:proveedores,id',
-            'origen' => 'nullable|string',
-            'destino' => 'nullable|string',
-            'precio_pactado' => 'nullable|numeric|min:0',
+            'tractora_id' => 'nullable|exists:unidades,id',
+            'acoplado_id' => 'nullable|exists:unidades,id',
+            'origen' => 'required|string',
+            'destino' => 'required|string',
+            'precio_pactado' => 'required|numeric|min:0',
             'costo_proveedor' => 'nullable|numeric|min:0',
             'unidades' => 'nullable|array',
             'unidades.*' => 'exists:unidades,id',
-            'chofer_id' => 'nullable|exists:choferes,id',
-            'km_recorrido' => 'nullable|integer',
+            'chofer_id' => 'required|exists:choferes,id',
+            'km_recorrido' => 'nullable|integer|min:0',
             'fecha_salida' => 'required|date',
             'hora_salida' => 'nullable|string',
             'fecha_llegada' => 'nullable|date',
             'hora_llegada' => 'nullable|string',
             'observaciones' => 'nullable|string',
-            'estado' => 'nullable|string',
+            'estado' => 'nullable|in:planificado,iniciado,terminado',
+            'facturado' => 'nullable|boolean',
+            'liquidado' => 'nullable|boolean',
 
             // Tarifa
             'tipo_tarifa' => 'nullable|string',
@@ -120,29 +145,97 @@ class ViajeController extends Controller
             'tarifa_base' => 'nullable|numeric|min:0',
 
             // Carga
-            'carga.descripcion' => 'nullable|string',
-            'carga.tipo_carga' => 'nullable|string',
             'carga.peso_kg' => 'nullable|numeric|min:0',
-            'carga.cantidad_bultos' => 'nullable|integer|min:0',
-            'carga.requiere_refrigeracion' => 'nullable|boolean',
+
+            // Reglas de negocio
+            'chofer_id' => ['required', 'exists:choferes,id', function ($attribute, $value, $fail) use ($request) {
+                $estado = $request->input('estado', 'planificado');
+                if ($estado === 'iniciado') {
+                    $conflict = Viaje::where('chofer_id', $value)
+                        ->where('estado', 'iniciado')
+                        ->exists();
+                    if ($conflict) {
+                        $fail('El chofer ya tiene un viaje Iniciado.');
+                    }
+                }
+            }],
+            'tractora_id' => ['nullable', 'exists:unidades,id', function ($attribute, $value, $fail) use ($request) {
+                $estado = $request->input('estado', 'planificado');
+                if ($estado === 'iniciado') {
+                    if (empty($value)) {
+                        $fail('Un viaje Iniciado debe tener una tractora asignada.');
+                    }
+                    $conflict = Viaje::where('tractora_id', $value)
+                        ->where('estado', 'iniciado')
+                        ->exists();
+                    if ($conflict) {
+                        $fail('La tractora ya está en un viaje Iniciado.');
+                    }
+                }
+            }],
+            'acoplado_id' => ['nullable', 'exists:unidades,id', function ($attribute, $value, $fail) use ($request) {
+                $estado = $request->input('estado', 'planificado');
+                $tractoraId = $request->input('tractora_id');
+                if ($estado === 'iniciado') {
+                    if (! empty($value) && empty($tractoraId)) {
+                        $fail('No se puede asignar acoplado sin tractora.');
+                    }
+                    if (! empty($value)) {
+                        $conflict = Viaje::where('acoplado_id', $value)
+                            ->where('estado', 'iniciado')
+                            ->exists();
+                        if ($conflict) {
+                            $fail('El acoplado ya está en un viaje Iniciado.');
+                        }
+                    }
+                } else {
+                    // Validar acoplado sin tractora en cualquier estado
+                    if (! empty($value) && empty($tractoraId)) {
+                        $fail('No se puede asignar acoplado sin tractora.');
+                    }
+                }
+            }],
+            'estado' => ['nullable', 'in:planificado,iniciado,terminado', function ($attribute, $value, $fail) use ($request) {
+                $facturado = (bool) $request->input('facturado', false);
+                $liquidado = (bool) $request->input('liquidado', false);
+                if (($facturado || $liquidado) && $value !== 'terminado') {
+                    $fail('Solo los viajes Terminados pueden ser facturados/liquidados.');
+                }
+            }],
+            'facturado' => ['nullable', 'boolean', function ($attribute, $value, $fail) use ($request) {
+                $estado = $request->input('estado', 'planificado');
+                if ($value && $estado !== 'terminado') {
+                    $fail('Solo los viajes Terminados pueden ser facturados.');
+                }
+            }],
+            'liquidado' => ['nullable', 'boolean', function ($attribute, $value, $fail) use ($request) {
+                $estado = $request->input('estado', 'planificado');
+                if ($value && $estado !== 'terminado') {
+                    $fail('Solo los viajes Terminados pueden ser liquidados.');
+                }
+            }],
         ]);
 
         if (empty($validated['estado'])) {
-            $validated['estado'] = 'pendiente';
+            $validated['estado'] = 'planificado';
         }
 
         $viaje = Viaje::create([
-            'chofer_id' => $validated['chofer_id'] ?? null,
+            'chofer_id' => $validated['chofer_id'],
             'cliente_id' => $validated['cliente_id'] ?? null,
             'proveedor_id' => $validated['proveedor_id'] ?? null,
+            'tractora_id' => $validated['tractora_id'] ?? null,
+            'acoplado_id' => $validated['acoplado_id'] ?? null,
             'estado' => $validated['estado'],
-            'origen' => $validated['origen'] ?? null,
-            'destino' => $validated['destino'] ?? null,
+            'facturado' => $validated['facturado'] ?? false,
+            'liquidado' => $validated['liquidado'] ?? false,
+            'origen' => $validated['origen'],
+            'destino' => $validated['destino'],
             'fecha_salida' => $validated['fecha_salida'],
             'hora_salida' => $validated['hora_salida'] ?? null,
             'fecha_llegada' => $validated['fecha_llegada'] ?? null,
             'hora_llegada' => $validated['hora_llegada'] ?? null,
-            'precio_pactado' => $validated['precio_pactado'] ?? 0,
+            'precio_pactado' => $validated['precio_pactado'],
             'costo_proveedor' => $validated['costo_proveedor'] ?? 0,
             'km_recorrido' => $validated['km_recorrido'] ?? 0,
             'tipo_tarifa' => $validated['tipo_tarifa'] ?? null,
@@ -151,11 +244,11 @@ class ViajeController extends Controller
             'observaciones' => $validated['observaciones'] ?? null,
         ]);
 
-        if (!empty($validated['unidades'])) {
+        if (! empty($validated['unidades'])) {
             $viaje->unidades()->sync($validated['unidades']);
         }
 
-        if (!empty($request->input('carga'))) {
+        if (! empty($request->input('carga'))) {
             Carga::create([
                 'viaje_id' => $viaje->id,
                 'descripcion' => $validated['carga']['descripcion'] ?? null,
@@ -171,11 +264,13 @@ class ViajeController extends Controller
         return response()->json($viaje, 201);
     }
 
-    public function update(Request $request, Viaje $viaje)
+    public function update(Request $request, Viaje $viaje): JsonResponse
     {
         $validated = $request->validate([
             'cliente_id' => 'nullable|exists:clientes,id',
             'proveedor_id' => 'nullable|exists:proveedores,id',
+            'tractora_id' => 'nullable|exists:unidades,id',
+            'acoplado_id' => 'nullable|exists:unidades,id',
             'origen' => 'nullable|string',
             'destino' => 'nullable|string',
             'precio_pactado' => 'nullable|numeric|min:0',
@@ -183,13 +278,15 @@ class ViajeController extends Controller
             'unidades' => 'nullable|array',
             'unidades.*' => 'exists:unidades,id',
             'chofer_id' => 'nullable|exists:choferes,id',
-            'km_recorrido' => 'nullable|integer',
+            'km_recorrido' => 'nullable|integer|min:0',
             'fecha_salida' => 'required|date',
             'hora_salida' => 'nullable|string',
             'fecha_llegada' => 'nullable|date',
             'hora_llegada' => 'nullable|string',
             'observaciones' => 'nullable|string',
-            'estado' => 'nullable|string',
+            'estado' => 'nullable|in:planificado,iniciado,terminado',
+            'facturado' => 'nullable|boolean',
+            'liquidado' => 'nullable|boolean',
 
             // Tarifa
             'tipo_tarifa' => 'nullable|string',
@@ -197,42 +294,120 @@ class ViajeController extends Controller
             'tarifa_base' => 'nullable|numeric|min:0',
 
             // Carga
-            'carga.descripcion' => 'nullable|string',
-            'carga.tipo_carga' => 'nullable|string',
             'carga.peso_kg' => 'nullable|numeric|min:0',
-            'carga.cantidad_bultos' => 'nullable|integer|min:0',
-            'carga.requiere_refrigeracion' => 'nullable|boolean',
+
+            // Reglas de negocio
+            'chofer_id' => ['nullable', 'exists:choferes,id', function ($attribute, $value, $fail) use ($request, $viaje) {
+                $estado = $request->input('estado', $viaje->estado->value);
+                if ($estado === 'iniciado' && ! empty($value)) {
+                    $conflict = Viaje::where('chofer_id', $value)
+                        ->where('estado', 'iniciado')
+                        ->where('id', '!=', $viaje->id)
+                        ->exists();
+                    if ($conflict) {
+                        $fail('El chofer ya tiene un viaje Iniciado.');
+                    }
+                }
+            }],
+            'tractora_id' => ['nullable', 'exists:unidades,id', function ($attribute, $value, $fail) use ($request, $viaje) {
+                $estado = $request->input('estado', $viaje->estado->value);
+                $tractoraId = $request->input('tractora_id', $viaje->tractora_id);
+                if ($estado === 'iniciado') {
+                    if (empty($value) && empty($tractoraId)) {
+                        $fail('Un viaje Iniciado debe tener una tractora asignada.');
+                    }
+                    $conflict = Viaje::where('tractora_id', $value)
+                        ->where('estado', 'iniciado')
+                        ->where('id', '!=', $viaje->id)
+                        ->exists();
+                    if ($conflict) {
+                        $fail('La tractora ya está en un viaje Iniciado.');
+                    }
+                }
+            }],
+            'acoplado_id' => ['nullable', 'exists:unidades,id', function ($attribute, $value, $fail) use ($request, $viaje) {
+                $estado = $request->input('estado', $viaje->estado->value);
+                $tractoraId = $request->input('tractora_id', $viaje->tractora_id);
+                if ($estado === 'iniciado') {
+                    if (! empty($value) && empty($tractoraId)) {
+                        $fail('No se puede asignar acoplado sin tractora.');
+                    }
+                    if (! empty($value)) {
+                        $conflict = Viaje::where('acoplado_id', $value)
+                            ->where('estado', 'iniciado')
+                            ->where('id', '!=', $viaje->id)
+                            ->exists();
+                        if ($conflict) {
+                            $fail('El acoplado ya está en un viaje Iniciado.');
+                        }
+                    }
+                } else {
+                    // Validar acoplado sin tractora en cualquier estado
+                    if (! empty($value) && empty($tractoraId)) {
+                        $fail('No se puede asignar acoplado sin tractora.');
+                    }
+                }
+            }],
+            'estado' => ['nullable', 'in:planificado,iniciado,terminado', function ($attribute, $value, $fail) use ($request, $viaje) {
+                $facturado = (bool) $request->input('facturado', $viaje->facturado);
+                $liquidado = (bool) $request->input('liquidado', $viaje->liquidado);
+                if (($facturado || $liquidado) && $value !== 'terminado') {
+                    $fail('Solo los viajes Terminados pueden ser facturados/liquidados.');
+                }
+            }],
+            'facturado' => ['nullable', 'boolean', function ($attribute, $value, $fail) use ($request, $viaje) {
+                $estado = $request->input('estado', $viaje->estado->value);
+                if ($value && $estado !== 'terminado') {
+                    $fail('Solo los viajes Terminados pueden ser facturados.');
+                }
+            }],
+            'liquidado' => ['nullable', 'boolean', function ($attribute, $value, $fail) use ($request, $viaje) {
+                $estado = $request->input('estado', $viaje->estado->value);
+                if ($value && $estado !== 'terminado') {
+                    $fail('Solo los viajes Terminados pueden ser liquidados.');
+                }
+            }],
         ]);
 
-        if (empty($validated['estado'])) {
-            $validated['estado'] = 'pendiente';
+        $updateData = [
+            'chofer_id' => $validated['chofer_id'] ?? $viaje->chofer_id,
+            'cliente_id' => $validated['cliente_id'] ?? $viaje->cliente_id,
+            'proveedor_id' => $validated['proveedor_id'] ?? $viaje->proveedor_id,
+            'tractora_id' => $validated['tractora_id'] ?? $viaje->tractora_id,
+            'acoplado_id' => $validated['acoplado_id'] ?? $viaje->acoplado_id,
+            'estado' => $validated['estado'] ?? $viaje->estado,
+            'origen' => $validated['origen'] ?? $viaje->origen,
+            'destino' => $validated['destino'] ?? $viaje->destino,
+            'fecha_salida' => $validated['fecha_salida'],
+            'hora_salida' => $validated['hora_salida'] ?? $viaje->hora_salida,
+            'fecha_llegada' => $validated['fecha_llegada'] ?? $viaje->fecha_llegada,
+            'hora_llegada' => $validated['hora_llegada'] ?? $viaje->hora_llegada,
+            'precio_pactado' => $validated['precio_pactado'] ?? $viaje->precio_pactado,
+            'costo_proveedor' => $validated['costo_proveedor'] ?? $viaje->costo_proveedor,
+            'km_recorrido' => $validated['km_recorrido'] ?? $viaje->km_recorrido,
+            'tipo_tarifa' => $validated['tipo_tarifa'] ?? $viaje->tipo_tarifa,
+            'tarifa_valor' => $validated['tarifa_valor'] ?? $viaje->tarifa_valor,
+            'tarifa_base' => $validated['tarifa_base'] ?? $viaje->tarifa_base,
+            'observaciones' => $validated['observaciones'] ?? $viaje->observaciones,
+        ];
+
+        // Solo permitir facturado/liquidado si estado = terminado
+        if ($validated['estado'] === 'terminado' || $viaje->estado === 'terminado') {
+            if (array_key_exists('facturado', $validated)) {
+                $updateData['facturado'] = $validated['facturado'];
+            }
+            if (array_key_exists('liquidado', $validated)) {
+                $updateData['liquidado'] = $validated['liquidado'];
+            }
         }
 
-        $viaje->update([
-            'chofer_id' => $validated['chofer_id'] ?? null,
-            'cliente_id' => $validated['cliente_id'] ?? null,
-            'proveedor_id' => $validated['proveedor_id'] ?? null,
-            'estado' => $validated['estado'],
-            'origen' => $validated['origen'] ?? null,
-            'destino' => $validated['destino'] ?? null,
-            'fecha_salida' => $validated['fecha_salida'],
-            'hora_salida' => $validated['hora_salida'] ?? null,
-            'fecha_llegada' => $validated['fecha_llegada'] ?? null,
-            'hora_llegada' => $validated['hora_llegada'] ?? null,
-            'precio_pactado' => $validated['precio_pactado'] ?? 0,
-            'costo_proveedor' => $validated['costo_proveedor'] ?? 0,
-            'km_recorrido' => $validated['km_recorrido'] ?? 0,
-            'tipo_tarifa' => $validated['tipo_tarifa'] ?? null,
-            'tarifa_valor' => $validated['tarifa_valor'] ?? null,
-            'tarifa_base' => $validated['tarifa_base'] ?? null,
-            'observaciones' => $validated['observaciones'] ?? null,
-        ]);
+        $viaje->update($updateData);
 
         if (array_key_exists('unidades', $validated)) {
             $viaje->unidades()->sync($validated['unidades'] ?? []);
         }
 
-        if (!empty($request->input('carga'))) {
+        if (! empty($request->input('carga'))) {
             $cargaData = [
                 'descripcion' => $validated['carga']['descripcion'] ?? null,
                 'tipo_carga' => $validated['carga']['tipo_carga'] ?? null,
@@ -255,7 +430,7 @@ class ViajeController extends Controller
         return response()->json($viaje, 200);
     }
 
-    public function show($id)
+    public function show(int $id): JsonResponse
     {
         $viaje = Viaje::withTrashed()->with([
             'cliente',
@@ -268,26 +443,29 @@ class ViajeController extends Controller
             'documento',
             'liquidaciones',
         ])->findOrFail($id);
+
         return response()->json($viaje);
     }
 
-    public function destroy(Viaje $viaje)
+    public function destroy(Viaje $viaje): JsonResponse
     {
         $viaje->delete();
+
         return response()->json(['message' => 'Viaje archivado']);
     }
 
-    public function restore($id)
+    public function restore(int $id): JsonResponse
     {
         $viaje = Viaje::withTrashed()->findOrFail($id);
         $viaje->restore();
+
         return response()->json(['message' => 'Viaje restaurado']);
     }
 
-    public function cambiarEstado(Request $request, Viaje $viaje)
+    public function cambiarEstado(Request $request, Viaje $viaje): JsonResponse
     {
         $validated = $request->validate([
-            'estado' => 'required|string|in:pendiente,en_curso,finalizado,liquidado,cancelado',
+            'estado' => 'required|string|in:planificado,iniciado,terminado',
         ]);
 
         $viaje->update(['estado' => $validated['estado']]);

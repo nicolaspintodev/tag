@@ -4,7 +4,7 @@ Sistema de gestión para una empresa de transporte y logística: clientes, prove
 
 [![CI](https://github.com/nicolaspintodev/tag/actions/workflows/ci.yml/badge.svg)](https://github.com/nicolaspintodev/tag/actions/workflows/ci.yml)
 
-> **Estado:** PoC funcional. La autenticación y la facturación están implementadas como mock/bypass. No usar todavía con datos reales de producción.
+> **Estado:** PoC funcional. La autenticación ya usa Sanctum; la facturación sigue en desarrollo. No usar todavía con datos reales de producción.
 
 ## Stack
 
@@ -28,6 +28,13 @@ TAG/
 ├── LICENSE
 └── README.md
 ```
+
+## Ramas
+
+- `main`: estable y deployable; solo releases y hotfixes.
+- `develop`: integración; recibe PRs de ramas cortas.
+- Ramas cortas: `feat/...`, `fix/...`, `chore/...`, `docs/...`.
+- Flujo detallado en [CONTRIBUTING](CONTRIBUTING.md).
 
 ## Requisitos
 
@@ -93,15 +100,19 @@ npm run build
 
 Los tests de backend usan SQLite en memoria (`api/phpunit.xml`) y no tocan la base local. La documentación de testing se mantiene en el hub interno del proyecto.
 
+El CI corre en `main` y `develop`. En `develop` es informativo; en `main` es bloqueante.
+
 ## Documentación
 
 - [Guía para agentes](AGENTS.md)
+- [Cómo contribuir](CONTRIBUTING.md)
+- [Seguridad](SECURITY.md)
 
 La documentación de gestión, deploy, testing e historial se mantiene en el hub interno del proyecto. `docs/` queda reservada para documentación de código.
 
 ## Despliegue
 
-El hosting de producción es DonWeb/Ferozo (hosting compartido). No soporta Docker ni procesos persistentes de Node, por lo que el frontend se compila y se sube por FTP. La guía de deploy se mantiene en el hub interno del proyecto.
+El entorno de prueba corre en DonWeb/Ferozo (hosting compartido). No soporta Docker ni procesos persistentes de Node, por lo que el frontend se compila y se sube por FTP. La guía de deploy se mantiene en el hub interno del proyecto.
 
 ## Repositorio legacy
 

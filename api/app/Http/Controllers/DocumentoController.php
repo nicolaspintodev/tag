@@ -48,6 +48,7 @@ class DocumentoController extends Controller
     public function show($id)
     {
         $documento = Documento::withTrashed()->with(['viaje', 'archivos'])->findOrFail($id);
+
         return response()->json($documento);
     }
 
@@ -77,6 +78,7 @@ class DocumentoController extends Controller
     {
         $documento = Documento::findOrFail($id);
         $documento->delete();
+
         return response()->json(['message' => 'Documento archivado']);
     }
 
@@ -84,6 +86,7 @@ class DocumentoController extends Controller
     {
         $documento = Documento::withTrashed()->findOrFail($id);
         $documento->restore();
+
         return response()->json(['message' => 'Documento restaurado']);
     }
 
@@ -110,6 +113,7 @@ class DocumentoController extends Controller
         $archivo->delete();
 
         $documento = Documento::with('archivos')->findOrFail($documentoId);
+
         return response()->json($documento);
     }
 

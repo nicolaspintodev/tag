@@ -18,12 +18,12 @@ return new class extends Migration
             'anticipos',
             'gastos',
             'facturas',
-            'users'
+            'users',
         ];
 
         foreach ($tables as $table) {
             Schema::table($table, function (Blueprint $table) {
-                if (!Schema::hasColumn($table->getTable(), 'deleted_at')) {
+                if (! Schema::hasColumn($table->getTable(), 'deleted_at')) {
                     $table->softDeletes();
                 }
             });
@@ -42,7 +42,7 @@ return new class extends Migration
             'anticipos',
             'gastos',
             'facturas',
-            'users'
+            'users',
         ];
 
         foreach ($tables as $table) {

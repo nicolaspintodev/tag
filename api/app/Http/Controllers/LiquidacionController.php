@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Factura;
 use App\Models\Liquidacion;
 use App\Models\Viaje;
 use Illuminate\Http\Request;
@@ -65,7 +66,7 @@ class LiquidacionController extends Controller
 
         $liquidacion = Liquidacion::create($validated);
 
-        if (!empty($viajeIds)) {
+        if (! empty($viajeIds)) {
             $viajes = Viaje::whereIn('id', $viajeIds)->get();
             foreach ($viajes as $v) {
                 $monto = $validated['tipo'] === 'proveedor' ? ($v->costo_proveedor_ajustado ?? $v->costo_viaje ?? 0) : $v->precio_pactado;
@@ -84,6 +85,7 @@ class LiquidacionController extends Controller
                 $q->with(['chofer', 'unidades', 'cliente', 'documento', 'gastos', 'anticipos']);
             }, 'factura'])
             ->findOrFail($id);
+
         return response()->json($liquidacion);
     }
 
@@ -109,6 +111,7 @@ class LiquidacionController extends Controller
     {
         $liquidacion = Liquidacion::findOrFail($id);
         $liquidacion->delete();
+
         return response()->json(['message' => 'Liquidación archivada']);
     }
 
@@ -116,6 +119,7 @@ class LiquidacionController extends Controller
     {
         $liquidacion = Liquidacion::withTrashed()->findOrFail($id);
         $liquidacion->restore();
+
         return response()->json(['message' => 'Liquidación restaurada']);
     }
 
@@ -253,7 +257,47 @@ class LiquidacionController extends Controller
             $siguiente = 1;
         }
 
-        return $prefijo . '-' . str_pad($siguiente, 4, '0', STR_PAD_LEFT);
+        return $prefijo.'-'.str_pad($siguiente, 4, '0', STR_PAD_LEFT);
+    }
+
+    public function generarFactura(Request $request, $id)
+    {
+        $liquidacion = Liquidacion::findOrFail($id);
+
+        if ($liquidacion->tipo !== 'cliente') {
+            return response()->json(['message' => 'Solo liquidaciones de cliente generan factura'], 422);
+        }
+        if ($liquidacion->estado !== 'pendiente') {
+            return response()->json(['message' => 'Solo liquidaciones pendientes pueden facturarse'], 422);
+        }
+
+        $validated = $request->validate([
+            'numero' => 'required|string|unique:facturas,numero',
+            'tipo' => 'required|in:A,B,C',
+            'punto_venta' => 'required|string|max:4|regex:/^\d{4}$/',
+            'fecha_emision' => 'required|date',
+            'fecha_vencimiento' => 'nullable|date|after_or_equal:fecha_emision',
+            'monto_neto' => 'required|numeric|min:0',
+            'iva' => 'required|numeric|min:0',
+            'monto_total' => 'required|numeric|min:0',
+            'cae' => 'nullable|string|max:20',
+            'cae_vencimiento' => 'nullable|date|after_or_equal:fecha_emision',
+        ]);
+
+        \DB::transaction(function () use ($liquidacion, $validated) {
+            $factura = Factura::create(array_merge($validated, [
+                'liquidacion_id' => $liquidacion->id,
+                'estado' => 'emitida',
+            ]));
+
+            // Actualizar viajes vinculados
+            $liquidacion->viajes()->update(['estado_facturacion' => 'facturado']);
+
+            // Cambiar estado liquidación
+            $liquidacion->update(['estado' => 'facturada']);
+        });
+
+        return response()->json($liquidacion->load(['factura', 'viajes']), 201);
     }
 
     private function recalcularTotal(Liquidacion $liquidacion): void

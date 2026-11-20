@@ -19,11 +19,11 @@ class ChoferController extends Controller
             $search = $request->get('search');
             $query->where(function ($q) use ($search) {
                 $q->where('nombre', 'like', "%{$search}%")
-                  ->orWhere('apellido', 'like', "%{$search}%")
-                  ->orWhere('numero', 'like', "%{$search}%")
-                  ->orWhere('dni', 'like', "%{$search}%")
-                  ->orWhere('email', 'like', "%{$search}%")
-                  ->orWhere('telefono', 'like', "%{$search}%");
+                    ->orWhere('apellido', 'like', "%{$search}%")
+                    ->orWhere('numero', 'like', "%{$search}%")
+                    ->orWhere('dni', 'like', "%{$search}%")
+                    ->orWhere('email', 'like', "%{$search}%")
+                    ->orWhere('telefono', 'like', "%{$search}%");
             });
         }
 
@@ -36,7 +36,11 @@ class ChoferController extends Controller
             }
         }
 
-        return response()->json($query->orderBy('id', 'desc')->get());
+        if ($request->filled('activo')) {
+            $query->where('activo', $request->boolean('activo'));
+        }
+
+        return response()->json($query->with('proveedor')->orderBy('id', 'desc')->get());
     }
 
     public function store(Request $request)
@@ -46,12 +50,12 @@ class ChoferController extends Controller
             'apellido' => 'required|string',
             'numero' => 'nullable|string',
             'dni' => 'nullable|string|unique:choferes,dni',
+            'cuil' => 'nullable|string|unique:choferes,cuil',
             'telefono' => 'nullable|string',
             'email' => 'nullable|email',
             'direccion' => 'nullable|string',
             'fecha_nacimiento' => 'nullable|date',
             'licencia_vencimiento' => 'nullable|date',
-            'linti_vencimiento' => 'nullable|date',
             'proveedor_id' => 'nullable|exists:proveedores,id',
             'activo' => 'boolean',
         ]);
@@ -65,6 +69,7 @@ class ChoferController extends Controller
                 ->exists();
             if ($duplicado) {
                 $chofer->delete();
+
                 return response()->json(['errors' => ['numero' => ['El número ya existe en esta flota']]], 422);
             }
         }
@@ -75,6 +80,7 @@ class ChoferController extends Controller
     public function show($id)
     {
         $chofer = Chofer::withTrashed()->findOrFail($id);
+
         return response()->json($chofer);
     }
 
@@ -86,13 +92,13 @@ class ChoferController extends Controller
             'nombre' => 'sometimes|required|string',
             'apellido' => 'sometimes|required|string',
             'numero' => 'nullable|string',
-            'dni' => 'nullable|string|unique:choferes,dni,' . $id,
+            'dni' => 'nullable|string|unique:choferes,dni,'.$id,
+            'cuil' => 'nullable|string|unique:choferes,cuil,'.$id,
             'telefono' => 'nullable|string',
             'email' => 'nullable|email',
             'direccion' => 'nullable|string',
             'fecha_nacimiento' => 'nullable|date',
             'licencia_vencimiento' => 'nullable|date',
-            'linti_vencimiento' => 'nullable|date',
             'proveedor_id' => 'nullable|exists:proveedores,id',
             'activo' => 'boolean',
         ]);

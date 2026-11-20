@@ -9,16 +9,16 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('facturas', function (Blueprint $table) {
-            if (!Schema::hasColumn('facturas', 'viaje_id')) {
+            if (! Schema::hasColumn('facturas', 'viaje_id')) {
                 $table->foreignId('viaje_id')->nullable()->after('id')->constrained('viajes')->cascadeOnDelete();
             }
         });
 
         Schema::table('ordenes_pago', function (Blueprint $table) {
-            if (!Schema::hasColumn('ordenes_pago', 'viaje_id')) {
+            if (! Schema::hasColumn('ordenes_pago', 'viaje_id')) {
                 $table->foreignId('viaje_id')->nullable()->after('id')->constrained('viajes')->cascadeOnDelete();
             }
-            if (!Schema::hasColumn('ordenes_pago', 'proveedor_id')) {
+            if (! Schema::hasColumn('ordenes_pago', 'proveedor_id')) {
                 $table->foreignId('proveedor_id')->nullable()->after('viaje_id')->constrained('proveedores')->cascadeOnDelete();
             }
         });

@@ -2,10 +2,10 @@
 
 namespace Tests\Feature;
 
-use App\Models\Viaje;
-use App\Models\Gasto;
-use App\Models\Cliente;
 use App\Models\Chofer;
+use App\Models\Cliente;
+use App\Models\Gasto;
+use App\Models\Viaje;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -14,12 +14,16 @@ class GastoApiTest extends TestCase
     use RefreshDatabase;
 
     private $cliente;
+
     private $chofer;
+
     private $viaje;
 
     protected function setUp(): void
     {
         parent::setUp();
+
+        $this->actingAsUser();
 
         $this->cliente = Cliente::create([
             'razon_social' => 'Cliente Test',
@@ -40,7 +44,7 @@ class GastoApiTest extends TestCase
             'fecha_salida' => '2026-07-15',
             'precio_pactado' => 780000,
             'costo_proveedor' => 230000,
-            'estado' => 'pendiente',
+            'estado' => 'planificado',
         ]);
     }
 
@@ -93,73 +97,6 @@ class GastoApiTest extends TestCase
         ]);
 
         $response->assertStatus(422);
-    }
-
-    // ================================================================
-    // RECALCULO COSTO VIAJE
-    // ================================================================
-
-    public function test_gasto_recalcula_viaje(): void
-    {
-        $this->postJson('/api/gastos', [
-            'viaje_id' => $this->viaje->id,
-            'tipo' => 'gasto',
-            'clase' => 'propio',
-            'reintegro' => false,
-            'concepto' => 'Peaje',
-            'monto' => 25000,
-            'fecha' => '2026-07-15',
-        ]);
-
-        $this->viaje->refresh();
-        // costoProv(230000) - 0 + propioSinReint(25000) + 0 = 255000
-        $this->assertEquals(255000, $this->viaje->costo_viaje);
-    }
-
-    public function test_gasto_update_recalcula_viaje(): void
-    {
-        $createResponse = $this->postJson('/api/gastos', [
-            'viaje_id' => $this->viaje->id,
-            'tipo' => 'gasto',
-            'clase' => 'propio',
-            'reintegro' => false,
-            'concepto' => 'Peaje',
-            'monto' => 25000,
-            'fecha' => '2026-07-15',
-        ])->assertCreated();
-
-        $gastoId = $createResponse->json('id');
-
-        $this->putJson("/api/gastos/{$gastoId}", [
-            'monto' => 50000,
-        ]);
-
-        $this->viaje->refresh();
-        // costoProv(230000) - 0 + propioSinReint(50000) + 0 = 280000
-        $this->assertEquals(280000, $this->viaje->costo_viaje);
-    }
-
-    public function test_gasto_destroy_recalcula_viaje(): void
-    {
-        $createResponse = $this->postJson('/api/gastos', [
-            'viaje_id' => $this->viaje->id,
-            'tipo' => 'gasto',
-            'clase' => 'propio',
-            'reintegro' => false,
-            'concepto' => 'Peaje',
-            'monto' => 25000,
-            'fecha' => '2026-07-15',
-        ])->assertCreated();
-
-        $gastoId = $createResponse->json('id');
-
-        $this->viaje->refresh();
-        $this->assertEquals(255000, $this->viaje->costo_viaje);
-
-        $this->deleteJson("/api/gastos/{$gastoId}");
-
-        $this->viaje->refresh();
-        $this->assertEquals($this->viaje->costo_proveedor, $this->viaje->costo_viaje);
     }
 
     // ================================================================

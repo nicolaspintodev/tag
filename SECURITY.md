@@ -22,4 +22,4 @@ No subir al repositorio:
 
 ## Alcance
 
-Este proyecto es una PoC. La autenticación y la facturación todavía no están completas; no debe exponerse con datos reales hasta completar esos módulos.
+Este proyecto es una PoC. La autenticación ya usa Sanctum; la facturación todavía no está completa. No debe exponerse con datos reales hasta completar ese módulo.
