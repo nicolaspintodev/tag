@@ -20,6 +20,16 @@ export const toDetailDraft = (liquidacion) => ({
   })),
 });
 
+export const createDetailRequest = (open, liquidacionId) => ({
+  id: liquidacionId,
+  detail: null,
+  draft: null,
+  loading: Boolean(open && liquidacionId),
+  error: '',
+});
+
+export const shouldCloseAfterSave = (estado) => estado !== 'pendiente';
+
 export const normalizeDraft = (draft) => JSON.stringify({
   fecha_emision: draft.fecha_emision ?? '',
   notas: draft.notas ?? '',
@@ -31,6 +41,17 @@ export const normalizeDraft = (draft) => JSON.stringify({
       iva_monto: toNumber(viaje.iva_monto),
     })),
 });
+
+const isValidAmount = (value) => {
+  if (typeof value === 'number') return Number.isFinite(value) && value >= 0;
+  if (typeof value !== 'string' || value.trim() === '') return false;
+  const parsed = Number(value);
+  return Number.isFinite(parsed) && parsed >= 0;
+};
+
+export const hasInvalidDetailAmount = (viajes = []) => viajes.some(
+  (viaje) => !isValidAmount(viaje.monto) || !isValidAmount(viaje.iva_monto),
+);
 
 const roundMoney = (value) => Math.round((value + Number.EPSILON) * 100) / 100;
 

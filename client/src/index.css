@@ -2023,6 +2023,11 @@ tr.row-saved-pulse td.col-acciones {
   color: var(--color-danger-text);
 }
 
+.detail-modal-saving {
+  font-size: 0.8125rem;
+  color: var(--text-muted);
+}
+
 .detail-modal-table-wrap {
   overflow: auto;
 }
@@ -2094,6 +2099,11 @@ tr.row-saved-pulse td.col-acciones {
 
 .detail-modal-input {
   width: 100%;
+}
+
+.detail-modal-textarea {
+  min-height: 5rem;
+  resize: vertical;
 }
 
 .detail-modal-number {

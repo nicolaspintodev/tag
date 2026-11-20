@@ -293,36 +293,50 @@ class LiquidacionController extends Controller
             return response()->json(['message' => 'Los viajes no pueden repetirse'], 422);
         }
 
-        $entityColumn = $liquidacion->tipo === 'cliente' ? 'cliente_id' : 'proveedor_id';
-        $entityId = $liquidacion->tipo === 'cliente' ? $liquidacion->cliente_id : $liquidacion->proveedor_id;
-        $viajes = Viaje::whereIn('id', $viajeIds)->get();
+        $error = null;
 
-        if ($viajes->count() !== $viajeIds->count()) {
-            return response()->json(['message' => 'Uno de los viajes no existe'], 422);
-        }
+        \DB::transaction(function () use (&$error, &$liquidacion, $id, $validated, $viajeIds) {
+            $liquidacion = Liquidacion::whereKey($id)->lockForUpdate()->firstOrFail();
 
-        foreach ($viajes as $viaje) {
-            if ((int) $viaje->{$entityColumn} !== (int) $entityId) {
-                return response()->json(['message' => 'Un viaje no pertenece a la entidad de la liquidación'], 422);
+            if ($liquidacion->estado !== 'borrador') {
+                $error = response()->json(['message' => 'Solo se puede editar una liquidación en estado borrador'], 422);
+                return;
             }
-            if ($viaje->liquidado) {
-                return response()->json(['message' => 'Un viaje ya está liquidado'], 422);
+
+            $entityColumn = $liquidacion->tipo === 'cliente' ? 'cliente_id' : 'proveedor_id';
+            $entityId = $liquidacion->tipo === 'cliente' ? $liquidacion->cliente_id : $liquidacion->proveedor_id;
+            $viajes = Viaje::whereIn('id', $viajeIds)->lockForUpdate()->get();
+
+            if ($viajes->count() !== $viajeIds->count()) {
+                $error = response()->json(['message' => 'Uno de los viajes no existe'], 422);
+                return;
             }
-        }
 
-        $viajesEnOtras = \DB::table('liquidacion_viaje')
-            ->join('liquidaciones', 'liquidaciones.id', '=', 'liquidacion_viaje.liquidacion_id')
-            ->whereNull('liquidaciones.deleted_at')
-            ->where('liquidaciones.tipo', $liquidacion->tipo)
-            ->where('liquidaciones.id', '!=', $liquidacion->id)
-            ->whereIn('liquidacion_viaje.viaje_id', $viajeIds)
-            ->exists();
+            foreach ($viajes as $viaje) {
+                if ((int) $viaje->{$entityColumn} !== (int) $entityId) {
+                    $error = response()->json(['message' => 'Un viaje no pertenece a la entidad de la liquidación'], 422);
+                    return;
+                }
+                if ($viaje->liquidado) {
+                    $error = response()->json(['message' => 'Un viaje ya está liquidado'], 422);
+                    return;
+                }
+            }
 
-        if ($viajesEnOtras) {
-            return response()->json(['message' => 'Un viaje ya está incluido en otra liquidación'], 422);
-        }
+            $viajesEnOtras = \DB::table('liquidacion_viaje')
+                ->join('liquidaciones', 'liquidaciones.id', '=', 'liquidacion_viaje.liquidacion_id')
+                ->whereNull('liquidaciones.deleted_at')
+                ->where('liquidaciones.tipo', $liquidacion->tipo)
+                ->where('liquidaciones.id', '!=', $liquidacion->id)
+                ->whereIn('liquidacion_viaje.viaje_id', $viajeIds)
+                ->lockForUpdate()
+                ->first();
 
-        \DB::transaction(function () use ($liquidacion, $validated, $viajeIds) {
+            if ($viajesEnOtras) {
+                $error = response()->json(['message' => 'Un viaje ya está incluido en otra liquidación'], 422);
+                return;
+            }
+
             $liquidacion->update([
                 'notas' => $validated['notas'] ?? null,
                 'fecha_emision' => $validated['fecha_emision'],
@@ -344,6 +358,10 @@ class LiquidacionController extends Controller
                 Viaje::whereIn('id', $viajeIds)->update(['liquidado' => true]);
             }
         });
+
+        if ($error) {
+            return $error;
+        }
 
         return response()->json($liquidacion->load([
             'cliente',

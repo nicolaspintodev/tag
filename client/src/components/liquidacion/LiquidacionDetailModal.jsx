@@ -9,7 +9,10 @@ import { liquidaciones } from '../../api/resources';
 import {
   buildDetailPayload,
   computeDetailTotals,
+  createDetailRequest,
+  hasInvalidDetailAmount,
   normalizeDraft,
+  shouldCloseAfterSave,
   toDetailDraft,
 } from '../../lib/liquidacionDetail';
 import { toNumber } from '../../lib/liquidacion';
@@ -40,7 +43,7 @@ const estadoBadge = (estado) => {
 };
 
 export default function LiquidacionDetailModal({ liquidacionId, open, onClose, onSaved }) {
-  const [request, setRequest] = useState({ id: liquidacionId, detail: null, draft: null, loading: false, error: '' });
+  const [request, setRequest] = useState(() => createDetailRequest(open, liquidacionId));
   const [saving, setSaving] = useState(false);
   const [pickerOpen, setPickerOpen] = useState(false);
   const [confirmPending, setConfirmPending] = useState(false);
@@ -85,11 +88,7 @@ export default function LiquidacionDetailModal({ liquidacionId, open, onClose, o
     [draft, detail],
   );
   const totals = useMemo(() => computeDetailTotals(draft?.viajes ?? []), [draft]);
-  const hasInvalidAmount = (draft?.viajes ?? []).some((viaje) => {
-    const monto = toNumber(viaje.monto);
-    const iva = toNumber(viaje.iva_monto);
-    return Number.isNaN(monto) || Number.isNaN(iva) || monto < 0 || iva < 0;
-  });
+  const hasInvalidAmount = hasInvalidDetailAmount(draft?.viajes ?? []);
 
   const close = () => {
     if (dirty && isBorrador) {
@@ -161,7 +160,7 @@ export default function LiquidacionDetailModal({ liquidacionId, open, onClose, o
         error: '',
       });
       onSaved();
-      onClose();
+      if (shouldCloseAfterSave(estado)) onClose();
     } catch (err) {
       setRequest((prev) => ({ ...prev, error: err.message || 'No se pudieron guardar los cambios' }));
     } finally {
@@ -172,7 +171,8 @@ export default function LiquidacionDetailModal({ liquidacionId, open, onClose, o
 
   const footer = (
     <div className="detail-modal-footer">
-      <Button variant="outline" onClick={close}>Cerrar</Button>
+      {saving && <span className="detail-modal-saving">Guardando…</span>}
+      <Button variant="outline" onClick={close} disabled={saving}>Cerrar</Button>
       {isBorrador && (
         <>
           <Button
@@ -244,10 +244,9 @@ export default function LiquidacionDetailModal({ liquidacionId, open, onClose, o
                 </div>
                 <div className="detail-modal-field" style={{ gridColumn: 'span 2' }}>
                   <label htmlFor="detail-notas">Notas</label>
-                  <Input
+                  <textarea
                     id="detail-notas"
-                    className="detail-modal-input"
-                    type="text"
+                    className="input-field detail-modal-input detail-modal-textarea"
                     value={draft.notas}
                     disabled={!isBorrador || saving}
                     onChange={(event) => updateDraft({ notas: event.target.value })}

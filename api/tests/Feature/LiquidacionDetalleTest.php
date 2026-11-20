@@ -174,6 +174,97 @@ class LiquidacionDetalleTest extends TestCase
             ->assertJsonFragment(['message' => 'El único cambio de estado permitido es a pendiente']);
     }
 
+    public function test_agrega_y_quita_viajes_en_una_sola_llamada(): void
+    {
+        $viajeViejo = $this->crearViaje(['id' => 1, 'precio_pactado' => 1000]);
+        $viajeNuevo = $this->crearViaje(['id' => 2, 'precio_pactado' => 2000]);
+        $liquidacion = $this->crearLiquidacion();
+        $liquidacion->viajes()->attach($viajeViejo->id, ['monto' => 1000, 'iva_monto' => 210]);
+
+        $response = $this->putJson("/api/liquidaciones/{$liquidacion->id}/detalle", [
+            'fecha_emision' => '2026-11-20',
+            'viajes' => [
+                ['viaje_id' => $viajeNuevo->id, 'monto' => 2000, 'iva_monto' => 420],
+            ],
+        ]);
+
+        $response->assertOk()->assertJsonCount(1, 'viajes');
+        $this->assertDatabaseMissing('liquidacion_viaje', [
+            'liquidacion_id' => $liquidacion->id,
+            'viaje_id' => $viajeViejo->id,
+        ]);
+        $this->assertDatabaseHas('liquidacion_viaje', [
+            'liquidacion_id' => $liquidacion->id,
+            'viaje_id' => $viajeNuevo->id,
+            'monto' => 2000,
+            'iva_monto' => 420,
+        ]);
+        $this->assertDatabaseHas('liquidaciones', ['id' => $liquidacion->id, 'total' => 2000]);
+    }
+
+    public function test_rechaza_viaje_liquidado(): void
+    {
+        $viaje = $this->crearViaje(['liquidado' => true]);
+        $liquidacion = $this->crearLiquidacion();
+
+        $response = $this->putJson("/api/liquidaciones/{$liquidacion->id}/detalle", [
+            'fecha_emision' => '2026-11-20',
+            'viajes' => [
+                ['viaje_id' => $viaje->id, 'monto' => 1000, 'iva_monto' => 210],
+            ],
+        ]);
+
+        $response->assertStatus(422)
+            ->assertJsonFragment(['message' => 'Un viaje ya está liquidado']);
+        $this->assertDatabaseCount('liquidacion_viaje', 0);
+    }
+
+    public function test_rechaza_viaje_en_otra_liquidacion_activa(): void
+    {
+        $viaje = $this->crearViaje();
+        $otraLiquidacion = $this->crearLiquidacion(['numero' => 'LIQ-OTRA-0001']);
+        $otraLiquidacion->viajes()->attach($viaje->id, ['monto' => 1000, 'iva_monto' => 210]);
+        $liquidacion = $this->crearLiquidacion(['numero' => 'LIQ-ACTUAL-0001']);
+
+        $response = $this->putJson("/api/liquidaciones/{$liquidacion->id}/detalle", [
+            'fecha_emision' => '2026-11-20',
+            'viajes' => [
+                ['viaje_id' => $viaje->id, 'monto' => 1000, 'iva_monto' => 210],
+            ],
+        ]);
+
+        $response->assertStatus(422)
+            ->assertJsonFragment(['message' => 'Un viaje ya está incluido en otra liquidación']);
+        $this->assertDatabaseCount('liquidacion_viaje', 1);
+    }
+
+    public function test_rechaza_estado_borrador_en_payload(): void
+    {
+        $liquidacion = $this->crearLiquidacion();
+
+        $response = $this->putJson("/api/liquidaciones/{$liquidacion->id}/detalle", [
+            'fecha_emision' => '2026-11-20',
+            'viajes' => [],
+            'estado' => 'borrador',
+        ]);
+
+        $response->assertStatus(422)
+            ->assertJsonFragment(['message' => 'El único cambio de estado permitido es a pendiente']);
+    }
+
+    public function test_rechaza_guardar_liquidacion_facturada(): void
+    {
+        $liquidacion = $this->crearLiquidacion(['estado' => 'facturada']);
+
+        $response = $this->putJson("/api/liquidaciones/{$liquidacion->id}/detalle", [
+            'fecha_emision' => '2026-11-20',
+            'viajes' => [],
+        ]);
+
+        $response->assertStatus(422)
+            ->assertJsonFragment(['message' => 'Solo se puede editar una liquidación en estado borrador']);
+    }
+
     public function test_viajes_disponibles_rechaza_liquidacion_pendiente(): void
     {
         $liquidacion = $this->crearLiquidacion(['estado' => 'pendiente']);
