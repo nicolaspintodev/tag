@@ -141,8 +141,13 @@ class LiquidacionController extends Controller
     {
         $liquidacion = Liquidacion::findOrFail($id);
 
+        if ($liquidacion->estado !== 'borrador') {
+            return response()->json(['message' => 'Solo se pueden consultar viajes disponibles en estado borrador'], 422);
+        }
+
         $query = Viaje::query()
-            ->where('estado', '!=', 'cancelado');
+            ->where('estado', '!=', 'cancelado')
+            ->where('liquidado', false);
 
         if ($liquidacion->tipo === 'cliente') {
             $query->where('cliente_id', $liquidacion->cliente_id);
@@ -171,6 +176,7 @@ class LiquidacionController extends Controller
 
         $viajesYaEnMismoTipo = \DB::table('liquidacion_viaje')
             ->join('liquidaciones', 'liquidaciones.id', '=', 'liquidacion_viaje.liquidacion_id')
+            ->whereNull('liquidaciones.deleted_at')
             ->where('liquidaciones.tipo', $liquidacion->tipo)
             ->where('liquidaciones.id', '!=', $liquidacion->id)
             ->pluck('liquidacion_viaje.viaje_id');

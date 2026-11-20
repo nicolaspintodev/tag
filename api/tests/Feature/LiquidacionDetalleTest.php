@@ -173,4 +173,34 @@ class LiquidacionDetalleTest extends TestCase
         $response->assertStatus(422)
             ->assertJsonFragment(['message' => 'El único cambio de estado permitido es a pendiente']);
     }
+
+    public function test_viajes_disponibles_rechaza_liquidacion_pendiente(): void
+    {
+        $liquidacion = $this->crearLiquidacion(['estado' => 'pendiente']);
+
+        $response = $this->getJson("/api/liquidaciones/{$liquidacion->id}/viajes-disponibles");
+
+        $response->assertStatus(422)
+            ->assertJsonFragment(['message' => 'Solo se pueden consultar viajes disponibles en estado borrador']);
+    }
+
+    public function test_viajes_disponibles_excluye_liquidados_y_ignora_archivadas(): void
+    {
+        $viajeLibre = $this->crearViaje(['id' => 1, 'precio_pactado' => 1000]);
+        $viajeLiquidado = $this->crearViaje(['id' => 2, 'liquidado' => true, 'precio_pactado' => 2000]);
+        $viajeEnArchivada = $this->crearViaje(['id' => 3, 'precio_pactado' => 3000]);
+
+        $archivada = $this->crearLiquidacion(['numero' => 'LIQ-ARCH-0001']);
+        $archivada->viajes()->attach($viajeEnArchivada->id, ['monto' => 3000, 'iva_monto' => 0]);
+        $archivada->delete();
+
+        $liquidacion = $this->crearLiquidacion(['numero' => 'LIQ-ACT-0001']);
+
+        $response = $this->getJson("/api/liquidaciones/{$liquidacion->id}/viajes-disponibles");
+
+        $response->assertOk()
+            ->assertJsonFragment(['id' => $viajeLibre->id])
+            ->assertJsonMissing(['id' => $viajeLiquidado->id])
+            ->assertJsonFragment(['id' => $viajeEnArchivada->id]);
+    }
 }
