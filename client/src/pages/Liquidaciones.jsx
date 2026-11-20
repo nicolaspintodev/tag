@@ -1,6 +1,6 @@
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import { Search, X, FileText } from 'lucide-react';
-import Modal from '../components/ui/Modal';
+import LiquidacionDetailModal from '../components/liquidacion/LiquidacionDetailModal';
 import ConfirmDialog from '../components/ui/ConfirmDialog';
 import Button from '../components/ui/Button';
 import Input from '../components/ui/Input';
@@ -62,8 +62,6 @@ const Liquidaciones = () => {
 
   const { rows, saveState, errors, reload, deleteRow, restoreRow, lastAction } =
     useEditableResource(liquidaciones, { rowKey: 'id', canPersist });
-
-  const selected = useMemo(() => rows.find((row) => row.id === selectedKey), [rows, selectedKey]);
 
   const fetchRows = (overrides = {}) => {
     const searchValue = overrides.searchValue ?? search;
@@ -249,55 +247,14 @@ const Liquidaciones = () => {
         <StateBar key={rows.length} count={rows.length} singular="liquidación" plural="liquidaciones" saveState={saveState} errors={errors} rows={rows} lastAction={lastAction} />
       )}
 
-      <Modal
-        open={Boolean(selected)}
-        title="Detalle de Liquidación"
-        onClose={() => setSelectedKey(null)}
-        footer={
-          <div className="modal-detail-footer">
-            <Button variant="outline" size="sm" onClick={() => setSelectedKey(null)}>
-              Cerrar
-            </Button>
-          </div>
-        }
-      >
-        {selected && (
-          <div className="modal-detail">
-            <div className="modal-detail-grid" style={{ gridTemplateColumns: 'repeat(2, 1fr)' }}>
-              <div className="modal-detail-row">
-                <label className="modal-detail-label">Número</label>
-                <span className="modal-detail-value mono">{selected.numero}</span>
-              </div>
-              <div className="modal-detail-row">
-                <label className="modal-detail-label">Tipo</label>
-                <span>{tipoBadge(selected.tipo)}</span>
-              </div>
-              <div className="modal-detail-row">
-                <label className="modal-detail-label">Estado</label>
-                <span>{estadoBadge(selected.estado)}</span>
-              </div>
-              <div className="modal-detail-row">
-                <label className="modal-detail-label">Fecha Emisión</label>
-                <span>{dateRender(selected.fecha_emision)}</span>
-              </div>
-              <div className="modal-detail-row" style={{ gridColumn: '1 / -1' }}>
-                <label className="modal-detail-label">{selected.tipo === 'cliente' ? 'Cliente' : 'Proveedor'}</label>
-                <span>{(selected.tipo === 'cliente' ? selected.cliente?.razon_social : selected.proveedor?.razon_social) || '-'}</span>
-              </div>
-              <div className="modal-detail-row" style={{ gridColumn: '1 / -1' }}>
-                <label className="modal-detail-label">Total</label>
-                <span className="modal-detail-value mono" style={{ fontWeight: 600, fontSize: '1.1rem', color: 'var(--color-primary)' }}>{currencyRender(selected.total)}</span>
-              </div>
-              {selected.notas && (
-                <div className="modal-detail-row" style={{ gridColumn: '1 / -1' }}>
-                  <label className="modal-detail-label">Notas</label>
-                  <span>{selected.notas}</span>
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-      </Modal>
+      {Boolean(selectedKey) && (
+        <LiquidacionDetailModal
+          liquidacionId={selectedKey}
+          open
+          onClose={() => setSelectedKey(null)}
+          onSaved={fetchRows}
+        />
+      )}
 
       <ConfirmDialog
         open={Boolean(toDelete)}
