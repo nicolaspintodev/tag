@@ -242,11 +242,11 @@ class ViajeController extends Controller
             'observaciones' => $validated['observaciones'] ?? null,
         ]);
 
-        if (! empty($validated['unidades'])) {
+        if (!empty($validated['unidades'])) {
             $viaje->unidades()->sync($validated['unidades']);
         }
 
-        if (! empty($request->input('carga'))) {
+        if (!empty($request->input('carga'))) {
             Carga::create([
                 'viaje_id' => $viaje->id,
                 'descripcion' => $validated['carga']['descripcion'] ?? null,
@@ -405,7 +405,7 @@ class ViajeController extends Controller
             $viaje->unidades()->sync($validated['unidades'] ?? []);
         }
 
-        if (! empty($request->input('carga'))) {
+        if (!empty($request->input('carga'))) {
             $cargaData = [
                 'descripcion' => $validated['carga']['descripcion'] ?? null,
                 'tipo_carga' => $validated['carga']['tipo_carga'] ?? null,
