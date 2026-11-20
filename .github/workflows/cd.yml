@@ -113,16 +113,19 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     needs: deploy
+    env:
+      DEPLOY_KEY: ${{ secrets.DEPLOY_KEY }}
+      API_URL: ${{ secrets.API_URL }}
     steps:
       - name: Run migrations
-        if: ${{ secrets.DEPLOY_KEY != '' }}
-        run: curl -fsS "http://logisticatag.com.ar/deploy.php?key=${{ secrets.DEPLOY_KEY }}&action=migrate"
+        if: ${{ env.DEPLOY_KEY != '' }}
+        run: curl -fsS "http://logisticatag.com.ar/deploy.php?key=${DEPLOY_KEY}&action=migrate"
 
       - name: Wait and health check
         run: |
           sleep 15
           for i in 1 2 3 4 5; do
-            if curl -fsS "${{ secrets.API_URL }}/health"; then
+            if curl -fsS "${API_URL}/health"; then
               echo
               echo "OK"
               exit 0
