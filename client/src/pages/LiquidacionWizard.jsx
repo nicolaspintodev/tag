@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { X, Save, FileText } from 'lucide-react';
+import { X, ChevronLeft, Save, FileText } from 'lucide-react';
 import { liquidaciones as liquidacionesResource, viajes as viajesResource } from '../api/resources';
 import StateBar from '../components/ui/StateBar';
 import LiquidacionToolbar from '../components/liquidacion/LiquidacionToolbar';
