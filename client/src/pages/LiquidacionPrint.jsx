@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Printer } from 'lucide-react';
 import { liquidaciones as liquidacionesResource } from '../api/resources';
+import { toNumber } from '../lib/liquidacion';
 import Button from '../components/ui/Button';
 
 const dateRender = (v) => {
@@ -10,8 +11,8 @@ const dateRender = (v) => {
 };
 
 const currencyRender = (v) => {
-  if (!v && v !== 0) return '$0';
-  return new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', minimumFractionDigits: 0 }).format(v);
+  const amount = toNumber(v);
+  return new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', minimumFractionDigits: 0 }).format(amount);
 };
 
 export default function LiquidacionPrint() {
@@ -42,9 +43,9 @@ export default function LiquidacionPrint() {
   const labelDestinatario = isCliente ? 'Cliente' : 'Proveedor';
 
   const viajes = liquidacion.viajes || [];
-  const subtotal = viajes.reduce((s, v) => s + Number(v.pivot?.monto || 0), 0);
-  const ivaTotal = viajes.reduce((s, v) => s + Number(v.pivot?.iva_monto || 0), 0);
-  const total = viajes.reduce((s, v) => s + Number(v.pivot?.monto_final || v.pivot?.monto || 0), 0);
+  const subtotal = viajes.reduce((s, v) => s + toNumber(v.pivot?.monto), 0);
+  const ivaTotal = viajes.reduce((s, v) => s + toNumber(v.pivot?.iva_monto), 0);
+  const total = viajes.reduce((s, v) => s + toNumber(v.pivot?.monto_final ?? v.pivot?.monto), 0);
 
   return (
     <div className="print-page" style={{ maxWidth: '800px', margin: '0 auto', padding: '2rem', fontFamily: 'system-ui, sans-serif', fontSize: '10pt', lineHeight: '1.4' }}>

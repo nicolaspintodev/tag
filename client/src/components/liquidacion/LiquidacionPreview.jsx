@@ -1,7 +1,7 @@
 import { ChevronLeft, Save, FileText, AlertTriangle } from 'lucide-react';
 import Button from '../ui/Button';
 import Input from '../ui/Input';
-import { computeTotals } from '../../lib/liquidacion';
+import { computeTotals, toNumber } from '../../lib/liquidacion';
 
 export default function LiquidacionPreview({
   data,
@@ -64,7 +64,7 @@ export default function LiquidacionPreview({
           </thead>
           <tbody>
             {selectedViajes.map(v => {
-              const precio = v.precio_pactado ?? 0;
+              const precio = toNumber(v.precio_pactado);
               const iva = Math.round(precio * 0.21);
               const subtotal = precio + iva;
               return (

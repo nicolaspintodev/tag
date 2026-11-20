@@ -8,7 +8,7 @@ import EntityPickerModal from '../components/liquidacion/EntityPickerModal';
 import LiquidacionPreview from '../components/liquidacion/LiquidacionPreview';
 import LiquidacionSelectionGrid from '../components/grid/LiquidacionSelectionGrid';
 import { buildSelectionGridColumns } from '../lib/columns/liquidacion';
-import { deriveMontos, computeTotals } from '../lib/liquidacion';
+import { deriveMontos, computeSelectionSubtotal } from '../lib/liquidacion';
 
 const STORAGE_KEY = 'liquidacion_wizard_draft';
 
@@ -210,7 +210,7 @@ export default function LiquidacionWizard() {
     return (data.viajesData || []).map(v => ({ ...v, ...(montos[v.id] || {}) }));
   }, [data.viajesData, data.montos]);
 
-  const { subtotal } = computeTotals(rows.filter(v => selectedIds.includes(v.id)));
+  const subtotal = computeSelectionSubtotal(rows.filter(v => selectedIds.includes(v.id)));
 
   return (
     <div className="resource-page" style={{
