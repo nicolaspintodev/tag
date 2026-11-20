@@ -1,10 +1,9 @@
 <?php
-declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
 use App\Models\Carga;
-use App.Models\Viaje;
+use App\Models\Viaje;
 use Illuminate\Http\Request;
 
 class ViajeController extends Controller
