@@ -1,0 +1,133 @@
+name: CD Deploy to Test
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: cd-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build-frontend:
+    name: Build Frontend
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: client
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: client/package-lock.json
+      - name: Install dependencies
+        run: npm ci
+      - name: Lint
+        run: npm run lint
+      - name: Build
+        run: npm run build
+        env:
+          VITE_API_URL: ${{ secrets.API_URL }}
+      - name: Upload frontend artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-dist
+          path: client/dist/
+          retention-days: 1
+
+  deploy:
+    name: Deploy via FTPS
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    needs: build-frontend
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download frontend artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: frontend-dist
+          path: client/dist/
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.4"
+          tools: composer:v2
+          coverage: none
+
+      - name: Install API prod dependencies
+        working-directory: api
+        run: composer install --no-dev --optimize-autoloader --no-interaction --prefer-dist
+
+      - name: Deploy frontend
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          server: ${{ secrets.FTP_HOST }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          port: ${{ secrets.FTP_PORT }}
+          protocol: ${{ secrets.FTP_PROTOCOL }}
+          local-dir: client/dist/
+          server-dir: ${{ secrets.DEPLOY_PATH_FRONTEND }}/
+          exclude: |
+            **/.htaccess
+            **/index.php
+            **/deploy.php
+
+      - name: Deploy API
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          server: ${{ secrets.FTP_HOST }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          port: ${{ secrets.FTP_PORT }}
+          protocol: ${{ secrets.FTP_PROTOCOL }}
+          local-dir: api/
+          server-dir: ${{ secrets.DEPLOY_PATH_API }}/
+          exclude: |
+            **/.git*
+            **/.github/**
+            **/.env*
+            **/tests/**
+            **/phpunit.xml
+            **/pint.json
+            **/database/*.sqlite
+            **/storage/logs/**
+            **/storage/framework/cache/**
+            **/storage/framework/sessions/**
+            **/storage/framework/views/**
+            **/bootstrap/cache/*.php
+            **/node_modules/**
+
+  post-deploy:
+    name: Migrate and Health Check
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    needs: deploy
+    steps:
+      - name: Run migrations
+        if: ${{ secrets.DEPLOY_KEY != '' }}
+        run: curl -fsS "http://logisticatag.com.ar/deploy.php?key=${{ secrets.DEPLOY_KEY }}&action=migrate"
+
+      - name: Wait and health check
+        run: |
+          sleep 15
+          for i in 1 2 3 4 5; do
+            if curl -fsS "${{ secrets.API_URL }}/health"; then
+              echo
+              echo "OK"
+              exit 0
+            fi
+            echo "attempt $i failed"
+            sleep 10
+          done
+          exit 1
