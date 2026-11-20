@@ -80,24 +80,20 @@ export default function LiquidacionWizard() {
 
       const response = await viajesResource.disponiblesParaLiquidacion(params);
       const viajesArray = Array.isArray(response) ? response : [];
+      const montos = deriveMontos(viajesArray);
 
-      setData(prev => ({ ...prev, viajesData: viajesArray }));
-
-      if (selectedIds.length > 0) {
-        const newMontos = deriveMontos(viajesArray.filter(v => selectedIds.includes(v.id)));
-        setData(prev => ({ ...prev, montos: { ...prev.montos, ...newMontos } }));
-      }
+      setData(prev => ({ ...prev, viajesData: viajesArray, montos }));
     } catch (err) {
       console.error('Error fetching viajes:', err);
-      setData(prev => ({ ...prev, viajesData: [] }));
+      setData(prev => ({ ...prev, viajesData: [], montos: {} }));
     } finally {
       setLoading(false);
     }
-  }, [selectedIds]);
+  }, []);
 
   useEffect(() => {
     fetchViajes();
-  }, [fetchViajes]);
+  }, [fetchViajes, data.tipo, data.cliente_id, data.proveedor_id]);
 
   const handleTipoChange = useCallback((newTipo) => {
     setData(prev => ({

@@ -532,7 +532,6 @@ class ViajeController extends Controller
         $column = $tipo === 'cliente' ? 'cliente_id' : 'proveedor_id';
 
         $query = Viaje::query()
-            ->where('estado', 'terminado')
             ->where('liquidado', false);
 
         $subQuery = \DB::table('liquidacion_viaje')

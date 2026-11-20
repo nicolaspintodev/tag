@@ -4,7 +4,7 @@ export function deriveMontos(viajes) {
   return viajes.reduce((acc, v) => {
     const precio = v.precio_pactado ?? 0;
     const iva = Math.round(precio * IVA_DEFAULT);
-    acc[v.id] = { monto: precio, iva_monto: iva };
+    acc[v.id] = { monto: precio, iva_monto: iva, monto_final: precio + iva };
     return acc;
   }, {});
 }

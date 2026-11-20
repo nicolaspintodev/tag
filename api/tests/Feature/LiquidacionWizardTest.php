@@ -274,7 +274,7 @@ class LiquidacionWizardTest extends TestCase
         // 1 liquidado (debe excluirse)
         Viaje::create(['cliente_id' => $cliente1->id, 'estado' => 'terminado', 'liquidado' => true, 'precio_pactado' => 60000, 'origen' => 'CABA', 'destino' => 'Rosario', 'fecha_salida' => '2026-07-15']);
 
-        // 1 planificado (debe excluirse)
+        // 1 planificado (también cuenta: todos los estados no liquidados)
         Viaje::create(['cliente_id' => $cliente1->id, 'estado' => 'planificado', 'liquidado' => false, 'precio_pactado' => 60000, 'origen' => 'CABA', 'destino' => 'Rosario', 'fecha_salida' => '2026-07-15']);
 
         // 2 para cliente2 (no deben aparecer en respuesta de cliente1)
@@ -294,7 +294,7 @@ class LiquidacionWizardTest extends TestCase
 
         $response->assertOk()
             ->assertJsonCount(2)
-            ->assertJsonFragment(['id' => $cliente1->id, 'cantidad' => 3])
+            ->assertJsonFragment(['id' => $cliente1->id, 'cantidad' => 4])
             ->assertJsonFragment(['id' => $cliente2->id, 'cantidad' => 2]);
     }
 
