@@ -1,5 +1,4 @@
 <?php
-
 declare(strict_types=1);
 
 namespace App\Http\Requests;
@@ -37,7 +36,7 @@ class PhpBuiltInServerRequest extends Request
             }
 
             if (is_array($data)) {
-                $request->request = new InputBag($data);
+                $request->request = new \Symfony\Component\HttpFoundation\InputBag($data);
             }
         }
 
