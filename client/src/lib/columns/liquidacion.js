@@ -17,6 +17,7 @@ const origenDestinoRender = (v, row) => {
 
 export const buildSelectionGridColumns = () => [
   { id: 'select', accessor: 'select', header: '', type: 'checkbox', width: '44px', className: 'checkbox-col' },
+  { id: 'estado', accessor: 'estado', header: 'Estado', type: 'text', width: '110px', className: 'mono', sortable: true },
   { id: 'codigo_viaje', accessor: 'codigo_viaje', header: 'Código', type: 'text', width: '110px', className: 'mono', sortable: true },
   { id: 'fecha_salida', accessor: 'fecha_salida', header: 'Fecha Salida', type: 'date', width: '120px', className: 'mono', render: dateRender, sortable: true },
   { id: 'origen_destino', accessor: 'origen_destino', header: 'Origen → Destino', type: 'text', width: '250px', className: 'truncate', render: origenDestinoRender, sortable: true },

@@ -487,7 +487,6 @@ class ViajeController extends Controller
         $targetId = $tipo === 'cliente' ? $validated['cliente_id'] : $validated['proveedor_id'];
 
         $query = Viaje::query()
-            ->where('estado', 'terminado')
             ->where('liquidado', false);
 
         if ($tipo === 'cliente') {

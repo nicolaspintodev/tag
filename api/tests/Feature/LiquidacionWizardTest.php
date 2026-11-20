@@ -29,7 +29,7 @@ class LiquidacionWizardTest extends TestCase
     }
 
     /** @test */
-    public function test_disponibles_para_liquidacion_filtra_por_cliente_y_estado(): void
+    public function test_disponibles_para_liquidacion_incluye_todos_los_estados_no_liquidados(): void
     {
         // Viaje disponible: terminado, no liquidado, del cliente
         $viajeOk = Viaje::create([
@@ -58,8 +58,8 @@ class LiquidacionWizardTest extends TestCase
         $viajeEnOtraLiq = Viaje::create(['cliente_id' => $this->cliente->id, 'estado' => 'terminado', 'liquidado' => false, 'precio_pactado' => 75000, 'origen' => 'CABA', 'destino' => 'Rosario', 'fecha_salida' => '2026-07-15']);
         $liqExistente->viajes()->attach($viajeEnOtraLiq->id, ['monto' => 50000]);
 
-        // Viaje NO disponible: estado planificado (no terminado)
-        Viaje::create([
+        // Viaje disponible: planificado, no liquidado (todos los estados se listan)
+        $viajePlanificado = Viaje::create([
             'cliente_id' => $this->cliente->id,
             'estado' => 'planificado',
             'liquidado' => false,
@@ -72,8 +72,9 @@ class LiquidacionWizardTest extends TestCase
         $response = $this->getJson('/api/viajes/disponibles-para-liquidacion?tipo=cliente&cliente_id=' . $this->cliente->id);
 
         $response->assertOk()
-            ->assertJsonCount(1)
-            ->assertJsonPath('0.id', $viajeOk->id);
+            ->assertJsonCount(2)
+            ->assertJsonFragment(['id' => $viajeOk->id])
+            ->assertJsonFragment(['id' => $viajePlanificado->id]);
     }
 
     /** @test */

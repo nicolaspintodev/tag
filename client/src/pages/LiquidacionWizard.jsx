@@ -209,7 +209,10 @@ export default function LiquidacionWizard() {
   const isEdicion = vista === 'edicion';
 
   const columns = useMemo(() => buildSelectionGridColumns(), []);
-  const rows = useMemo(() => data.viajesData || [], [data.viajesData]);
+  const rows = useMemo(() => {
+    const montos = data.montos || {};
+    return (data.viajesData || []).map(v => ({ ...v, ...(montos[v.id] || {}) }));
+  }, [data.viajesData, data.montos]);
 
   const { subtotal } = computeTotals(rows.filter(v => selectedIds.includes(v.id)));
 
