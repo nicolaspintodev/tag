@@ -16,7 +16,7 @@ const parse = async (response) => {
   return data;
 };
 
-export const makeResource = (base) => ({
+export const makeResource = (base, extra = {}) => ({
   list: (params = {}) => {
     const entries = Object.entries(params).filter(
       ([, value]) => value !== undefined && value !== null && value !== '',
@@ -30,6 +30,7 @@ export const makeResource = (base) => ({
     apiFetch(`${base}/${id}`, { method: 'PUT', body: JSON.stringify(data) }).then(parse),
   remove: (id) => apiFetch(`${base}/${id}`, { method: 'DELETE' }).then(parse),
   restore: (id) => apiFetch(`${base}/${id}/restore`, { method: 'POST' }).then(parse),
+  ...extra,
 });
 
 export const clientes = makeResource('/clientes');
