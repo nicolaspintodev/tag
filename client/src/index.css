@@ -1932,12 +1932,17 @@ tr.row-saved-pulse td.col-acciones {
   justify-content: center;
   width: 32px;
   height: 32px;
+  padding: 0;
   border: none;
   background: transparent;
   color: var(--color-danger-text);
   border-radius: var(--radius-md);
   cursor: pointer;
   transition: background 0.15s ease, color 0.15s ease;
+}
+
+.wizard-close-btn svg {
+  flex-shrink: 0;
 }
 
 .wizard-close-btn:hover {
