@@ -53,4 +53,10 @@ export const viajes = makeResource('/viajes', {
     return apiFetch(`/viajes/disponibles-por-entidad?${qs}`).then(parse);
   },
 });
-export const liquidaciones = makeResource('/liquidaciones');
+export const liquidaciones = makeResource('/liquidaciones', {
+  viajesDisponibles: (id) => apiFetch(`/liquidaciones/${id}/viajes-disponibles`).then(parse),
+  saveDetalle: (id, data) => apiFetch(`/liquidaciones/${id}/detalle`, {
+    method: 'PUT',
+    body: JSON.stringify(data),
+  }).then(parse),
+});

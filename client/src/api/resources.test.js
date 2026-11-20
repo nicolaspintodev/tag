@@ -3,7 +3,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 vi.mock('../api', () => ({ apiFetch: vi.fn() }));
 
 import { apiFetch } from '../api';
-import { clientes } from './resources';
+import { clientes, liquidaciones } from './resources';
 
 const ok = (body) => ({
   ok: true,
@@ -59,6 +59,24 @@ describe('clientes resource', () => {
     await expect(clientes.create({})).rejects.toMatchObject({
       status: 422,
       errors: { cuit: ['CUIT duplicado'] },
+    });
+  });
+});
+
+describe('liquidaciones resource', () => {
+  it('viajesDisponibles consulta el endpoint de la liquidación', async () => {
+    apiFetch.mockResolvedValue(ok([]));
+    await liquidaciones.viajesDisponibles(9);
+    expect(apiFetch).toHaveBeenCalledWith('/liquidaciones/9/viajes-disponibles');
+  });
+
+  it('saveDetalle hace PUT con payload JSON', async () => {
+    apiFetch.mockResolvedValue(ok({ id: 9 }));
+    const payload = { fecha_emision: '2026-11-20', viajes: [] };
+    await liquidaciones.saveDetalle(9, payload);
+    expect(apiFetch).toHaveBeenCalledWith('/liquidaciones/9/detalle', {
+      method: 'PUT',
+      body: JSON.stringify(payload),
     });
   });
 });
