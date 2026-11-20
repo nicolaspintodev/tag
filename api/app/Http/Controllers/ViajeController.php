@@ -1,15 +1,17 @@
 <?php
+
 declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
 use App\Models\Carga;
 use App\Models\Viaje;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class ViajeController extends Controller
 {
-    public function index(Request $request): \Illuminate\Http\JsonResponse
+    public function index(Request $request): JsonResponse
     {
         $query = Viaje::select('viajes.*')->with([
             'cliente',
@@ -113,7 +115,7 @@ class ViajeController extends Controller
         return response()->json($viajes);
     }
 
-    public function store(Request $request): \Illuminate\Http\JsonResponse
+    public function store(Request $request): JsonResponse
     {
         $validated = $request->validate([
             'cliente_id' => 'nullable|exists:clientes,id',
@@ -149,7 +151,7 @@ class ViajeController extends Controller
             'chofer_id' => ['required', 'exists:choferes,id', function ($attribute, $value, $fail) use ($request) {
                 $estado = $request->input('estado', 'planificado');
                 if ($estado === 'iniciado') {
-                    $conflict = \App\Models\Viaje::where('chofer_id', $value)
+                    $conflict = Viaje::where('chofer_id', $value)
                         ->where('estado', 'iniciado')
                         ->exists();
                     if ($conflict) {
@@ -163,7 +165,7 @@ class ViajeController extends Controller
                     if (empty($value)) {
                         $fail('Un viaje Iniciado debe tener una tractora asignada.');
                     }
-                    $conflict = \App\Models\Viaje::where('tractora_id', $value)
+                    $conflict = Viaje::where('tractora_id', $value)
                         ->where('estado', 'iniciado')
                         ->exists();
                     if ($conflict) {
@@ -175,11 +177,11 @@ class ViajeController extends Controller
                 $estado = $request->input('estado', 'planificado');
                 $tractoraId = $request->input('tractora_id');
                 if ($estado === 'iniciado') {
-                    if (!empty($value) && empty($tractoraId)) {
+                    if (! empty($value) && empty($tractoraId)) {
                         $fail('No se puede asignar acoplado sin tractora.');
                     }
-                    if (!empty($value)) {
-                        $conflict = \App\Models\Viaje::where('acoplado_id', $value)
+                    if (! empty($value)) {
+                        $conflict = Viaje::where('acoplado_id', $value)
                             ->where('estado', 'iniciado')
                             ->exists();
                         if ($conflict) {
@@ -188,7 +190,7 @@ class ViajeController extends Controller
                     }
                 } else {
                     // Validar acoplado sin tractora en cualquier estado
-                    if (!empty($value) && empty($tractoraId)) {
+                    if (! empty($value) && empty($tractoraId)) {
                         $fail('No se puede asignar acoplado sin tractora.');
                     }
                 }
@@ -242,11 +244,11 @@ class ViajeController extends Controller
             'observaciones' => $validated['observaciones'] ?? null,
         ]);
 
-        if (!empty($validated['unidades'])) {
+        if (! empty($validated['unidades'])) {
             $viaje->unidades()->sync($validated['unidades']);
         }
 
-        if (!empty($request->input('carga'))) {
+        if (! empty($request->input('carga'))) {
             Carga::create([
                 'viaje_id' => $viaje->id,
                 'descripcion' => $validated['carga']['descripcion'] ?? null,
@@ -262,7 +264,7 @@ class ViajeController extends Controller
         return response()->json($viaje, 201);
     }
 
-    public function update(Request $request, Viaje $viaje): \Illuminate\Http\JsonResponse
+    public function update(Request $request, Viaje $viaje): JsonResponse
     {
         $validated = $request->validate([
             'cliente_id' => 'nullable|exists:clientes,id',
@@ -297,8 +299,8 @@ class ViajeController extends Controller
             // Reglas de negocio
             'chofer_id' => ['nullable', 'exists:choferes,id', function ($attribute, $value, $fail) use ($request, $viaje) {
                 $estado = $request->input('estado', $viaje->estado->value);
-                if ($estado === 'iniciado' && !empty($value)) {
-                    $conflict = \App\Models\Viaje::where('chofer_id', $value)
+                if ($estado === 'iniciado' && ! empty($value)) {
+                    $conflict = Viaje::where('chofer_id', $value)
                         ->where('estado', 'iniciado')
                         ->where('id', '!=', $viaje->id)
                         ->exists();
@@ -314,7 +316,7 @@ class ViajeController extends Controller
                     if (empty($value) && empty($tractoraId)) {
                         $fail('Un viaje Iniciado debe tener una tractora asignada.');
                     }
-                    $conflict = \App\Models\Viaje::where('tractora_id', $value)
+                    $conflict = Viaje::where('tractora_id', $value)
                         ->where('estado', 'iniciado')
                         ->where('id', '!=', $viaje->id)
                         ->exists();
@@ -327,11 +329,11 @@ class ViajeController extends Controller
                 $estado = $request->input('estado', $viaje->estado->value);
                 $tractoraId = $request->input('tractora_id', $viaje->tractora_id);
                 if ($estado === 'iniciado') {
-                    if (!empty($value) && empty($tractoraId)) {
+                    if (! empty($value) && empty($tractoraId)) {
                         $fail('No se puede asignar acoplado sin tractora.');
                     }
-                    if (!empty($value)) {
-                        $conflict = \App\Models\Viaje::where('acoplado_id', $value)
+                    if (! empty($value)) {
+                        $conflict = Viaje::where('acoplado_id', $value)
                             ->where('estado', 'iniciado')
                             ->where('id', '!=', $viaje->id)
                             ->exists();
@@ -341,7 +343,7 @@ class ViajeController extends Controller
                     }
                 } else {
                     // Validar acoplado sin tractora en cualquier estado
-                    if (!empty($value) && empty($tractoraId)) {
+                    if (! empty($value) && empty($tractoraId)) {
                         $fail('No se puede asignar acoplado sin tractora.');
                     }
                 }
@@ -405,7 +407,7 @@ class ViajeController extends Controller
             $viaje->unidades()->sync($validated['unidades'] ?? []);
         }
 
-        if (!empty($request->input('carga'))) {
+        if (! empty($request->input('carga'))) {
             $cargaData = [
                 'descripcion' => $validated['carga']['descripcion'] ?? null,
                 'tipo_carga' => $validated['carga']['tipo_carga'] ?? null,
@@ -428,7 +430,7 @@ class ViajeController extends Controller
         return response()->json($viaje, 200);
     }
 
-    public function show(int $id): \Illuminate\Http\JsonResponse
+    public function show(int $id): JsonResponse
     {
         $viaje = Viaje::withTrashed()->with([
             'cliente',
@@ -445,14 +447,14 @@ class ViajeController extends Controller
         return response()->json($viaje);
     }
 
-    public function destroy(Viaje $viaje): \Illuminate\Http\JsonResponse
+    public function destroy(Viaje $viaje): JsonResponse
     {
         $viaje->delete();
 
         return response()->json(['message' => 'Viaje archivado']);
     }
 
-    public function restore(int $id): \Illuminate\Http\JsonResponse
+    public function restore(int $id): JsonResponse
     {
         $viaje = Viaje::withTrashed()->findOrFail($id);
         $viaje->restore();
@@ -460,7 +462,7 @@ class ViajeController extends Controller
         return response()->json(['message' => 'Viaje restaurado']);
     }
 
-    public function cambiarEstado(Request $request, Viaje $viaje): \Illuminate\Http\JsonResponse
+    public function cambiarEstado(Request $request, Viaje $viaje): JsonResponse
     {
         $validated = $request->validate([
             'estado' => 'required|string|in:planificado,iniciado,terminado',
