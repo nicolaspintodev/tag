@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Printer } from 'lucide-react';
 import { liquidaciones as liquidacionesResource } from '../api/resources';
 import { toNumber } from '../lib/liquidacion';
+import { buildPrintView } from '../lib/liquidacionViews';
 import Button from '../components/ui/Button';
 
 const dateRender = (v) => {
@@ -38,21 +39,18 @@ export default function LiquidacionPrint() {
   if (error) return <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--color-danger-text)' }}>Error: {error}</div>;
   if (!liquidacion) return <div style={{ padding: '2rem', textAlign: 'center' }}>No encontrado</div>;
 
-  const isCliente = liquidacion.tipo === 'cliente';
-  const destinatario = isCliente ? liquidacion.cliente : liquidacion.proveedor;
-  const labelDestinatario = isCliente ? 'Cliente' : 'Proveedor';
+  const { destinatarioNombre, destinatarioDocumento, labelDestinatario, labelMonto, total } = buildPrintView(liquidacion);
 
   const viajes = liquidacion.viajes || [];
   const subtotal = viajes.reduce((s, v) => s + toNumber(v.pivot?.monto), 0);
   const ivaTotal = viajes.reduce((s, v) => s + toNumber(v.pivot?.iva_monto), 0);
-  const total = viajes.reduce((s, v) => s + toNumber(v.pivot?.monto_final ?? v.pivot?.monto), 0);
 
   return (
     <div className="print-page" style={{ maxWidth: '800px', margin: '0 auto', padding: '2rem', fontFamily: 'system-ui, sans-serif', fontSize: '10pt', lineHeight: '1.4' }}>
       <div className="print-header" style={{ marginBottom: '2rem', paddingBottom: '1rem', borderBottom: '2px solid #333', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div>
           <h1 style={{ margin: 0, fontSize: '1.5rem' }}>LIQUIDACIÓN {liquidacion.numero}</h1>
-          <div style={{ fontSize: '0.9rem', color: '#666' }}>Tipo: {isCliente ? 'Cliente' : 'Proveedor'} • Estado: {liquidacion.estado}</div>
+          <div style={{ fontSize: '0.9rem', color: '#666' }}>Tipo: {labelDestinatario} • Estado: {liquidacion.estado}</div>
         </div>
         <div style={{ display: 'flex', gap: '0.5rem' }}>
           <Button variant="outline" onClick={handleBack}><ArrowLeft size={16} /> Volver</Button>
@@ -65,11 +63,11 @@ export default function LiquidacionPrint() {
           <tbody>
             <tr>
               <td style={{ width: '50%', padding: '0.3rem 0', fontWeight: 'bold' }}>{labelDestinatario}:</td>
-              <td style={{ width: '50%', padding: '0.3rem 0' }}>{destinatario?.razon_social || '-'}</td>
+              <td style={{ width: '50%', padding: '0.3rem 0' }}>{destinatarioNombre}</td>
             </tr>
             <tr>
               <td style={{ padding: '0.3rem 0', fontWeight: 'bold' }}>CUIT:</td>
-              <td style={{ padding: '0.3rem 0' }}>{destinatario?.cuit || '-'}</td>
+              <td style={{ padding: '0.3rem 0' }}>{destinatarioDocumento || '-'}</td>
             </tr>
             <tr>
               <td style={{ padding: '0.3rem 0', fontWeight: 'bold' }}>Fecha Emisión:</td>
@@ -88,7 +86,7 @@ export default function LiquidacionPrint() {
               <th style={{ padding: '0.4rem', textAlign: 'left', borderRight: '1px solid #ddd' }}>Código</th>
               <th style={{ padding: '0.4rem', textAlign: 'left', borderRight: '1px solid #ddd' }}>Fecha</th>
               <th style={{ padding: '0.4rem', textAlign: 'left', borderRight: '1px solid #ddd' }}>Origen → Destino</th>
-              <th style={{ padding: '0.4rem', textAlign: 'right', borderRight: '1px solid #ddd' }}>Precio</th>
+              <th style={{ padding: '0.4rem', textAlign: 'right', borderRight: '1px solid #ddd' }}>{labelMonto}</th>
               <th style={{ padding: '0.4rem', textAlign: 'right', borderRight: '1px solid #ddd' }}>IVA $</th>
               <th style={{ padding: '0.4rem', textAlign: 'right' }}>Monto Final</th>
             </tr>
@@ -101,7 +99,7 @@ export default function LiquidacionPrint() {
                 <td style={{ padding: '0.3rem', borderRight: '1px solid #ddd' }}>{v.origen || '-'} → {v.destino || '-'}</td>
                 <td style={{ padding: '0.3rem', textAlign: 'right', borderRight: '1px solid #ddd' }}>{currencyRender(v.pivot?.monto)}</td>
                 <td style={{ padding: '0.3rem', textAlign: 'right', borderRight: '1px solid #ddd' }}>{currencyRender(v.pivot?.iva_monto)}</td>
-                <td style={{ padding: '0.3rem', textAlign: 'right', fontWeight: 600 }}>{currencyRender(v.pivot?.monto_final || v.pivot?.monto)}</td>
+                <td style={{ padding: '0.3rem', textAlign: 'right', fontWeight: 600 }}>{currencyRender(v.pivot?.monto_final ?? v.pivot?.monto)}</td>
               </tr>
             ))}
           </tbody>

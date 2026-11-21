@@ -15,7 +15,8 @@ import {
   shouldCloseAfterSave,
   toDetailDraft,
 } from '../../lib/liquidacionDetail';
-import { toNumber } from '../../lib/liquidacion';
+import { montoBaseViaje, tipoLabel, toNumber } from '../../lib/liquidacion';
+import { entidadNombre, montoLabelVista } from '../../lib/liquidacionViews';
 
 const dateRender = (value) => {
   if (!value) return '-';
@@ -89,6 +90,7 @@ export default function LiquidacionDetailModal({ liquidacionId, open, onClose, o
   );
   const totals = useMemo(() => computeDetailTotals(draft?.viajes ?? []), [draft]);
   const hasInvalidAmount = hasInvalidDetailAmount(draft?.viajes ?? []);
+  const tipo = draft?.tipo ?? detail?.tipo ?? 'cliente';
 
   const close = () => {
     if (dirty && isBorrador) {
@@ -132,7 +134,7 @@ export default function LiquidacionDetailModal({ liquidacionId, open, onClose, o
           origen: viaje.origen,
           destino: viaje.destino,
           estado: viaje.estado,
-          monto: toNumber(viaje.precio_pactado ?? viaje.costo_proveedor_ajustado ?? viaje.costo_proveedor ?? 0),
+          monto: montoBaseViaje(viaje, tipo),
           iva_monto: 0,
         }));
       return { ...prev, draft: { ...prev.draft, viajes: [...prev.draft.viajes, ...nuevos] } };
@@ -212,7 +214,7 @@ export default function LiquidacionDetailModal({ liquidacionId, open, onClose, o
               </div>
               <div className="detail-modal-field">
                 <label>Tipo</label>
-                <strong>{draft.tipo === 'cliente' ? 'Cliente' : 'Proveedor'}</strong>
+                <strong>{tipoLabel(draft.tipo)}</strong>
               </div>
               <div className="detail-modal-field">
                 <label>Estado</label>
@@ -220,7 +222,7 @@ export default function LiquidacionDetailModal({ liquidacionId, open, onClose, o
               </div>
               <div className="detail-modal-field">
                 <label>Entidad</label>
-                <strong>{draft.entidad?.razon_social || '-'}</strong>
+                  <strong>{entidadNombre(draft.entidad, draft.tipo)}</strong>
               </div>
               <div className="detail-modal-field">
                 <label>Viajes incluidos</label>
@@ -272,7 +274,7 @@ export default function LiquidacionDetailModal({ liquidacionId, open, onClose, o
                       <th>Fecha</th>
                       <th>Origen → Destino</th>
                       <th>Estado</th>
-                      <th>Monto</th>
+                      <th>{montoLabelVista(draft.tipo, 'detalle')}</th>
                       <th>IVA</th>
                       <th>Subtotal</th>
                       <th />
@@ -357,6 +359,7 @@ export default function LiquidacionDetailModal({ liquidacionId, open, onClose, o
       {pickerOpen && (
         <ViajePickerModal
           liquidacionId={liquidacionId}
+          tipo={tipo}
           onConfirm={addViajes}
           onClose={() => setPickerOpen(false)}
         />

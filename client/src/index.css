@@ -969,6 +969,15 @@ tr.has-row-warning td.col-acciones {
   margin: 0 1.5rem 0.75rem;
 }
 
+.wizard-fetch-error {
+  background: var(--color-danger-bg);
+  border: 1px solid var(--color-danger-text);
+  border-radius: var(--radius-md);
+  color: var(--color-danger-text);
+  margin-bottom: 1rem;
+  padding: 0.75rem 1rem;
+}
+
 .search-field {
   position: relative;
   flex: 1 1 240px;
@@ -1693,6 +1702,16 @@ tr.row-saved-pulse td.col-acciones {
   padding: 2rem;
   text-align: center;
   color: var(--text-muted);
+}
+
+.entity-picker-error {
+  background: var(--color-danger-bg);
+  border: 1px solid var(--color-danger-text);
+  border-radius: var(--radius-sm);
+  color: var(--color-danger-text);
+  font-size: 0.85rem;
+  margin-bottom: 0.75rem;
+  padding: 0.6rem 0.75rem;
 }
 
 .entity-picker-list {

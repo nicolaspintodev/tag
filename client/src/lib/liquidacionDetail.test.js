@@ -57,6 +57,36 @@ describe('toDetailDraft', () => {
       ],
     });
   });
+
+  it('usa chofer como entidad y costo_viaje como monto por defecto', () => {
+    const liquidacionChofer = {
+      id: 10,
+      numero: 'LIQ-CH-0001',
+      tipo: 'chofer',
+      chofer: { nombre: 'Chofer', apellido: 'Test', cuil: '20-33333333-4' },
+      proveedor: null,
+      fecha_emision: '2026-11-21',
+      estado: 'borrador',
+      viajes: [
+        {
+          id: 12,
+          codigo_viaje: 'V-1',
+          fecha_salida: '2026-11-10',
+          origen: 'CABA',
+          destino: 'Rosario',
+          estado: 'terminado',
+          costo_viaje: 80000,
+          precio_pactado: 170000,
+        },
+      ],
+    };
+
+    expect(toDetailDraft(liquidacionChofer)).toMatchObject({
+      tipo: 'chofer',
+      entidad: { nombre: 'Chofer', apellido: 'Test', cuil: '20-33333333-4' },
+      viajes: [{ viaje_id: 12, monto: 80000, iva_monto: 0 }],
+    });
+  });
 });
 
 describe('computeDetailTotals', () => {

@@ -8,14 +8,12 @@ import Select from '../components/ui/Select';
 import StateBar from '../components/ui/StateBar';
 import { useEditableResource } from '../hooks/useEditableResource';
 import { liquidaciones } from '../api/resources';
-
-const canPersist = (row) =>
-  Boolean(row.id) ||
-  (String(row.tipo ?? '').trim() !== '' && String(row.cliente_id ?? row.proveedor_id ?? '').trim() !== '' && String(row.fecha_emision ?? '').trim() !== '');
+import { buildListRowView, canPersistLiquidacion } from '../lib/liquidacionViews';
 
 const TIPO_OPTIONS = [
   { value: '', label: 'Todos' },
   { value: 'cliente', label: 'Cliente' },
+  { value: 'chofer', label: 'Chofer' },
   { value: 'proveedor', label: 'Proveedor' },
 ];
 
@@ -28,6 +26,7 @@ const ESTADO_OPTIONS = [
 
 const tipoBadge = (tipo) => {
   if (tipo === 'cliente') return <span style={{ background: 'var(--color-primary-bg)', color: 'var(--color-primary)', padding: '0.15rem 0.5rem', borderRadius: '9999px', fontSize: '0.7rem', fontWeight: 600 }}>Cliente</span>;
+  if (tipo === 'chofer') return <span style={{ background: 'var(--color-warning-bg)', color: 'var(--color-warning-text)', padding: '0.15rem 0.5rem', borderRadius: '9999px', fontSize: '0.7rem', fontWeight: 600 }}>Chofer</span>;
   return <span style={{ background: 'var(--color-info-bg)', color: 'var(--color-info-text)', padding: '0.15rem 0.5rem', borderRadius: '9999px', fontSize: '0.7rem', fontWeight: 600 }}>Proveedor</span>;
 };
 
@@ -61,7 +60,7 @@ const Liquidaciones = () => {
   const [toDelete, setToDelete] = useState(null);
 
   const { rows, saveState, errors, reload, deleteRow, restoreRow, lastAction } =
-    useEditableResource(liquidaciones, { rowKey: 'id', canPersist });
+    useEditableResource(liquidaciones, { rowKey: 'id', canPersist: canPersistLiquidacion });
 
   const fetchRows = (overrides = {}) => {
     const searchValue = overrides.searchValue ?? search;
@@ -151,7 +150,7 @@ const Liquidaciones = () => {
               <th style={{ width: '40px' }} />
               <th style={{ width: '130px' }}>Número</th>
               <th style={{ width: '100px' }}>Tipo</th>
-              <th>Cliente / Proveedor</th>
+              <th>Destinatario</th>
               <th style={{ width: '120px' }}>Fecha</th>
               <th style={{ width: '110px' }}>Estado</th>
               <th style={{ width: '130px' }}>Total</th>
@@ -173,7 +172,7 @@ const Liquidaciones = () => {
                 hasRowError ? 'has-row-error' : '',
                 isSavedPulse ? 'row-saved-pulse' : ''
               ].filter(Boolean).join(' ');
-              const destinatario = row.tipo === 'cliente' ? row.cliente?.razon_social : row.proveedor?.razon_social;
+              const { destinatarioNombre } = buildListRowView(row);
 
               return (
                 <tr key={row.id} className={rowClass}>
@@ -183,7 +182,7 @@ const Liquidaciones = () => {
                   </td>
                   <td className="mono">{row.numero}</td>
                   <td>{tipoBadge(row.tipo)}</td>
-                  <td>{destinatario || '-'}</td>
+                  <td>{destinatarioNombre}</td>
                   <td className="mono">{dateRender(row.fecha_emision)}</td>
                   <td>{estadoBadge(row.estado)}</td>
                   <td className="mono">{currencyRender(row.total)}</td>

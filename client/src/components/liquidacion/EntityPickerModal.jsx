@@ -3,6 +3,7 @@ import { Loader2, Check } from 'lucide-react';
 import Modal from '../ui/Modal';
 import { clientes as clientesResource, proveedores as proveedoresResource, choferes as choferesResource } from '../../api/resources';
 import { viajes as viajesResource } from '../../api/resources';
+import { entityCountText, viajesLoadErrorMessage } from '../../lib/liquidacionPicker';
 
 export default function EntityPickerModal({
   tipo,
@@ -14,6 +15,7 @@ export default function EntityPickerModal({
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(null);
   const [localCounts, setLocalCounts] = useState(new Map());
+  const [countsError, setCountsError] = useState('');
 
   useEffect(() => {
     if (!open) return;
@@ -22,6 +24,7 @@ export default function EntityPickerModal({
     setLoading(true);
     setLoadError(null);
     setLocalCounts(new Map());
+    setCountsError('');
 
     const fetchEntities = async () => {
       try {
@@ -60,6 +63,7 @@ export default function EntityPickerModal({
         setLocalCounts(countsMap);
       } catch (err) {
         console.error('Error loading entity counts:', err);
+        if (!cancelled) setCountsError(viajesLoadErrorMessage('counts'));
       }
     };
 
@@ -107,40 +111,44 @@ export default function EntityPickerModal({
             No hay {getEntityLabelPlural(tipo)} registrados.
           </div>
         ) : (
-          <div className="entity-picker-list">
-            {entities.map(entity => {
-              let displayEntity;
-              if (tipo === 'chofer') {
-                displayEntity = {
-                  id: entity.id,
-                  razon_social: `${entity.nombre} ${entity.apellido}`,
-                  cuit: entity.cuil,
-                  condicion_iva: 'Sin condición IVA',
-                };
-              } else {
-                displayEntity = {
-                  id: entity.id,
-                  razon_social: entity.razon_social,
-                  cuit: entity.cuit,
-                  condicion_iva: entity.condicion_iva,
-                };
-              }
-              return (
-                <button
-                  key={entity.id}
-                  className="entity-picker-item"
-                  onClick={() => handleSelect(displayEntity)}
-                  type="button"
-                >
-                  <span className="entity-name">{displayEntity.razon_social}</span>
-                  <span className={`entity-count ${(localCounts.get(entity.id) || 0) === 0 ? 'zero' : ''}`}>
-                    ({localCounts.get(entity.id) || 0})
-                  </span>
-                  <Check size={16} className="entity-check" />
-                </button>
-              );
-            })}
-          </div>
+          <>
+            {countsError && <div className="entity-picker-error" role="alert">{countsError}</div>}
+            <div className="entity-picker-list">
+              {entities.map(entity => {
+                let displayEntity;
+                if (tipo === 'chofer') {
+                  displayEntity = {
+                    id: entity.id,
+                    razon_social: `${entity.nombre} ${entity.apellido}`,
+                    cuit: entity.cuil,
+                    condicion_iva: 'Sin condición IVA',
+                  };
+                } else {
+                  displayEntity = {
+                    id: entity.id,
+                    razon_social: entity.razon_social,
+                    cuit: entity.cuit,
+                    condicion_iva: entity.condicion_iva,
+                  };
+                }
+                const count = localCounts.get(entity.id);
+                return (
+                  <button
+                    key={entity.id}
+                    className="entity-picker-item"
+                    onClick={() => handleSelect(displayEntity)}
+                    type="button"
+                  >
+                    <span className="entity-name">{displayEntity.razon_social}</span>
+                    <span className={`entity-count ${!countsError && (count || 0) === 0 ? 'zero' : ''}`}>
+                      {entityCountText(count, Boolean(countsError))}
+                    </span>
+                    <Check size={16} className="entity-check" />
+                  </button>
+                );
+              })}
+            </div>
+          </>
         )}
       </div>
     </Modal>

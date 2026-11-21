@@ -33,6 +33,19 @@ class Viaje extends Model
             // Validar reglas de negocio
             $viaje->validateBusinessRules();
         });
+
+        static::created(function (Viaje $viaje) {
+            if (! array_key_exists('costo_viaje', $viaje->getAttributes())) {
+                $viaje->costo_viaje = $viaje->costo_proveedor ?? 0;
+                $viaje->saveQuietly();
+            }
+        });
+
+        static::updated(function (Viaje $viaje) {
+            if ($viaje->wasChanged('costo_proveedor')) {
+                $viaje->recalcularCostoViaje();
+            }
+        });
     }
 
     protected $table = 'viajes';
@@ -244,7 +257,7 @@ class Viaje extends Model
         $costoProveedorBase = $this->costo_proveedor ?? 0;
 
         $this->costo_viaje = $costoProveedorBase - $anticipos + $propioSinReintegro + $terceroReintegro;
-        $this->save();
+        $this->saveQuietly();
     }
 
     // ---------- Auditoría ----------

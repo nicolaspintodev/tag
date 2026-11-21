@@ -8,7 +8,8 @@ import EntityPickerModal from '../components/liquidacion/EntityPickerModal';
 import LiquidacionPreview from '../components/liquidacion/LiquidacionPreview';
 import LiquidacionSelectionGrid from '../components/grid/LiquidacionSelectionGrid';
 import { buildSelectionGridColumns } from '../lib/columns/liquidacion';
-import { deriveMontos, computeSelectionSubtotal } from '../lib/liquidacion';
+import { deriveMontos, deriveMontosSeleccion, computeSelectionSubtotal } from '../lib/liquidacion';
+import { viajesLoadErrorMessage } from '../lib/liquidacionPicker';
 
 const STORAGE_KEY = 'liquidacion_wizard_draft';
 
@@ -33,6 +34,7 @@ export default function LiquidacionWizard() {
   const [data, setData] = useState(initialState);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [fetchError, setFetchError] = useState('');
   const [saveState] = useState({});
   const [lastAction, setLastAction] = useState(null);
   const [selectedIds, setSelectedIds] = useState([]);
@@ -71,9 +73,13 @@ export default function LiquidacionWizard() {
 
   const fetchViajes = useCallback(async () => {
     const { tipo, cliente_id, proveedor_id, chofer_id } = dataRef.current;
-    if (!cliente_id && !proveedor_id && !chofer_id) return;
+    if (!cliente_id && !proveedor_id && !chofer_id) {
+      setFetchError('');
+      return;
+    }
 
     setLoading(true);
+    setFetchError('');
     try {
       const params = { tipo };
       if (tipo === 'cliente') params.cliente_id = cliente_id;
@@ -87,6 +93,7 @@ export default function LiquidacionWizard() {
       setData(prev => ({ ...prev, viajesData: viajesArray, montos }));
     } catch (err) {
       console.error('Error fetching viajes:', err);
+      setFetchError(viajesLoadErrorMessage('viajes'));
       setData(prev => ({ ...prev, viajesData: [], montos: {} }));
     } finally {
       setLoading(false);
@@ -163,10 +170,10 @@ export default function LiquidacionWizard() {
     setData(prev => ({ ...prev, viaje_ids: newSelectedIds }));
 
     if (newSelectedIds.length > 0) {
-      const newMontos = deriveMontos(data.viajesData.filter(v => newSelectedIds.includes(v.id)));
+      const newMontos = deriveMontosSeleccion(data.viajesData, newSelectedIds, data.tipo);
       setData(prev => ({ ...prev, montos: { ...prev.montos, ...newMontos } }));
     }
-  }, [data.viajesData]);
+  }, [data.tipo, data.viajesData]);
 
   const goToPreview = useCallback(() => {
     if (data.cliente_id || data.proveedor_id || data.chofer_id) {
@@ -234,7 +241,11 @@ export default function LiquidacionWizard() {
     return (data.viajesData || []).map(v => ({ ...v, ...(montos[v.id] || {}) }));
   }, [data.viajesData, data.montos]);
 
-  const subtotal = computeSelectionSubtotal(rows.filter(v => selectedIds.includes(v.id)));
+  const subtotal = computeSelectionSubtotal(
+    rows.filter(v => selectedIds.includes(v.id)),
+    data.tipo,
+    data.montos,
+  );
 
   return (
     <div className="resource-page" style={{
@@ -283,6 +294,7 @@ export default function LiquidacionWizard() {
             overflow: 'auto',
             minHeight: 0
           }}>
+            {fetchError && <div className="wizard-fetch-error" role="alert">{fetchError}</div>}
             <LiquidacionSelectionGrid
               columns={columns}
               rows={rows}

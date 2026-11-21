@@ -2,7 +2,8 @@ import { useEffect, useMemo, useState } from 'react';
 import Modal from '../ui/Modal';
 import Button from '../ui/Button';
 import { liquidaciones } from '../../api/resources';
-import { toNumber } from '../../lib/liquidacion';
+import { montoBaseViaje } from '../../lib/liquidacion';
+import { montoLabelVista } from '../../lib/liquidacionViews';
 
 const dateRender = (value) => {
   if (!value) return '-';
@@ -15,7 +16,7 @@ const money = (value) => new Intl.NumberFormat('es-AR', {
   minimumFractionDigits: 0,
 }).format(value);
 
-export default function ViajePickerModal({ liquidacionId, onConfirm, onClose }) {
+export default function ViajePickerModal({ liquidacionId, tipo = 'cliente', onConfirm, onClose }) {
   const [request, setRequest] = useState({ id: liquidacionId, viajes: [], loading: true, error: '' });
   const [selection, setSelection] = useState({ id: liquidacionId, ids: [] });
 
@@ -66,9 +67,7 @@ export default function ViajePickerModal({ liquidacionId, onConfirm, onClose }) 
     [viajes, selected],
   );
 
-  const suggestedAmount = (viaje) => toNumber(
-    viaje.precio_pactado ?? viaje.costo_proveedor_ajustado ?? viaje.costo_proveedor ?? 0,
-  );
+  const suggestedAmount = (viaje) => montoBaseViaje(viaje, tipo);
 
   return (
     <Modal
@@ -100,7 +99,7 @@ export default function ViajePickerModal({ liquidacionId, onConfirm, onClose }) 
                 <th>Fecha</th>
                 <th>Origen → Destino</th>
                 <th>Estado</th>
-                <th>Precio</th>
+                <th>{montoLabelVista(tipo, 'picker')}</th>
               </tr>
             </thead>
             <tbody>

@@ -2,32 +2,72 @@ export const IVA_DEFAULT = 0.21;
 
 export const toNumber = (value) => Number(value ?? 0) || 0;
 
+export function montoBaseViaje(viaje, tipo = 'cliente') {
+  if (tipo === 'chofer') return toNumber(viaje?.costo_viaje);
+  if (tipo === 'proveedor') return toNumber(viaje?.costo_proveedor_ajustado ?? viaje?.costo_proveedor);
+  return toNumber(viaje?.precio_pactado);
+}
+
+export function montoLabel(tipo = 'cliente') {
+  if (tipo === 'chofer') return 'Costo';
+  if (tipo === 'proveedor') return 'Costo Proveedor';
+  return 'Precio';
+}
+
+export function tipoLabel(tipo = 'cliente') {
+  if (tipo === 'chofer') return 'Chofer';
+  if (tipo === 'cliente') return 'Cliente';
+  return 'Proveedor';
+}
+
+const calcularMontos = (viaje, tipo) => {
+  const monto = montoBaseViaje(viaje, tipo);
+  const iva_monto = Math.round(monto * IVA_DEFAULT);
+  return { monto, iva_monto, monto_final: monto + iva_monto };
+};
+
+export function montoViaje(viaje, tipo = 'cliente', montos = {}) {
+  const calculado = calcularMontos(viaje, tipo);
+  const guardado = montos?.[viaje?.id];
+
+  if (!guardado || typeof guardado !== 'object') {
+    return {
+      ...calculado,
+      monto_final: toNumber(viaje?.monto_final ?? calculado.monto_final),
+    };
+  }
+
+  return {
+    monto: toNumber(guardado.monto),
+    iva_monto: toNumber(guardado.iva_monto),
+    monto_final: toNumber(
+      guardado.monto_final ?? toNumber(guardado.monto) + toNumber(guardado.iva_monto),
+    ),
+  };
+}
+
 export function deriveMontos(viajes, tipo = 'cliente') {
   return viajes.reduce((acc, v) => {
-    let precio;
-    if (tipo === 'chofer') {
-      precio = toNumber(v.costo_viaje);
-    } else if (tipo === 'proveedor') {
-      precio = toNumber(v.costo_proveedor_ajustado ?? v.costo_proveedor);
-    } else {
-      precio = toNumber(v.precio_pactado);
-    }
-    const iva = Math.round(precio * IVA_DEFAULT);
-    acc[v.id] = { monto: precio, iva_monto: iva, monto_final: precio + iva };
+    acc[v.id] = calcularMontos(v, tipo);
     return acc;
   }, {});
 }
 
-export function computeTotals(viajes) {
-  const subtotal = viajes.reduce((s, v) => s + toNumber(v.precio_pactado), 0);
-  const ivaTotal = viajes.reduce((s, v) => s + Math.round(toNumber(v.precio_pactado) * IVA_DEFAULT), 0);
-  return { subtotal, ivaTotal, total: subtotal + ivaTotal };
+export function deriveMontosSeleccion(viajes, ids, tipo) {
+  return deriveMontos(viajes.filter(v => ids.includes(v.id)), tipo);
 }
 
-export function computeSelectionSubtotal(viajes) {
-  return viajes.reduce((s, v) => {
-    const precio = toNumber(v.precio_pactado);
-    const montoFinal = toNumber(v.monto_final ?? precio + Math.round(precio * IVA_DEFAULT));
-    return s + montoFinal;
-  }, 0);
+export function computeTotals(viajes, tipo = 'cliente', montos = {}) {
+  const items = viajes.map(viaje => montoViaje(viaje, tipo, montos));
+  const subtotal = items.reduce((sum, item) => sum + item.monto, 0);
+  const ivaTotal = items.reduce((sum, item) => sum + item.iva_monto, 0);
+  const total = items.reduce((sum, item) => sum + item.monto_final, 0);
+  return { subtotal, ivaTotal, total };
+}
+
+export function computeSelectionSubtotal(viajes, tipo = 'cliente', montos = {}) {
+  return viajes.reduce(
+    (sum, viaje) => sum + montoViaje(viaje, tipo, montos).monto_final,
+    0,
+  );
 }

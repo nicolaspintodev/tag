@@ -1,7 +1,6 @@
 import { AlertTriangle } from 'lucide-react';
 import Input from '../ui/Input';
-import { computeTotals, toNumber } from '../../lib/liquidacion';
-import { buildPreviewMeta } from '../../lib/liquidacionPreview';
+import { buildPreviewView } from '../../lib/liquidacionPreview';
 
 const money = (value) => new Intl.NumberFormat('es-AR', {
   style: 'currency',
@@ -13,16 +12,8 @@ export default function LiquidacionPreview({
   data,
   error,
 }) {
-  const { notas, viaje_ids, viajesData } = data;
-
-  const selectedViajes = viaje_ids
-    .map(id => viajesData.find(v => v.id === id))
-    .filter(Boolean);
-
-  const { subtotal, ivaTotal, total } = computeTotals(selectedViajes);
-  const previewMeta = buildPreviewMeta(data);
-
-  const hasWarnings = selectedViajes.some(v => toNumber(v.precio_pactado) < 0);
+  const { notas } = data;
+  const { meta, amountLabel, rows, totals, hasWarnings } = buildPreviewView(data);
 
   return (
     <div className="liquidacion-preview">
@@ -34,7 +25,7 @@ export default function LiquidacionPreview({
       </div>
 
       <div className="preview-meta">
-        {previewMeta.map(item => (
+        {meta.map(item => (
           <div className="preview-meta-item" key={item.label}>
             <span className="preview-meta-label">{item.label}</span>
             <span className={`preview-meta-value${item.label === 'CUIT' ? ' mono' : ''}`}>{item.value}</span>
@@ -62,28 +53,23 @@ export default function LiquidacionPreview({
               <th>Código</th>
               <th>Fecha</th>
               <th>Origen → Destino</th>
-              <th className="mono">Precio</th>
+              <th className="mono">{amountLabel}</th>
               <th className="mono">IVA $</th>
               <th className="mono">Subtotal</th>
             </tr>
           </thead>
           <tbody>
-            {selectedViajes.map(v => {
-              const precio = toNumber(v.precio_pactado);
-              const iva = Math.round(precio * 0.21);
-              const subtotalViaje = precio + iva;
-              return (
-                <tr key={v.id}>
-                  <td>{v.codigo_viaje || '-'}</td>
-                  <td>{v.fecha_salida ? new Date(v.fecha_salida).toLocaleDateString('es-AR') : '-'}</td>
-                  <td className="truncate">{(v.origen || '-') + ' → ' + (v.destino || '-')}</td>
-                  <td className="mono">{money(precio)}</td>
-                  <td className="mono">{money(iva)}</td>
-                  <td className="mono">{money(subtotalViaje)}</td>
-                </tr>
-              );
-            })}
-            {selectedViajes.length === 0 && (
+            {rows.map(({ viaje, monto, iva_monto, monto_final }) => (
+              <tr key={viaje.id}>
+                <td>{viaje.codigo_viaje || '-'}</td>
+                <td>{viaje.fecha_salida ? new Date(viaje.fecha_salida).toLocaleDateString('es-AR') : '-'}</td>
+                <td className="truncate">{(viaje.origen || '-') + ' → ' + (viaje.destino || '-')}</td>
+                <td className="mono">{money(monto)}</td>
+                <td className="mono">{money(iva_monto)}</td>
+                <td className="mono">{money(monto_final)}</td>
+              </tr>
+            ))}
+            {rows.length === 0 && (
               <tr>
                 <td colSpan={6} className="empty-row">No hay viajes seleccionados</td>
               </tr>
@@ -102,15 +88,15 @@ export default function LiquidacionPreview({
         <div className="totals-grid">
           <div className="total-row">
             <span>Subtotal</span>
-            <span className="mono">{money(subtotal)}</span>
+            <span className="mono">{money(totals.subtotal)}</span>
           </div>
           <div className="total-row">
             <span>IVA (21%)</span>
-            <span className="mono">{money(ivaTotal)}</span>
+            <span className="mono">{money(totals.ivaTotal)}</span>
           </div>
           <div className="total-row grand-total">
             <span>TOTAL GENERAL</span>
-            <span className="mono">{money(total)}</span>
+            <span className="mono">{money(totals.total)}</span>
           </div>
         </div>
       </div>

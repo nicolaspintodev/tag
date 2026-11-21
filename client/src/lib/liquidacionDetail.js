@@ -1,10 +1,14 @@
-import { toNumber } from './liquidacion';
+import { montoBaseViaje, toNumber } from './liquidacion';
 
 export const toDetailDraft = (liquidacion) => ({
   id: liquidacion.id,
   numero: liquidacion.numero,
   tipo: liquidacion.tipo,
-  entidad: liquidacion.tipo === 'cliente' ? liquidacion.cliente : liquidacion.proveedor,
+  entidad: {
+    cliente: liquidacion.cliente,
+    chofer: liquidacion.chofer,
+    proveedor: liquidacion.proveedor,
+  }[liquidacion.tipo] ?? liquidacion.proveedor,
   fecha_emision: liquidacion.fecha_emision,
   notas: liquidacion.notas ?? '',
   estado: liquidacion.estado,
@@ -15,7 +19,7 @@ export const toDetailDraft = (liquidacion) => ({
     origen: viaje.origen,
     destino: viaje.destino,
     estado: viaje.estado,
-    monto: toNumber(viaje.pivot?.monto ?? viaje.precio_pactado),
+    monto: toNumber(viaje.pivot?.monto ?? montoBaseViaje(viaje, liquidacion.tipo)),
     iva_monto: toNumber(viaje.pivot?.iva_monto),
   })),
 });

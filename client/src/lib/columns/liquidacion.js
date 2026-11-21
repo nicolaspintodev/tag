@@ -1,4 +1,5 @@
 import React from 'react';
+import { montoLabel } from '../liquidacion';
 
 const dateRender = (v) => {
   if (!v) return '-';
@@ -30,15 +31,10 @@ const estadoRender = (v) => {
 };
 
 export const buildSelectionGridColumns = (tipo = 'cliente') => {
-  let priceAccessor = 'precio_pactado';
-  let priceHeader = 'Precio';
-  if (tipo === 'chofer') {
-    priceAccessor = 'costo_viaje';
-    priceHeader = 'Costo Viaje';
-  } else if (tipo === 'proveedor') {
-    priceAccessor = 'costo_proveedor';
-    priceHeader = 'Costo Proveedor';
-  }
+  const priceAccessor = tipo === 'chofer'
+    ? 'costo_viaje'
+    : (tipo === 'proveedor' ? 'costo_proveedor' : 'precio_pactado');
+  const priceHeader = montoLabel(tipo);
 
   return [
     { id: 'select', accessor: 'select', header: '', type: 'checkbox', width: '44px', className: 'checkbox-col' },
