@@ -7,4 +7,6 @@ enum EstadoViaje: string
     case PLANIFICADO = 'planificado';
     case INICIADO = 'iniciado';
     case TERMINADO = 'terminado';
+    case LIQUIDADO = 'liquidado';
+    case CANCELADO = 'cancelado';
 }
