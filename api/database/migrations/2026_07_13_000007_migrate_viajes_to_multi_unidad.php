@@ -7,9 +7,35 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
+    private function disableForeignKeys(): void
+    {
+        $driver = DB::getDriverName();
+
+        if ($driver === 'sqlite') {
+            DB::statement('PRAGMA foreign_keys = OFF');
+        } elseif ($driver === 'mysql') {
+            DB::statement('SET FOREIGN_KEY_CHECKS=0');
+        } else {
+            Schema::disableForeignKeyConstraints();
+        }
+    }
+
+    private function enableForeignKeys(): void
+    {
+        $driver = DB::getDriverName();
+
+        if ($driver === 'sqlite') {
+            DB::statement('PRAGMA foreign_keys = ON');
+        } elseif ($driver === 'mysql') {
+            DB::statement('SET FOREIGN_KEY_CHECKS=1');
+        } else {
+            Schema::enableForeignKeyConstraints();
+        }
+    }
+
     public function up(): void
     {
-        DB::statement('PRAGMA foreign_keys = OFF');
+        $this->disableForeignKeys();
 
         // Drop and recreate viajes without unidad_id (data doesn't matter)
         Schema::dropIfExists('viajes');
@@ -49,12 +75,12 @@ return new class extends Migration
             $table->unique(['viaje_id', 'unidad_id']);
         });
 
-        DB::statement('PRAGMA foreign_keys = ON');
+        $this->enableForeignKeys();
     }
 
     public function down(): void
     {
-        DB::statement('PRAGMA foreign_keys = OFF');
+        $this->disableForeignKeys();
 
         Schema::dropIfExists('viaje_unidad');
 
@@ -62,6 +88,6 @@ return new class extends Migration
             $table->foreignId('unidad_id')->nullable()->constrained('unidades');
         });
 
-        DB::statement('PRAGMA foreign_keys = ON');
+        $this->enableForeignKeys();
     }
 };
