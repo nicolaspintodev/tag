@@ -100,7 +100,7 @@ export default function ViajePickerModal({ liquidacionId, onConfirm, onClose }) 
                 <th>Fecha</th>
                 <th>Origen → Destino</th>
                 <th>Estado</th>
-                <th>Monto sugerido</th>
+                <th>Precio</th>
               </tr>
             </thead>
             <tbody>

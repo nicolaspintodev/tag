@@ -55,7 +55,7 @@ export const buildSelectionGridColumns = (tipo = 'cliente') => {
 
 export const buildMontosGridColumns = () => [
   { id: 'codigo_viaje', accessor: 'codigo_viaje', header: 'Código', type: 'text', width: '110px', className: 'mono' },
-  { id: 'precio_sugerido', accessor: 'precio_sugerido', header: 'Precio Sugerido', type: 'currency', width: '140px', className: 'mono readonly', render: precioRender },
+  { id: 'precio_sugerido', accessor: 'precio_sugerido', header: 'Precio', type: 'currency', width: '140px', className: 'mono readonly', render: precioRender },
   { id: 'iva_monto', accessor: 'iva_monto', header: 'IVA $', type: 'currency', width: '120px', className: 'mono', editable: true, render: precioRender },
   { id: 'monto_final', accessor: 'monto_final', header: 'Monto Final', type: 'currency', width: '140px', className: 'mono', editable: true, render: precioRender },
   { id: 'peso_carga', accessor: 'peso_carga', header: 'Peso (kg)', type: 'number', width: '100px', className: 'mono', render: (v) => v ? new Intl.NumberFormat('es-AR').format(v) : '-' },
