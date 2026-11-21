@@ -71,7 +71,10 @@ const Viajes = () => {
     choferes.map(c => ({ value: c.id, label: `${c.nombre} ${c.apellido}` })),
     clientes.map(c => ({ value: c.id, label: c.razon_social })),
     proveedores.map(p => ({ value: p.id, label: p.razon_social })),
-    unidades.map(u => ({ value: u.id, label: `${u.marca} ${u.modelo} (${u.patente})`, tipo: u.tipo }))
+    unidades.map(u => {
+      const label = [u.marca, u.modelo].filter(Boolean).join(' ');
+      return { value: u.id, label: u.patente ? `${label} (${u.patente})` : label || `Unidad ${u.id}`, tipo: u.tipo };
+    })
   ), [choferes, clientes, proveedores, unidades]);
 
   const estadoOptions = useMemo(() => [
