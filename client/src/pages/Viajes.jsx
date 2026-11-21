@@ -367,7 +367,7 @@ const Viajes = () => {
             </div>
           </div>
           <div style={{ marginLeft: 'auto' }}>
-            <Button onClick={() => createRow()}>+ Agregar fila</Button>
+            <Button onClick={() => { const key = createRow(); setSelectedKey(key); setActiveTab('operativo'); }}>+ Nuevo Viaje</Button>
           </div>
         </div>
       </div>
@@ -381,7 +381,7 @@ const Viajes = () => {
           onRowDelete={(key) => setToDelete(key)}
           onRowOpenDetail={(row) => { setSelectedKey(row.id); setActiveTab('operativo'); }}
           onRowRestore={(key) => restoreRow(key)}
-          onAddRow={createRow}
+          onAddRow={undefined}
           saveState={saveState}
           loading={loading}
           errors={errors}
