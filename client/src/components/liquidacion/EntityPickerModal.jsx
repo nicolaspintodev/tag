@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Loader2, Check } from 'lucide-react';
 import Modal from '../ui/Modal';
-import { clientes as clientesResource, proveedores as proveedoresResource } from '../../api/resources';
+import { clientes as clientesResource, proveedores as proveedoresResource, choferes as choferesResource } from '../../api/resources';
 import { viajes as viajesResource } from '../../api/resources';
 
 export default function EntityPickerModal({
@@ -25,9 +25,14 @@ export default function EntityPickerModal({
 
     const fetchEntities = async () => {
       try {
-        const entitiesRes = tipo === 'cliente'
-          ? await clientesResource.list()
-          : await proveedoresResource.list();
+        let entitiesRes;
+        if (tipo === 'cliente') {
+          entitiesRes = await clientesResource.list();
+        } else if (tipo === 'chofer') {
+          entitiesRes = await choferesResource.list();
+        } else {
+          entitiesRes = await proveedoresResource.list();
+        }
 
         if (cancelled) return;
 
@@ -71,45 +76,70 @@ export default function EntityPickerModal({
 
   if (!open) return null;
 
-  return (
+  const getEntityLabel = (tipo) => {
+      if (tipo === 'cliente') return 'Cliente';
+      if (tipo === 'chofer') return 'Chofer';
+      return 'Proveedor';
+    };
+
+    const getEntityLabelPlural = (tipo) => {
+      if (tipo === 'cliente') return 'clientes';
+      if (tipo === 'chofer') return 'choferes';
+      return 'proveedores';
+    };
+
+    return (
     <Modal
       open={open}
       onClose={onClose}
-      title={`Seleccionar ${tipo === 'cliente' ? 'Cliente' : 'Proveedor'}`}
+      title={`Seleccionar ${getEntityLabel(tipo)}`}
     >
       <div className="entity-picker-modal" style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
         {loading ? (
           <div className="entity-picker-loading">
             <Loader2 size={24} className="spin" />
-            <span>Cargando {tipo === 'cliente' ? 'clientes' : 'proveedores'}...</span>
+            <span>Cargando {getEntityLabelPlural(tipo)}...</span>
           </div>
         ) : loadError ? (
           <div className="entity-picker-empty">{loadError}</div>
         ) : entities.length === 0 ? (
           <div className="entity-picker-empty">
-            No hay {tipo === 'cliente' ? 'clientes' : 'proveedores'} registrados.
+            No hay {getEntityLabelPlural(tipo)} registrados.
           </div>
         ) : (
           <div className="entity-picker-list">
-            {entities.map(entity => (
-              <button
-                key={entity.id}
-                className="entity-picker-item"
-                onClick={() => handleSelect({
+            {entities.map(entity => {
+              let displayEntity;
+              if (tipo === 'chofer') {
+                displayEntity = {
+                  id: entity.id,
+                  razon_social: `${entity.nombre} ${entity.apellido}`,
+                  cuit: entity.cuil,
+                  condicion_iva: 'Sin condición IVA',
+                };
+              } else {
+                displayEntity = {
                   id: entity.id,
                   razon_social: entity.razon_social,
                   cuit: entity.cuit,
                   condicion_iva: entity.condicion_iva,
-                })}
-                type="button"
-              >
-                <span className="entity-name">{entity.razon_social}</span>
-                <span className={`entity-count ${(localCounts.get(entity.id) || 0) === 0 ? 'zero' : ''}`}>
-                  ({localCounts.get(entity.id) || 0})
-                </span>
-                <Check size={16} className="entity-check" />
-              </button>
-            ))}
+                };
+              }
+              return (
+                <button
+                  key={entity.id}
+                  className="entity-picker-item"
+                  onClick={() => handleSelect(displayEntity)}
+                  type="button"
+                >
+                  <span className="entity-name">{displayEntity.razon_social}</span>
+                  <span className={`entity-count ${(localCounts.get(entity.id) || 0) === 0 ? 'zero' : ''}`}>
+                    ({localCounts.get(entity.id) || 0})
+                  </span>
+                  <Check size={16} className="entity-check" />
+                </button>
+              );
+            })}
           </div>
         )}
       </div>

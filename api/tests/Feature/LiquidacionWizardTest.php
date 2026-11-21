@@ -35,18 +35,18 @@ class LiquidacionWizardTest extends TestCase
         $viajeOk = Viaje::create([
             'cliente_id' => $this->cliente->id,
             'estado' => 'terminado',
-            'liquidado' => false,
+            'liquidado_cliente' => false,
             'precio_pactado' => 100000,
             'origen' => 'CABA',
             'destino' => 'Rosario',
             'fecha_salida' => '2026-07-15',
         ]);
 
-        // Viaje NO disponible: liquidado=true
+        // Viaje NO disponible: liquidado_cliente=true
         Viaje::create([
             'cliente_id' => $this->cliente->id,
             'estado' => 'terminado',
-            'liquidado' => true,
+            'liquidado_cliente' => true,
             'precio_pactado' => 50000,
             'origen' => 'CABA',
             'destino' => 'Rosario',
@@ -55,14 +55,14 @@ class LiquidacionWizardTest extends TestCase
 
         // Viaje NO disponible: en otra liquidación mismo tipo
         $liqExistente = Liquidacion::create(['tipo' => 'cliente', 'cliente_id' => $this->cliente->id, 'estado' => 'borrador', 'fecha_emision' => now()->toDateString(), 'numero' => 'LIQ-C-0001']);
-        $viajeEnOtraLiq = Viaje::create(['cliente_id' => $this->cliente->id, 'estado' => 'terminado', 'liquidado' => false, 'precio_pactado' => 75000, 'origen' => 'CABA', 'destino' => 'Rosario', 'fecha_salida' => '2026-07-15']);
+        $viajeEnOtraLiq = Viaje::create(['cliente_id' => $this->cliente->id, 'estado' => 'terminado', 'liquidado_cliente' => false, 'precio_pactado' => 75000, 'origen' => 'CABA', 'destino' => 'Rosario', 'fecha_salida' => '2026-07-15']);
         $liqExistente->viajes()->attach($viajeEnOtraLiq->id, ['monto' => 50000]);
 
         // Viaje disponible: planificado, no liquidado (todos los estados se listan)
         $viajePlanificado = Viaje::create([
             'cliente_id' => $this->cliente->id,
             'estado' => 'planificado',
-            'liquidado' => false,
+            'liquidado_cliente' => false,
             'precio_pactado' => 60000,
             'origen' => 'CABA',
             'destino' => 'Rosario',
@@ -83,7 +83,7 @@ class LiquidacionWizardTest extends TestCase
         $viajeOk = Viaje::create([
             'proveedor_id' => $this->proveedor->id,
             'estado' => 'terminado',
-            'liquidado' => false,
+            'liquidado_proveedor' => false,
             'costo_proveedor' => 80000,
             'origen' => 'CABA',
             'destino' => 'Rosario',
@@ -93,7 +93,7 @@ class LiquidacionWizardTest extends TestCase
         Viaje::create([
             'proveedor_id' => $this->proveedor->id,
             'estado' => 'terminado',
-            'liquidado' => true,
+            'liquidado_proveedor' => true,
             'costo_proveedor' => 50000,
             'origen' => 'CABA',
             'destino' => 'Rosario',
@@ -258,7 +258,7 @@ class LiquidacionWizardTest extends TestCase
             Viaje::create([
                 'cliente_id' => $cliente1->id,
                 'estado' => 'terminado',
-                'liquidado' => false,
+                'liquidado_cliente' => false,
                 'precio_pactado' => 100000,
                 'origen' => 'CABA',
                 'destino' => 'Rosario',
@@ -268,21 +268,21 @@ class LiquidacionWizardTest extends TestCase
 
         // 1 en otra liquidación mismo tipo (debe excluirse)
         $liq = Liquidacion::create(['tipo' => 'cliente', 'cliente_id' => $cliente1->id, 'estado' => 'borrador', 'fecha_emision' => now()->toDateString(), 'numero' => 'LIQ-C-0002']);
-        $vExcluido = Viaje::create(['cliente_id' => $cliente1->id, 'estado' => 'terminado', 'liquidado' => false, 'precio_pactado' => 75000, 'origen' => 'CABA', 'destino' => 'Rosario', 'fecha_salida' => '2026-07-15']);
+        $vExcluido = Viaje::create(['cliente_id' => $cliente1->id, 'estado' => 'terminado', 'liquidado_cliente' => false, 'precio_pactado' => 75000, 'origen' => 'CABA', 'destino' => 'Rosario', 'fecha_salida' => '2026-07-15']);
         $liq->viajes()->attach($vExcluido->id, ['monto' => 50000]);
 
         // 1 liquidado (debe excluirse)
-        Viaje::create(['cliente_id' => $cliente1->id, 'estado' => 'terminado', 'liquidado' => true, 'precio_pactado' => 60000, 'origen' => 'CABA', 'destino' => 'Rosario', 'fecha_salida' => '2026-07-15']);
+        Viaje::create(['cliente_id' => $cliente1->id, 'estado' => 'terminado', 'liquidado_cliente' => true, 'precio_pactado' => 60000, 'origen' => 'CABA', 'destino' => 'Rosario', 'fecha_salida' => '2026-07-15']);
 
         // 1 planificado (también cuenta: todos los estados no liquidados)
-        Viaje::create(['cliente_id' => $cliente1->id, 'estado' => 'planificado', 'liquidado' => false, 'precio_pactado' => 60000, 'origen' => 'CABA', 'destino' => 'Rosario', 'fecha_salida' => '2026-07-15']);
+        Viaje::create(['cliente_id' => $cliente1->id, 'estado' => 'planificado', 'liquidado_cliente' => false, 'precio_pactado' => 60000, 'origen' => 'CABA', 'destino' => 'Rosario', 'fecha_salida' => '2026-07-15']);
 
         // 2 para cliente2 (no deben aparecer en respuesta de cliente1)
         for ($i = 0; $i < 2; $i++) {
             Viaje::create([
                 'cliente_id' => $cliente2->id,
                 'estado' => 'terminado',
-                'liquidado' => false,
+                'liquidado_cliente' => false,
                 'precio_pactado' => 100000,
                 'origen' => 'CABA',
                 'destino' => 'Rosario',
@@ -314,7 +314,7 @@ class LiquidacionWizardTest extends TestCase
             Viaje::create([
                 'proveedor_id' => $prov1->id,
                 'estado' => 'terminado',
-                'liquidado' => false,
+                'liquidado_proveedor' => false,
                 'costo_proveedor' => 80000,
                 'origen' => 'CABA',
                 'destino' => 'Rosario',
@@ -325,7 +325,7 @@ class LiquidacionWizardTest extends TestCase
             Viaje::create([
                 'proveedor_id' => $prov2->id,
                 'estado' => 'terminado',
-                'liquidado' => false,
+                'liquidado_proveedor' => false,
                 'costo_proveedor' => 80000,
                 'origen' => 'CABA',
                 'destino' => 'Rosario',

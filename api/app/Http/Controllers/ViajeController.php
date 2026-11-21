@@ -493,8 +493,7 @@ class ViajeController extends Controller
             'chofer' => $validated['chofer_id'],
         };
 
-        $query = Viaje::query()
-            ->where('liquidado', false);
+        $query = Viaje::query();
 
         // Excluir viajes ya liquidados EN EL MISMO CONCEPTO
         $flag = match ($tipo) {
@@ -563,7 +562,6 @@ class ViajeController extends Controller
         };
 
         $query = Viaje::query()
-            ->where('liquidado', false)
             ->where($flag, false);
 
         $subQuery = \DB::table('liquidacion_viaje')

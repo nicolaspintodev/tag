@@ -205,7 +205,7 @@ class LiquidacionDetalleTest extends TestCase
 
     public function test_rechaza_viaje_liquidado(): void
     {
-        $viaje = $this->crearViaje(['liquidado' => true]);
+        $viaje = $this->crearViaje(['liquidado_cliente' => true]);
         $liquidacion = $this->crearLiquidacion();
 
         $response = $this->putJson("/api/liquidaciones/{$liquidacion->id}/detalle", [
@@ -216,7 +216,7 @@ class LiquidacionDetalleTest extends TestCase
         ]);
 
         $response->assertStatus(422)
-            ->assertJsonFragment(['message' => 'Un viaje ya está liquidado']);
+            ->assertJsonFragment(['message' => 'Un viaje ya está liquidado para este concepto']);
         $this->assertDatabaseCount('liquidacion_viaje', 0);
     }
 
@@ -279,7 +279,7 @@ class LiquidacionDetalleTest extends TestCase
     public function test_viajes_disponibles_excluye_liquidados_y_ignora_archivadas(): void
     {
         $viajeLibre = $this->crearViaje(['id' => 1, 'precio_pactado' => 1000]);
-        $viajeLiquidado = $this->crearViaje(['id' => 2, 'liquidado' => true, 'precio_pactado' => 2000]);
+        $viajeLiquidado = $this->crearViaje(['id' => 2, 'liquidado_cliente' => true, 'precio_pactado' => 2000]);
         $viajeEnArchivada = $this->crearViaje(['id' => 3, 'precio_pactado' => 3000]);
 
         $archivada = $this->crearLiquidacion(['numero' => 'LIQ-ARCH-0001']);

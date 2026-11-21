@@ -87,7 +87,7 @@ class LiquidacionController extends Controller
             $itemsToAttach = [];
             foreach ($viajesData as $item) {
                 $viaje = Viaje::findOrFail($item['viaje_id']);
-                $monto = $item['monto'] ?? $this->precioSugerido($viaje, $liquidacion->tipo);
+                $monto = $item['monto'] ?? $this->precioSugerido($viaje, $liquidacion->tipo->value);
                 $ivaMonto = $item['iva_monto'] ?? 0;
 
                 $itemsToAttach[$viaje->id] = ['monto' => $monto, 'iva_monto' => $ivaMonto];
@@ -158,12 +158,12 @@ class LiquidacionController extends Controller
         }
 
         $query = Viaje::query()
-            ->where('estado', '!=', 'cancelado')
-            ->where('liquidado', false);
+            ->where('estado', '!=', 'cancelado');
 
-        if ($liquidacion->tipo === 'cliente') {
+        $tipoValue = $liquidacion->tipo->value;
+        if ($tipoValue === 'cliente') {
             $query->where('cliente_id', $liquidacion->cliente_id);
-        } elseif ($liquidacion->tipo === 'proveedor') {
+        } elseif ($tipoValue === 'proveedor') {
             $query->where('proveedor_id', $liquidacion->proveedor_id);
         } else {
             $query->where('chofer_id', $liquidacion->chofer_id);
@@ -227,7 +227,7 @@ class LiquidacionController extends Controller
 
         foreach ($validated['viajes'] as $item) {
             $viaje = Viaje::findOrFail($item['viaje_id']);
-            $monto = $item['monto'] ?? $this->precioSugerido($viaje, $liquidacion->tipo);
+            $monto = $item['monto'] ?? $this->precioSugerido($viaje, $liquidacion->tipo->value);
             $ivaMonto = $item['iva_monto'] ?? 0;
 
             $liquidacion->viajes()->attach($item['viaje_id'], ['monto' => $monto, 'iva_monto' => $ivaMonto]);
@@ -367,8 +367,9 @@ class LiquidacionController extends Controller
 
                     return;
                 }
-                if ($viaje->liquidado) {
-                    $error = response()->json(['message' => 'Un viaje ya está liquidado'], 422);
+                $tipoValue = $liquidacion->tipo->value;
+                if ($viaje->esLiquidadoPara($tipoValue)) {
+                    $error = response()->json(['message' => 'Un viaje ya está liquidado para este concepto'], 422);
 
                     return;
                 }
@@ -450,7 +451,7 @@ class LiquidacionController extends Controller
     {
         $liquidacion = Liquidacion::findOrFail($id);
 
-        if ($liquidacion->tipo !== 'cliente') {
+        if ($liquidacion->tipo->value !== 'cliente') {
             return response()->json(['message' => 'Solo liquidaciones de cliente generan factura'], 422);
         }
         if ($liquidacion->estado !== 'pendiente') {
@@ -496,6 +497,8 @@ class LiquidacionController extends Controller
 
     private function precioSugerido(Viaje $viaje, string $tipo): float
     {
+        $tipo = $tipo instanceof \BackedEnum ? $tipo->value : $tipo;
+
         return match ($tipo) {
             'cliente' => $viaje->precio_pactado,
             'proveedor' => $viaje->costo_proveedor_ajustado ?? $viaje->costo_viaje ?? 0,

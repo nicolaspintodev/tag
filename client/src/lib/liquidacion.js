@@ -2,9 +2,16 @@ export const IVA_DEFAULT = 0.21;
 
 export const toNumber = (value) => Number(value ?? 0) || 0;
 
-export function deriveMontos(viajes) {
+export function deriveMontos(viajes, tipo = 'cliente') {
   return viajes.reduce((acc, v) => {
-    const precio = toNumber(v.precio_pactado);
+    let precio;
+    if (tipo === 'chofer') {
+      precio = toNumber(v.costo_viaje);
+    } else if (tipo === 'proveedor') {
+      precio = toNumber(v.costo_proveedor_ajustado ?? v.costo_proveedor);
+    } else {
+      precio = toNumber(v.precio_pactado);
+    }
     const iva = Math.round(precio * IVA_DEFAULT);
     acc[v.id] = { monto: precio, iva_monto: iva, monto_final: precio + iva };
     return acc;

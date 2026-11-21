@@ -16,8 +16,10 @@ const initialState = {
   tipo: 'cliente',
   cliente_id: null,
   proveedor_id: null,
+  chofer_id: null,
   cliente: null,
   proveedor: null,
+  chofer: null,
   fecha_emision: new Date().toISOString().slice(0, 10),
   notas: '',
   viaje_ids: [],
@@ -68,19 +70,19 @@ export default function LiquidacionWizard() {
   }, [saveDraft]);
 
   const fetchViajes = useCallback(async () => {
-    const { tipo, cliente_id, proveedor_id } = dataRef.current;
-    if (!cliente_id && !proveedor_id) return;
+    const { tipo, cliente_id, proveedor_id, chofer_id } = dataRef.current;
+    if (!cliente_id && !proveedor_id && !chofer_id) return;
 
     setLoading(true);
     try {
-      const params = {
-        tipo,
-        [tipo === 'cliente' ? 'cliente_id' : 'proveedor_id']: tipo === 'cliente' ? cliente_id : proveedor_id,
-      };
+      const params = { tipo };
+      if (tipo === 'cliente') params.cliente_id = cliente_id;
+      else if (tipo === 'proveedor') params.proveedor_id = proveedor_id;
+      else if (tipo === 'chofer') params.chofer_id = chofer_id;
 
       const response = await viajesResource.disponiblesParaLiquidacion(params);
       const viajesArray = Array.isArray(response) ? response : [];
-      const montos = deriveMontos(viajesArray);
+      const montos = deriveMontos(viajesArray, tipo);
 
       setData(prev => ({ ...prev, viajesData: viajesArray, montos }));
     } catch (err) {
@@ -93,7 +95,7 @@ export default function LiquidacionWizard() {
 
   useEffect(() => {
     fetchViajes();
-  }, [fetchViajes, data.tipo, data.cliente_id, data.proveedor_id]);
+  }, [fetchViajes, data.tipo, data.cliente_id, data.proveedor_id, data.chofer_id]);
 
   const handleTipoChange = useCallback((newTipo) => {
     setData(prev => ({
@@ -101,8 +103,10 @@ export default function LiquidacionWizard() {
       tipo: newTipo,
       cliente_id: null,
       proveedor_id: null,
+      chofer_id: null,
       cliente: null,
       proveedor: null,
+      chofer: null,
       viaje_ids: [],
       selectedIds: [],
       montos: {},
@@ -116,28 +120,36 @@ export default function LiquidacionWizard() {
   }, []);
 
   const handleEntityClear = useCallback(() => {
-    setData(prev => ({
-      ...prev,
-      [prev.tipo === 'cliente' ? 'cliente_id' : 'proveedor_id']: null,
-      [prev.tipo === 'cliente' ? 'cliente' : 'proveedor']: null,
-      viaje_ids: [],
-      selectedIds: [],
-      montos: {},
-      viajesData: [],
-    }));
+    setData(prev => {
+      const entityIdKey = prev.tipo === 'cliente' ? 'cliente_id' : (prev.tipo === 'chofer' ? 'chofer_id' : 'proveedor_id');
+      const entityKey = prev.tipo === 'cliente' ? 'cliente' : (prev.tipo === 'chofer' ? 'chofer' : 'proveedor');
+      return {
+        ...prev,
+        [entityIdKey]: null,
+        [entityKey]: null,
+        viaje_ids: [],
+        selectedIds: [],
+        montos: {},
+        viajesData: [],
+      };
+    });
     setSelectedIds([]);
   }, []);
 
   const handleEntitySelect = useCallback((entity) => {
-    setData(prev => ({
-      ...prev,
-      [prev.tipo === 'cliente' ? 'cliente_id' : 'proveedor_id']: entity.id,
-      [prev.tipo === 'cliente' ? 'cliente' : 'proveedor']: entity,
-      viaje_ids: [],
-      selectedIds: [],
-      montos: {},
-      viajesData: [],
-    }));
+    setData(prev => {
+      const entityIdKey = prev.tipo === 'cliente' ? 'cliente_id' : (prev.tipo === 'chofer' ? 'chofer_id' : 'proveedor_id');
+      const entityKey = prev.tipo === 'cliente' ? 'cliente' : (prev.tipo === 'chofer' ? 'chofer' : 'proveedor');
+      return {
+        ...prev,
+        [entityIdKey]: entity.id,
+        [entityKey]: entity,
+        viaje_ids: [],
+        selectedIds: [],
+        montos: {},
+        viajesData: [],
+      };
+    });
     setSelectedIds([]);
     setModalOpen(false);
   }, []);
@@ -157,12 +169,12 @@ export default function LiquidacionWizard() {
   }, [data.viajesData]);
 
   const goToPreview = useCallback(() => {
-    if (data.cliente_id || data.proveedor_id) {
+    if (data.cliente_id || data.proveedor_id || data.chofer_id) {
       if (selectedIds.length > 0) {
         setVista('preview');
       }
     }
-  }, [data.cliente_id, data.proveedor_id, selectedIds.length]);
+  }, [data.cliente_id, data.proveedor_id, data.chofer_id, selectedIds.length]);
 
   const goToEdicion = useCallback(() => {
     setVista('edicion');
@@ -173,9 +185,21 @@ export default function LiquidacionWizard() {
     setError(null);
 
     try {
+      let entityIdKey, entityIdValue;
+      if (data.tipo === 'cliente') {
+        entityIdKey = 'cliente_id';
+        entityIdValue = data.cliente_id;
+      } else if (data.tipo === 'chofer') {
+        entityIdKey = 'chofer_id';
+        entityIdValue = data.chofer_id;
+      } else {
+        entityIdKey = 'proveedor_id';
+        entityIdValue = data.proveedor_id;
+      }
+
       const payload = {
         tipo: data.tipo,
-        [data.tipo === 'cliente' ? 'cliente_id' : 'proveedor_id']: data[data.tipo === 'cliente' ? 'cliente_id' : 'proveedor_id'],
+        [entityIdKey]: entityIdValue,
         fecha_emision: data.fecha_emision,
         notas: data.notas || undefined,
         estado,
@@ -201,10 +225,10 @@ export default function LiquidacionWizard() {
   const handleSaveBorrador = () => submit('borrador');
   const handleCrear = () => submit('pendiente');
 
-  const hasDestinatario = data.cliente_id || data.proveedor_id;
+  const hasDestinatario = data.cliente_id || data.proveedor_id || data.chofer_id;
   const isEdicion = vista === 'edicion';
 
-  const columns = useMemo(() => buildSelectionGridColumns(), []);
+  const columns = useMemo(() => buildSelectionGridColumns(data.tipo), [data.tipo]);
   const rows = useMemo(() => {
     const montos = data.montos || {};
     return (data.viajesData || []).map(v => ({ ...v, ...(montos[v.id] || {}) }));
@@ -245,6 +269,7 @@ export default function LiquidacionWizard() {
             tipo={data.tipo}
             cliente={data.cliente}
             proveedor={data.proveedor}
+            chofer={data.chofer}
             fecha_emision={data.fecha_emision}
             onTipoChange={handleTipoChange}
             onEntityPick={handleEntityPick}

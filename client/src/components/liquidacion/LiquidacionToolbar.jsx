@@ -4,22 +4,23 @@ import Button from '../ui/Button';
 
 const TIPO_OPTIONS = [
   { value: 'cliente', label: 'Cliente' },
+  { value: 'chofer', label: 'Chofer' },
   { value: 'proveedor', label: 'Proveedor (próximamente)', disabled: true },
-  { value: 'chofer', label: 'Chofer (próximamente)', disabled: true },
 ];
 
 export default function LiquidacionToolbar({
   tipo,
   cliente,
   proveedor,
+  chofer,
   fecha_emision,
   onTipoChange,
   onEntityPick,
   onEntityClear,
   onFechaChange,
 }) {
-  const currentEntity = tipo === 'cliente' ? cliente : proveedor;
-  const entityLabel = tipo === 'cliente' ? 'cliente' : 'proveedor';
+  const currentEntity = tipo === 'cliente' ? cliente : (tipo === 'chofer' ? chofer : proveedor);
+  const entityLabel = tipo === 'cliente' ? 'cliente' : (tipo === 'chofer' ? 'chofer' : 'proveedor');
   const pickButtonLabel = currentEntity ? `Cambiar ${entityLabel}` : `Elegir ${entityLabel}`;
 
   return (

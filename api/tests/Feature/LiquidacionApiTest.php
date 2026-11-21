@@ -328,4 +328,181 @@ class LiquidacionApiTest extends TestCase
         $response->assertOk();
         $this->assertDatabaseHas('liquidaciones', ['id' => $liquidacion->id, 'deleted_at' => null]);
     }
+
+    // ================================================================
+    // CHOFER LIQUIDACION TESTS
+    // ================================================================
+
+    public function test_store_crea_liquidacion_chofer(): void
+    {
+        $response = $this->postJson('/api/liquidaciones', [
+            'tipo' => 'chofer',
+            'chofer_id' => $this->chofer->id,
+            'fecha_emision' => '2026-07-15',
+        ]);
+
+        $response->assertCreated()
+            ->assertJsonFragment(['tipo' => 'chofer']);
+    }
+
+    public function test_store_chofer_requiere_chofer_id(): void
+    {
+        $response = $this->postJson('/api/liquidaciones', [
+            'tipo' => 'chofer',
+            'fecha_emision' => '2026-07-15',
+        ]);
+
+        $response->assertStatus(422);
+    }
+
+    public function test_store_chofer_con_viajes_usa_costo_viaje(): void
+    {
+        $viaje = $this->crearViaje([
+            'chofer_id' => $this->chofer->id,
+            'estado' => 'terminado',
+            'liquidado_chofer' => false,
+            'costo_viaje' => 500000,
+        ]);
+
+        $response = $this->postJson('/api/liquidaciones', [
+            'tipo' => 'chofer',
+            'chofer_id' => $this->chofer->id,
+            'fecha_emision' => '2026-07-15',
+            'viajes' => [['viaje_id' => $viaje->id]],
+        ]);
+
+        $response->assertCreated();
+
+        $liquidacion = Liquidacion::latest()->first();
+        $this->assertCount(1, $liquidacion->viajes);
+        $this->assertEquals(500000, $liquidacion->viajes->first()->pivot->monto);
+    }
+
+    public function test_chofer_liquidacion_numero_prefijo_liq_ch(): void
+    {
+        $response = $this->postJson('/api/liquidaciones', [
+            'tipo' => 'chofer',
+            'chofer_id' => $this->chofer->id,
+            'fecha_emision' => '2026-07-15',
+        ]);
+
+        $response->assertCreated();
+        $response->assertJsonFragment(['numero' => 'LIQ-CH-0001']);
+    }
+
+    public function test_disponibles_para_liquidacion_chofer_filtra_por_flag(): void
+    {
+        $viajeLiquidadoCliente = $this->crearViaje([
+            'chofer_id' => $this->chofer->id,
+            'estado' => 'terminado',
+            'liquidado_cliente' => true,
+            'liquidado_chofer' => false,
+        ]);
+
+        $viajeLiquidadoChofer = $this->crearViaje([
+            'chofer_id' => $this->chofer->id,
+            'estado' => 'terminado',
+            'liquidado_cliente' => false,
+            'liquidado_chofer' => true,
+        ]);
+
+        $viajeDisponibleChofer = $this->crearViaje([
+            'chofer_id' => $this->chofer->id,
+            'estado' => 'terminado',
+            'liquidado_cliente' => false,
+            'liquidado_chofer' => false,
+        ]);
+
+        $response = $this->getJson('/api/viajes/disponibles-para-liquidacion?tipo=chofer&chofer_id='.$this->chofer->id);
+
+        $response->assertOk();
+        $ids = collect($response->json())->pluck('id')->toArray();
+        $this->assertContains($viajeDisponibleChofer->id, $ids);
+        $this->assertContains($viajeLiquidadoCliente->id, $ids); // disponible para chofer aunque esté liquidado cliente
+        $this->assertNotContains($viajeLiquidadoChofer->id, $ids); // NO disponible si ya liquidado chofer
+    }
+
+    public function test_mismo_viaje_puede_liquidarse_cliente_y_chofer(): void
+    {
+        $viaje = $this->crearViaje([
+            'chofer_id' => $this->chofer->id,
+            'cliente_id' => $this->cliente->id,
+            'estado' => 'terminado',
+            'liquidado_cliente' => false,
+            'liquidado_chofer' => false,
+        ]);
+
+        $liqCliente = Liquidacion::create([
+            'numero' => 'LIQ-C-0001',
+            'tipo' => 'cliente',
+            'cliente_id' => $this->cliente->id,
+            'fecha_emision' => '2026-07-15',
+            'estado' => 'pendiente',
+        ]);
+        $liqCliente->viajes()->attach($viaje->id, ['monto' => 100000]);
+        $viaje->refresh()->marcarLiquidadoPara('cliente');
+
+        $liqChofer = Liquidacion::create([
+            'numero' => 'LIQ-CH-0001',
+            'tipo' => 'chofer',
+            'chofer_id' => $this->chofer->id,
+            'fecha_emision' => '2026-07-15',
+            'estado' => 'borrador',
+        ]);
+
+        $response = $this->postJson("/api/liquidaciones/{$liqChofer->id}/viajes", [
+            'viajes' => [['viaje_id' => $viaje->id, 'monto' => 500000]],
+        ]);
+
+        $response->assertOk();
+        $this->assertCount(1, $liqChofer->fresh()->viajes);
+    }
+
+    public function test_factura_rechaza_liquidacion_chofer(): void
+    {
+        $liqChofer = Liquidacion::create([
+            'numero' => 'LIQ-CH-0001',
+            'tipo' => 'chofer',
+            'chofer_id' => $this->chofer->id,
+            'fecha_emision' => '2026-07-15',
+            'estado' => 'pendiente',
+        ]);
+
+        $response = $this->postJson("/api/liquidaciones/{$liqChofer->id}/facturar", [
+            'numero' => 'A-0001-00000001',
+            'tipo' => 'A',
+            'punto_venta' => '0001',
+            'fecha_emision' => '2026-07-15',
+            'monto_neto' => 100000,
+            'iva' => 21000,
+            'monto_total' => 121000,
+        ]);
+
+        $response->assertStatus(422);
+    }
+
+    public function test_update_detalle_rechaza_viaje_ya_liquidado_mismo_concepto(): void
+    {
+        $viaje = $this->crearViaje([
+            'chofer_id' => $this->chofer->id,
+            'estado' => 'terminado',
+            'liquidado_chofer' => true,
+        ]);
+
+        $liqChofer = Liquidacion::create([
+            'numero' => 'LIQ-CH-0001',
+            'tipo' => 'chofer',
+            'chofer_id' => $this->chofer->id,
+            'fecha_emision' => '2026-07-15',
+            'estado' => 'borrador',
+        ]);
+
+        $response = $this->putJson("/api/liquidaciones/{$liqChofer->id}/detalle", [
+            'fecha_emision' => '2026-07-15',
+            'viajes' => [['viaje_id' => $viaje->id, 'monto' => 500000, 'iva_monto' => 105000]],
+        ]);
+
+        $response->assertStatus(422);
+        $this->assertStringContainsString('ya está liquidado para este concepto', $response->json('message'));
+    }
 }

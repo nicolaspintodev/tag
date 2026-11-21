@@ -8,15 +8,21 @@ export const formatCuit = (value) => {
   return `${digits.slice(0, 2)}-${digits.slice(2, 10)}-${digits.slice(10, 11)}`;
 };
 
-export const buildPreviewMeta = ({ tipo, cliente, proveedor, fecha_emision }) => {
-  const destinatario = tipo === 'cliente' ? cliente : proveedor;
+export const buildPreviewMeta = ({ tipo, cliente, proveedor, chofer, fecha_emision }) => {
+  let destinatario;
+  if (tipo === 'cliente') destinatario = cliente;
+  else if (tipo === 'chofer') destinatario = chofer;
+  else destinatario = proveedor;
+
   const condicionIva = destinatario?.condicion_iva;
   const condicionIvaLabel = condicionIva
     ? CONDICION_IVA_LABELS[condicionIva] ?? 'Sin condición IVA'
     : 'Sin condición IVA';
 
+  const tipoLabel = tipo === 'cliente' ? 'Cliente' : (tipo === 'chofer' ? 'Chofer' : 'Proveedor');
+
   return [
-    { label: 'Tipo', value: tipo === 'cliente' ? 'Cliente' : 'Proveedor' },
+    { label: 'Tipo', value: tipoLabel },
     { label: 'Nombre legal', value: destinatario?.razon_social || '-' },
     { label: 'CUIT', value: formatCuit(destinatario?.cuit) },
     { label: 'Condición IVA', value: condicionIvaLabel },
