@@ -133,7 +133,17 @@ jobs:
     steps:
       - name: Run migrations
         if: ${{ env.DEPLOY_KEY != '' }}
-        run: curl -fsS "http://logisticatag.com.ar/deploy.php?key=${DEPLOY_KEY}&action=migrate"
+        continue-on-error: true
+        run: |
+          resp_file=$(mktemp)
+          http=$(curl -sS -o "$resp_file" -w "%{http_code}" "http://logisticatag.com.ar/deploy.php?key=${DEPLOY_KEY}&action=migrate")
+          echo "migrate HTTP ${http}"
+          cat "$resp_file"
+          echo
+          if [ "$http" -lt 200 ] || [ "$http" -ge 300 ]; then
+            echo "::warning::Migration endpoint returned HTTP ${http}; continuing to health check"
+            exit 1
+          fi
 
       - name: Wait and health check
         run: |
