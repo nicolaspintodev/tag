@@ -68,6 +68,44 @@ jobs:
         working-directory: api
         run: composer install --no-dev --optimize-autoloader --no-interaction --prefer-dist
 
+      - name: Package API release
+        run: |
+          cd api
+          zip -rq ../release.zip . \
+            -x "*.git*" \
+            -x ".github/*" \
+            -x "tests/*" \
+            -x ".env*" \
+            -x "database/*.sqlite" \
+            -x "storage/logs/*" \
+            -x "storage/framework/cache/*" \
+            -x "storage/framework/sessions/*" \
+            -x "storage/framework/views/*" \
+            -x "bootstrap/cache/*.php" \
+            -x "node_modules/*" \
+            -x "phpunit.xml" \
+            -x "pint.json"
+          cd ..
+          mkdir -p deploy-pkg
+          mv release.zip deploy-pkg/
+
+      - name: Upload API release package
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          server: ${{ secrets.FTP_HOST }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          port: ${{ secrets.FTP_PORT }}
+          protocol: ${{ secrets.FTP_PROTOCOL }}
+          local-dir: deploy-pkg/
+          server-dir: ${{ secrets.DEPLOY_PATH_FRONTEND }}/
+
+      - name: Unpack API on server
+        env:
+          DEPLOY_KEY: ${{ secrets.DEPLOY_KEY }}
+        run: |
+          curl -fsS "http://logisticatag.com.ar/deploy.php?key=${DEPLOY_KEY}&action=unzip"
+
       - name: Deploy frontend
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5
         with:
@@ -82,31 +120,7 @@ jobs:
             **/.htaccess
             **/index.php
             **/deploy.php
-
-      - name: Deploy API
-        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
-        with:
-          server: ${{ secrets.FTP_HOST }}
-          username: ${{ secrets.FTP_USERNAME }}
-          password: ${{ secrets.FTP_PASSWORD }}
-          port: ${{ secrets.FTP_PORT }}
-          protocol: ${{ secrets.FTP_PROTOCOL }}
-          local-dir: api/
-          server-dir: ${{ secrets.DEPLOY_PATH_API }}/
-          exclude: |
-            **/.git*
-            **/.github/**
-            **/.env*
-            **/tests/**
-            **/phpunit.xml
-            **/pint.json
-            **/database/*.sqlite
-            **/storage/logs/**
-            **/storage/framework/cache/**
-            **/storage/framework/sessions/**
-            **/storage/framework/views/**
-            **/bootstrap/cache/*.php
-            **/node_modules/**
+            **/release.zip
 
   post-deploy:
     name: Migrate and Health Check
