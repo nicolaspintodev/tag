@@ -38,14 +38,14 @@ Route::middleware('auth:sanctum')->group(function () {
         'facturas' => FacturaController::class,
     ];
 
+    Route::apiResources($resources);
     foreach ($resources as $name => $controller) {
-        Route::apiResource($name, $controller);
         Route::post("/{$name}/{id}/restore", [$controller, 'restore']);
     }
     Route::patch('/viajes/{viaje}/estado', [ViajeController::class, 'cambiarEstado']);
 
     // Liquidaciones (with custom endpoints)
-    Route::apiResource('liquidaciones', LiquidacionController::class);
+    Route::apiResources(['liquidaciones' => LiquidacionController::class]);
     Route::post('/liquidaciones/{id}/restore', [LiquidacionController::class, 'restore']);
     Route::get('/liquidaciones/{id}/viajes-disponibles', [LiquidacionController::class, 'viajesDisponibles']);
     Route::post('/liquidaciones/{id}/viajes', [LiquidacionController::class, 'agregarViajes']);
