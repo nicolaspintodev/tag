@@ -84,6 +84,11 @@ const Viajes = () => {
     { value: 'terminado', label: 'Terminado' },
   ], []);
 
+  const canPersist = (row) => {
+    if (selectedKey && row.id === selectedKey) return false;
+    return baseCanPersist(row);
+  };
+
   const { rows, setRows, saveState, loading, errors, reload, updateCell, createRow, deleteRow, restoreRow, saveRow, cancelPendingSave, lastAction } =
     useEditableResource(viajes, { rowKey: 'id', canPersist });
 
@@ -177,13 +182,6 @@ const Viajes = () => {
   };
 
   const [activeTab, setActiveTab] = useState('operativo');
-  const selectedKeyRef = useRef(null);
-  selectedKeyRef.current = selectedKey;
-
-  const canPersist = (row) => {
-    if (selectedKeyRef.current && row.id === selectedKeyRef.current) return false;
-    return baseCanPersist(row);
-  };
 
   const handleBooleanChange = (rowId, fieldId, checked) => {
     updateCell(rowId, fieldId, checked);
