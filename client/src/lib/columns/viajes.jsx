@@ -25,7 +25,8 @@ const dateRender = (v) => {
 
 const tractoraRender = (v, row) => {
   if (row.tractora) {
-    return `${row.tractora.marca} ${row.tractora.modelo} (${row.tractora.patente})`;
+    const label = [row.tractora.marca, row.tractora.modelo].filter(Boolean).join(' ');
+    return row.tractora.patente ? `${label} (${row.tractora.patente})` : label || '-';
   }
   return '-';
 };
