@@ -56,6 +56,9 @@ class Viaje extends Model
         'estado',
         'facturado',
         'liquidado',
+        'liquidado_cliente',
+        'liquidado_proveedor',
+        'liquidado_chofer',
         'estado_facturacion',
         'origen',
         'destino',
@@ -81,6 +84,9 @@ class Viaje extends Model
             'estado' => EstadoViaje::class,
             'facturado' => 'boolean',
             'liquidado' => 'boolean',
+            'liquidado_cliente' => 'boolean',
+            'liquidado_proveedor' => 'boolean',
+            'liquidado_chofer' => 'boolean',
             'estado_facturacion' => 'string',
             'fecha_salida' => 'date',
             'fecha_llegada' => 'date',
@@ -113,7 +119,36 @@ class Viaje extends Model
 
     public function getLiquidadoAttribute(): bool
     {
-        return (bool) ($this->attributes['liquidado'] ?? false);
+        // Aggregate: true si está liquidado en CUALQUIER concepto
+        return (bool) (($this->attributes['liquidado_cliente'] ?? false)
+            || ($this->attributes['liquidado_proveedor'] ?? false)
+            || ($this->attributes['liquidado_chofer'] ?? false)
+            || ($this->attributes['liquidado'] ?? false));
+    }
+
+    public function esLiquidadoPara(string $tipo): bool
+    {
+        return match ($tipo) {
+            'cliente' => (bool) ($this->attributes['liquidado_cliente'] ?? false),
+            'proveedor' => (bool) ($this->attributes['liquidado_proveedor'] ?? false),
+            'chofer' => (bool) ($this->attributes['liquidado_chofer'] ?? false),
+            default => false,
+        };
+    }
+
+    public function marcarLiquidadoPara(string $tipo): void
+    {
+        $column = match ($tipo) {
+            'cliente' => 'liquidado_cliente',
+            'proveedor' => 'liquidado_proveedor',
+            'chofer' => 'liquidado_chofer',
+            default => null,
+        };
+        if ($column) {
+            $this->{$column} = true;
+            $this->liquidado = true; // keep aggregate in sync
+            $this->save();
+        }
     }
 
     public function getPuedeFacturarseAttribute(): bool
@@ -123,7 +158,12 @@ class Viaje extends Model
 
     public function getPuedeLiquidarseAttribute(): bool
     {
-        return $this->estado->value === 'terminado' && ! $this->attributes['liquidado'];
+        // A trip can be liquidated if it's NOT liquidated in ANY concept
+        return $this->estado->value === 'terminado'
+            && ! (($this->attributes['liquidado_cliente'] ?? false)
+                || ($this->attributes['liquidado_proveedor'] ?? false)
+                || ($this->attributes['liquidado_chofer'] ?? false)
+                || ($this->attributes['liquidado'] ?? false));
     }
 
     // ---------- Relaciones ----------
@@ -242,7 +282,11 @@ class Viaje extends Model
         }
 
         // Regla: facturado/liquidado solo en terminado
-        if (($this->facturado || $this->liquidado) && $this->estado !== EstadoViaje::TERMINADO) {
+        $anyLiquidado = ($this->liquidado_cliente ?? false)
+            || ($this->liquidado_proveedor ?? false)
+            || ($this->liquidado_chofer ?? false)
+            || ($this->attributes['liquidado'] ?? false);
+        if (($this->facturado || $anyLiquidado) && $this->estado !== EstadoViaje::TERMINADO) {
             $errors['estado'] = 'Solo los viajes Terminados pueden ser facturados/liquidados.';
         }
 

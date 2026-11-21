@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\TipoLiquidacion;
 use App\Models\Factura;
 use App\Models\Liquidacion;
 use App\Models\Viaje;
@@ -30,8 +31,16 @@ class LiquidacionController extends Controller
             $query->where('proveedor_id', $request->get('proveedor_id'));
         }
 
+        if ($request->has('chofer_id')) {
+            $query->where('chofer_id', $request->get('chofer_id'));
+        }
+
+        if ($request->filled('estado')) {
+            $query->where('estado', $request->get('estado'));
+        }
+
         return response()->json(
-            $query->with(['cliente', 'proveedor', 'viajes' => function ($q) {
+            $query->with(['cliente', 'proveedor', 'chofer', 'viajes' => function ($q) {
                 $q->with(['chofer', 'unidades', 'cliente', 'documento', 'gastos', 'anticipos']);
             }])
                 ->orderBy('created_at', 'desc')
@@ -42,9 +51,10 @@ class LiquidacionController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'tipo' => 'required|string|in:cliente,proveedor',
+            'tipo' => 'required|string|in:cliente,proveedor,chofer',
             'cliente_id' => 'nullable|exists:clientes,id',
             'proveedor_id' => 'nullable|exists:proveedores,id',
+            'chofer_id' => 'nullable|exists:choferes,id',
             'fecha_emision' => 'required|date',
             'notas' => 'nullable|string',
             'estado' => 'nullable|string|in:borrador,pendiente',
@@ -60,6 +70,9 @@ class LiquidacionController extends Controller
         if ($validated['tipo'] === 'proveedor' && empty($validated['proveedor_id'])) {
             return response()->json(['message' => 'proveedor_id es requerido para liquidaciones de proveedor'], 422);
         }
+        if ($validated['tipo'] === 'chofer' && empty($validated['chofer_id'])) {
+            return response()->json(['message' => 'chofer_id es requerido para liquidaciones de chofer'], 422);
+        }
 
         $viajesData = $validated['viajes'] ?? [];
         unset($validated['viajes']);
@@ -74,9 +87,7 @@ class LiquidacionController extends Controller
             $itemsToAttach = [];
             foreach ($viajesData as $item) {
                 $viaje = Viaje::findOrFail($item['viaje_id']);
-                $monto = $item['monto'] ?? ($liquidacion->tipo === 'proveedor'
-                    ? ($viaje->costo_proveedor_ajustado ?? $viaje->costo_viaje ?? 0)
-                    : $viaje->precio_pactado);
+                $monto = $item['monto'] ?? $this->precioSugerido($viaje, $liquidacion->tipo);
                 $ivaMonto = $item['iva_monto'] ?? 0;
 
                 $itemsToAttach[$viaje->id] = ['monto' => $monto, 'iva_monto' => $ivaMonto];
@@ -87,16 +98,16 @@ class LiquidacionController extends Controller
 
         // Si estado es pendiente, marcar viajes como liquidados
         if ($liquidacion->estado === 'pendiente') {
-            $liquidacion->viajes()->update(['liquidado' => true]);
+            $this->marcarViajesLiquidados($liquidacion);
         }
 
-        return response()->json($liquidacion->load(['cliente', 'proveedor', 'viajes']), 201);
+        return response()->json($liquidacion->load(['cliente', 'proveedor', 'chofer', 'viajes']), 201);
     }
 
     public function show($id)
     {
         $liquidacion = Liquidacion::withTrashed()
-            ->with(['cliente', 'proveedor', 'viajes' => function ($q) {
+            ->with(['cliente', 'proveedor', 'chofer', 'viajes' => function ($q) {
                 $q->with(['chofer', 'unidades', 'cliente', 'documento', 'gastos', 'anticipos']);
             }, 'factura'])
             ->findOrFail($id);
@@ -152,9 +163,18 @@ class LiquidacionController extends Controller
 
         if ($liquidacion->tipo === 'cliente') {
             $query->where('cliente_id', $liquidacion->cliente_id);
-        } else {
+        } elseif ($liquidacion->tipo === 'proveedor') {
             $query->where('proveedor_id', $liquidacion->proveedor_id);
+        } else {
+            $query->where('chofer_id', $liquidacion->chofer_id);
         }
+
+        $flag = match ($liquidacion->tipo) {
+            TipoLiquidacion::CLIENTE => 'liquidado_cliente',
+            TipoLiquidacion::PROVEEDOR => 'liquidado_proveedor',
+            TipoLiquidacion::CHOFER => 'liquidado_chofer',
+        };
+        $query->where($flag, false);
 
         if ($request->filled('fecha_desde')) {
             $query->whereDate('fecha_salida', '>=', $request->get('fecha_desde'));
@@ -207,9 +227,7 @@ class LiquidacionController extends Controller
 
         foreach ($validated['viajes'] as $item) {
             $viaje = Viaje::findOrFail($item['viaje_id']);
-            $monto = $item['monto'] ?? ($liquidacion->tipo === 'proveedor'
-                ? ($viaje->costo_proveedor_ajustado ?? $viaje->costo_viaje ?? 0)
-                : $viaje->precio_pactado);
+            $monto = $item['monto'] ?? $this->precioSugerido($viaje, $liquidacion->tipo);
             $ivaMonto = $item['iva_monto'] ?? 0;
 
             $liquidacion->viajes()->attach($item['viaje_id'], ['monto' => $monto, 'iva_monto' => $ivaMonto]);
@@ -217,7 +235,7 @@ class LiquidacionController extends Controller
 
         $this->recalcularTotal($liquidacion);
 
-        return response()->json($liquidacion->load(['cliente', 'proveedor', 'viajes']));
+        return response()->json($liquidacion->load(['cliente', 'proveedor', 'chofer', 'viajes']));
     }
 
     public function quitarViaje($id, $viajeId)
@@ -268,7 +286,7 @@ class LiquidacionController extends Controller
 
         $viajeIds = $liquidacion->viajes->pluck('id')->toArray();
 
-        DB::transaction(function () use ($id, $viajeIds, $validated) {
+        DB::transaction(function () use ($id, $validated) {
             $liq = Liquidacion::lockForUpdate()->findOrFail($id);
 
             if ($liq->estado !== 'borrador') {
@@ -278,13 +296,13 @@ class LiquidacionController extends Controller
             $liq->update(['estado' => $validated['estado']]);
 
             if ($validated['estado'] === 'pendiente') {
-                Viaje::whereIn('id', $viajeIds)->update(['liquidado' => true]);
+                $this->marcarViajesLiquidados($liq);
             }
         });
 
         $liquidacion = Liquidacion::findOrFail($id);
 
-        return response()->json($liquidacion->load(['cliente', 'proveedor', 'viajes']));
+        return response()->json($liquidacion->load(['cliente', 'proveedor', 'chofer', 'viajes']));
     }
 
     public function updateDetalle(Request $request, $id)
@@ -325,8 +343,16 @@ class LiquidacionController extends Controller
                 return;
             }
 
-            $entityColumn = $liquidacion->tipo === 'cliente' ? 'cliente_id' : 'proveedor_id';
-            $entityId = $liquidacion->tipo === 'cliente' ? $liquidacion->cliente_id : $liquidacion->proveedor_id;
+            $entityColumn = match ($liquidacion->tipo) {
+                TipoLiquidacion::CLIENTE => 'cliente_id',
+                TipoLiquidacion::PROVEEDOR => 'proveedor_id',
+                TipoLiquidacion::CHOFER => 'chofer_id',
+            };
+            $entityId = match ($liquidacion->tipo) {
+                TipoLiquidacion::CLIENTE => $liquidacion->cliente_id,
+                TipoLiquidacion::PROVEEDOR => $liquidacion->proveedor_id,
+                TipoLiquidacion::CHOFER => $liquidacion->chofer_id,
+            };
             $viajes = Viaje::whereIn('id', $viajeIds)->lockForUpdate()->get();
 
             if ($viajes->count() !== $viajeIds->count()) {
@@ -382,7 +408,7 @@ class LiquidacionController extends Controller
 
             if (($validated['estado'] ?? null) === 'pendiente') {
                 $liquidacion->update(['estado' => 'pendiente']);
-                Viaje::whereIn('id', $viajeIds)->update(['liquidado' => true]);
+                $this->marcarViajesLiquidados($liquidacion);
             }
         });
 
@@ -393,6 +419,7 @@ class LiquidacionController extends Controller
         return response()->json($liquidacion->load([
             'cliente',
             'proveedor',
+            'chofer',
             'viajes',
             'factura',
         ]));
@@ -400,7 +427,12 @@ class LiquidacionController extends Controller
 
     private function generateNumero(string $tipo): string
     {
-        $prefijo = $tipo === 'cliente' ? 'LIQ-C' : 'LIQ-P';
+        $prefijo = match ($tipo) {
+            'cliente' => 'LIQ-C',
+            'proveedor' => 'LIQ-P',
+            'chofer' => 'LIQ-CH',
+            default => 'LIQ-C',
+        };
         $ultimo = Liquidacion::withTrashed()->where('numero', 'like', "{$prefijo}-%")
             ->latest('id')
             ->first();
@@ -444,8 +476,8 @@ class LiquidacionController extends Controller
                 'estado' => 'emitida',
             ]));
 
-            // Actualizar viajes vinculados
-            $liquidacion->viajes()->update(['estado_facturacion' => 'facturado']);
+            // Actualizar viajes vinculados - fix estado_facturacion column removed
+            $liquidacion->viajes()->update(['facturado' => true]);
 
             // Cambiar estado liquidación
             $liquidacion->update(['estado' => 'facturada']);
@@ -460,5 +492,26 @@ class LiquidacionController extends Controller
             ->where('liquidacion_id', $liquidacion->id)
             ->sum('monto');
         $liquidacion->update(['total' => $total]);
+    }
+
+    private function precioSugerido(Viaje $viaje, string $tipo): float
+    {
+        return match ($tipo) {
+            'cliente' => $viaje->precio_pactado,
+            'proveedor' => $viaje->costo_proveedor_ajustado ?? $viaje->costo_viaje ?? 0,
+            'chofer' => $viaje->costo_viaje ?? 0,
+            default => 0,
+        };
+    }
+
+    private function marcarViajesLiquidados(Liquidacion $liquidacion): void
+    {
+        $flag = match ($liquidacion->tipo) {
+            TipoLiquidacion::CLIENTE => 'liquidado_cliente',
+            TipoLiquidacion::PROVEEDOR => 'liquidado_proveedor',
+            TipoLiquidacion::CHOFER => 'liquidado_chofer',
+        };
+        $viajeIds = $liquidacion->viajes->pluck('id')->toArray();
+        Viaje::whereIn('id', $viajeIds)->update([$flag => true, 'liquidado' => true]);
     }
 }

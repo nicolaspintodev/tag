@@ -46,4 +46,9 @@ class Chofer extends Model
     {
         return $this->hasMany(Viaje::class);
     }
+
+    public function liquidaciones(): HasMany
+    {
+        return $this->hasMany(Liquidacion::class, 'chofer_id');
+    }
 }

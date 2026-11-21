@@ -2,15 +2,14 @@
 
 namespace Database\Seeders;
 
+use App\Enums\EstadoViaje;
 use App\Models\Chofer;
 use App\Models\Cliente;
 use App\Models\Proveedor;
 use App\Models\Unidad;
 use App\Models\User;
 use App\Models\Viaje;
-use App\Enums\EstadoViaje;
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Facades\DB;
 
 class RecursosSeeder extends Seeder
 {
