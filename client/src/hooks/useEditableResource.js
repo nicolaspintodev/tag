@@ -49,6 +49,7 @@ export const useEditableResource = (resource, { rowKey = 'id', delay = 500, canP
       setRows((prev) => prev.map((row) => (row[rowKey] === key ? { ...row, ...saved } : row)));
       setSaveState((prev) => ({ ...prev, [key]: 'saved' }));
       setAction(key, 'saved');
+      return { ok: true, saved };
     } catch (err) {
       setSaveState((prev) => ({ ...prev, [key]: 'error' }));
       const message = err instanceof Error ? err.message : String(err);
@@ -57,6 +58,7 @@ export const useEditableResource = (resource, { rowKey = 'id', delay = 500, canP
         [key]: { ...prev[key], [failedColumnId || '_row']: message },
       }));
       setAction(key, 'error');
+      return { ok: false, error: err };
     }
   }, [resource, rowKey, setAction]);
 
@@ -126,7 +128,19 @@ export const useEditableResource = (resource, { rowKey = 'id', delay = 500, canP
     );
   }, []);
 
-  return { rows, setRows, saveState, loading, errors, setErrors, reload, updateCell, createRow, deleteRow, restoreRow, flush, clearError, lastAction };
+  const saveRow = useCallback(async (key, { force = false } = {}) => {
+    debouncers.current[key]?.cancel?.();
+    const row = rowsRef.current.find((item) => item[rowKey] === key);
+    if (!row) return { ok: false, error: new Error('Row not found') };
+    if (!force && canPersistRef.current && !canPersistRef.current(row)) return { ok: false, error: new Error('Row cannot be persisted') };
+    return persist(key, buildPayload(row), !String(row.id).startsWith('new-'));
+  }, [rowKey, persist]);
+
+  const cancelPendingSave = useCallback((key) => {
+    debouncers.current[key]?.cancel?.();
+  }, []);
+
+  return { rows, setRows, saveState, loading, errors, setErrors, reload, updateCell, createRow, deleteRow, restoreRow, flush, saveRow, cancelPendingSave, clearError, lastAction };
 };
 
 export { buildPayload, SERVER_KEYS };

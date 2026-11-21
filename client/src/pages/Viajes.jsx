@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Search, X, Calendar, Filter, ChevronDown, ChevronUp, ChevronLeft, ChevronRight } from 'lucide-react';
 import ViajeGrid from '../components/grid/ViajeGrid';
 import Modal from '../components/ui/Modal';
@@ -14,7 +14,7 @@ import {
   buildViajesDetailFields,
 } from '../lib/columns/viajes';
 
-const canPersist = (row) =>
+const baseCanPersist = (row) =>
   Boolean(row.id) ||
   (String(row.origen ?? '').trim() !== '' &&
    String(row.destino ?? '').trim() !== '' &&
@@ -81,10 +81,11 @@ const Viajes = () => {
     { value: 'terminado', label: 'Terminado' },
   ], []);
 
-  const { rows, saveState, loading, errors, reload, updateCell, createRow, deleteRow, restoreRow, flush, lastAction } =
+  const { rows, setRows, saveState, loading, errors, reload, updateCell, createRow, deleteRow, restoreRow, saveRow, cancelPendingSave, lastAction } =
     useEditableResource(viajes, { rowKey: 'id', canPersist });
 
   const selected = useMemo(() => rows.find((row) => row.id === selectedKey), [rows, selectedKey]);
+  const selectedSnapshotRef = useRef(null);
 
   const fetchRows = (overrides = {}) => {
     const searchValue = overrides.searchValue ?? search;
@@ -115,6 +116,38 @@ const Viajes = () => {
     fetchRows({ searchValue: '' });
   };
 
+  const openDetail = (row) => {
+    selectedSnapshotRef.current = structuredClone(row);
+    setSelectedKey(row.id);
+    setActiveTab('operativo');
+  };
+
+  const closeDetail = async () => {
+    const snapshot = selectedSnapshotRef.current;
+    selectedSnapshotRef.current = null;
+    const key = selectedKey;
+    if (key) cancelPendingSave(key);
+    setSelectedKey(null);
+    setActiveTab('operativo');
+    if (snapshot && key) {
+      if (String(key).startsWith('new-')) {
+        setRows((prev) => prev.filter((row) => row.id !== key));
+      } else {
+        await fetchRows();
+      }
+    }
+  };
+
+  const handleSaveDetail = async () => {
+    if (!selected) return;
+    const result = await saveRow(selected.id, { force: true });
+    if (!result?.ok) return;
+    selectedSnapshotRef.current = null;
+    await fetchRows();
+    setSelectedKey(null);
+    setActiveTab('operativo');
+  };
+
   const handleEstadoFilterChange = (value) => {
     setEstadoFilter(value);
     fetchRows({ estadoValue: value });
@@ -141,6 +174,13 @@ const Viajes = () => {
   };
 
   const [activeTab, setActiveTab] = useState('operativo');
+  const selectedKeyRef = useRef(null);
+  selectedKeyRef.current = selectedKey;
+
+  const canPersist = (row) => {
+    if (selectedKeyRef.current && row.id === selectedKeyRef.current) return false;
+    return baseCanPersist(row);
+  };
 
   const handleBooleanChange = (rowId, fieldId, checked) => {
     updateCell(rowId, fieldId, checked);
@@ -367,7 +407,7 @@ const Viajes = () => {
             </div>
           </div>
           <div style={{ marginLeft: 'auto' }}>
-            <Button onClick={() => { const key = createRow(); setSelectedKey(key); setActiveTab('operativo'); }}>+ Nuevo Viaje</Button>
+            <Button onClick={() => { const key = createRow(); const draft = { id: key }; selectedSnapshotRef.current = draft; setSelectedKey(key); setActiveTab('operativo'); }}>+ Nuevo Viaje</Button>
           </div>
         </div>
       </div>
@@ -379,7 +419,7 @@ const Viajes = () => {
           rowKey="id"
           onCellChange={updateCell}
           onRowDelete={(key) => setToDelete(key)}
-          onRowOpenDetail={(row) => { setSelectedKey(row.id); setActiveTab('operativo'); }}
+          onRowOpenDetail={openDetail}
           onRowRestore={(key) => restoreRow(key)}
           onAddRow={undefined}
           saveState={saveState}
@@ -394,13 +434,13 @@ const Viajes = () => {
       <Modal
         open={Boolean(selected)}
         title="Detalle de Viaje"
-        onClose={() => { setSelectedKey(null); setActiveTab('operativo'); }}
+        onClose={closeDetail}
         footer={
           <div className="modal-detail-footer">
-            <Button variant="outline" size="sm" onClick={() => { setSelectedKey(null); setActiveTab('operativo'); }}>
+            <Button variant="outline" size="sm" onClick={closeDetail}>
               Cerrar
             </Button>
-            <Button size="sm" onClick={async () => { await flush(); await fetchRows(); setSelectedKey(null); setActiveTab('operativo'); }}>
+            <Button size="sm" onClick={handleSaveDetail}>
               Guardar
             </Button>
           </div>
