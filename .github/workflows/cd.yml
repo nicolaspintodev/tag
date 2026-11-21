@@ -57,17 +57,6 @@ jobs:
           name: frontend-dist
           path: client/dist/
 
-      - name: Setup PHP
-        uses: shivammathur/setup-php@v2
-        with:
-          php-version: "8.3"
-          tools: composer:v2
-          coverage: none
-
-      - name: Install API prod dependencies
-        working-directory: api
-        run: composer install --no-dev --optimize-autoloader --no-interaction --prefer-dist
-
       - name: Package API release
         run: |
           cd api
@@ -84,7 +73,8 @@ jobs:
             -x "bootstrap/cache/*.php" \
             -x "node_modules/*" \
             -x "phpunit.xml" \
-            -x "pint.json"
+            -x "pint.json" \
+            -x "vendor/*"
           cd ..
           mkdir -p deploy-pkg
           mv release.zip deploy-pkg/
