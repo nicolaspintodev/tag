@@ -18,7 +18,7 @@ const toBoolean = (val) => {
   return Boolean(val);
 };
 
-const GridCell = ({ column, value, draft, row, isActive, isEditing, onSelect, onStartEdit, onChange, onCommit, onCancel, onToggle, serverError, rowError }) => {
+const GridCell = ({ column, value, draft, row, isActive, isEditing, onSelect, onStartEdit, onChange, onCommit, onCancel, onToggle, checked, serverError, rowError }) => {
   const ref = useRef(null);
 
   useEffect(() => {
@@ -79,7 +79,13 @@ const GridCell = ({ column, value, draft, row, isActive, isEditing, onSelect, on
     const displayValue = column.id === 'cuit' ? formatCuit(value) : value;
     return (
       <td className={className} title={errorTitle || undefined} onClick={onSelect} onDoubleClick={handleDoubleClick}>
-        {column.render ? column.render(value, row) : displayValue}
+        {column.type === 'checkbox' ? (
+          <input type="checkbox" checked={Boolean(checked)} onChange={() => onToggle?.()} onClick={(e) => e.stopPropagation()} />
+        ) : column.render ? (
+          column.render(value, row)
+        ) : (
+          displayValue
+        )}
       </td>
     );
   }

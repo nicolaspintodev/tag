@@ -12,6 +12,7 @@ const TITLES = {
   '/choferes': 'Choferes',
   '/unidades': 'Unidades',
   '/liquidaciones': 'Liquidaciones',
+  '/liquidaciones/nueva': 'Liquidaciones',
   '/facturas': 'Facturas',
   '/gastos': 'Gastos',
   '/documentos': 'Documentos',

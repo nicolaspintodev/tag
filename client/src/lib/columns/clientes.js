@@ -9,7 +9,7 @@ const CONDICION_IVA_OPTIONS = [
   { value: 'no_categorizado', label: 'No Categorizado' },
 ];
 
-const CONDICION_IVA_LABELS = Object.fromEntries(CONDICION_IVA_OPTIONS.map((o) => [o.value, o.label]));
+export const CONDICION_IVA_LABELS = Object.fromEntries(CONDICION_IVA_OPTIONS.map((o) => [o.value, o.label]));
 
 export const GRID_COLUMNS = [
   { id: 'razon_social', accessor: 'razon_social', header: 'Razón Social', type: 'text', editable: true, validate: required, width: '220px', className: 'truncate' },

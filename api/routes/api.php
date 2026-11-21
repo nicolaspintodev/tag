@@ -23,6 +23,11 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::post('/logout', [AuthController::class, 'logout']);
 
+    // Custom viaje routes (must be before apiResource to avoid {viaje} parameter matching)
+    Route::get('/viajes/disponibles-para-liquidacion', [ViajeController::class, 'disponiblesParaLiquidacion']);
+    Route::get('/viajes/disponibles-por-entidad', [ViajeController::class, 'disponiblesPorEntidad']);
+    Route::patch('/viajes/{viaje}/estado', [ViajeController::class, 'cambiarEstado']);
+
     // Resources with Restore capability
     $resources = [
         'viajes' => ViajeController::class,
@@ -40,7 +45,6 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::apiResource($name, $controller);
         Route::post("/{$name}/{id}/restore", [$controller, 'restore']);
     }
-    Route::patch('/viajes/{viaje}/estado', [ViajeController::class, 'cambiarEstado']);
 
     // Liquidaciones (with custom endpoints)
     Route::apiResource('liquidaciones', LiquidacionController::class);
@@ -50,6 +54,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::delete('/liquidaciones/{id}/viajes/{viajeId}', [LiquidacionController::class, 'quitarViaje']);
     Route::put('/liquidaciones/{id}/viajes/{viajeId}/monto', [LiquidacionController::class, 'actualizarMonto']);
     Route::put('/liquidaciones/{id}/estado', [LiquidacionController::class, 'cambiarEstado']);
+    Route::put('/liquidaciones/{id}/detalle', [LiquidacionController::class, 'updateDetalle']);
     Route::post('/liquidaciones/{id}/facturar', [LiquidacionController::class, 'generarFactura']);
 
     // Documento file uploads

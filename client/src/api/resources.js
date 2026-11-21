@@ -16,7 +16,7 @@ const parse = async (response) => {
   return data;
 };
 
-export const makeResource = (base) => ({
+export const makeResource = (base, extra = {}) => ({
   list: (params = {}) => {
     const entries = Object.entries(params).filter(
       ([, value]) => value !== undefined && value !== null && value !== '',
@@ -30,10 +30,33 @@ export const makeResource = (base) => ({
     apiFetch(`${base}/${id}`, { method: 'PUT', body: JSON.stringify(data) }).then(parse),
   remove: (id) => apiFetch(`${base}/${id}`, { method: 'DELETE' }).then(parse),
   restore: (id) => apiFetch(`${base}/${id}/restore`, { method: 'POST' }).then(parse),
+  ...extra,
 });
 
 export const clientes = makeResource('/clientes');
 export const choferes = makeResource('/choferes');
 export const proveedores = makeResource('/proveedores');
 export const unidades = makeResource('/unidades');
-export const viajes = makeResource('/viajes');
+export const viajes = makeResource('/viajes', {
+  disponiblesParaLiquidacion: (params) => {
+    const entries = Object.entries(params).filter(
+      ([, value]) => value !== undefined && value !== null && value !== '',
+    );
+    const qs = new URLSearchParams(entries).toString();
+    return apiFetch(`/viajes/disponibles-para-liquidacion?${qs}`).then(parse);
+  },
+  disponiblesPorEntidad: (params) => {
+    const entries = Object.entries(params).filter(
+      ([, value]) => value !== undefined && value !== null && value !== '',
+    );
+    const qs = new URLSearchParams(entries).toString();
+    return apiFetch(`/viajes/disponibles-por-entidad?${qs}`).then(parse);
+  },
+});
+export const liquidaciones = makeResource('/liquidaciones', {
+  viajesDisponibles: (id) => apiFetch(`/liquidaciones/${id}/viajes-disponibles`).then(parse),
+  saveDetalle: (id, data) => apiFetch(`/liquidaciones/${id}/detalle`, {
+    method: 'PUT',
+    body: JSON.stringify(data),
+  }).then(parse),
+});

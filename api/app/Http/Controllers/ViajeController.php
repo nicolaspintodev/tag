@@ -8,6 +8,7 @@ use App\Models\Carga;
 use App\Models\Viaje;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class ViajeController extends Controller
 {
@@ -471,5 +472,120 @@ class ViajeController extends Controller
         $viaje->update(['estado' => $validated['estado']]);
 
         return response()->json($viaje->fresh(['cliente', 'proveedor', 'unidades', 'chofer']));
+    }
+
+    public function disponiblesParaLiquidacion(Request $request)
+    {
+        $validated = $request->validate([
+            'tipo' => 'required|string|in:cliente,proveedor,chofer',
+            'cliente_id' => 'required_if:tipo,cliente|exists:clientes,id',
+            'proveedor_id' => 'required_if:tipo,proveedor|exists:proveedores,id',
+            'chofer_id' => 'required_if:tipo,chofer|exists:choferes,id',
+            'fecha_desde' => 'nullable|date',
+            'fecha_hasta' => 'nullable|date',
+            'ordenar_precio' => 'nullable|string|in:asc,desc',
+        ]);
+
+        $tipo = $validated['tipo'];
+        $targetId = match ($tipo) {
+            'cliente' => $validated['cliente_id'],
+            'proveedor' => $validated['proveedor_id'],
+            'chofer' => $validated['chofer_id'],
+        };
+
+        $query = Viaje::query();
+
+        // Excluir viajes ya liquidados EN EL MISMO CONCEPTO
+        $flag = match ($tipo) {
+            'cliente' => 'liquidado_cliente',
+            'proveedor' => 'liquidado_proveedor',
+            'chofer' => 'liquidado_chofer',
+        };
+        $query->where($flag, false);
+
+        if ($tipo === 'cliente') {
+            $query->where('cliente_id', $targetId);
+        } elseif ($tipo === 'proveedor') {
+            $query->where('proveedor_id', $targetId);
+        } else {
+            $query->where('chofer_id', $targetId);
+        }
+
+        // Excluir viajes ya en otra liquidación del mismo tipo (excluir archivadas)
+        $subQuery = DB::table('liquidacion_viaje')
+            ->join('liquidaciones', 'liquidaciones.id', '=', 'liquidacion_viaje.liquidacion_id')
+            ->where('liquidaciones.tipo', $tipo)
+            ->whereNull('liquidaciones.deleted_at')
+            ->select('liquidacion_viaje.viaje_id');
+
+        $query->whereNotIn('viajes.id', $subQuery);
+
+        if ($request->filled('fecha_desde')) {
+            $query->whereDate('fecha_salida', '>=', $validated['fecha_desde']);
+        }
+        if ($request->filled('fecha_hasta')) {
+            $query->whereDate('fecha_salida', '<=', $validated['fecha_hasta']);
+        }
+
+        $orden = $validated['ordenar_precio'] ?? 'desc';
+        $precioColumn = match ($tipo) {
+            'cliente' => 'precio_pactado',
+            'proveedor' => 'costo_proveedor',
+            'chofer' => 'costo_viaje',
+        };
+        $query->orderBy($precioColumn, $orden === 'asc' ? 'asc' : 'desc');
+
+        $viajes = $query->with(['cliente', 'proveedor', 'unidades', 'chofer', 'documento', 'gastos', 'anticipos'])
+            ->get();
+
+        return response()->json($viajes);
+    }
+
+    public function disponiblesPorEntidad(Request $request)
+    {
+        $validated = $request->validate([
+            'tipo' => 'required|string|in:cliente,proveedor,chofer',
+            'fecha_desde' => 'nullable|date',
+            'fecha_hasta' => 'nullable|date',
+        ]);
+
+        $tipo = $validated['tipo'];
+        $column = match ($tipo) {
+            'cliente' => 'cliente_id',
+            'proveedor' => 'proveedor_id',
+            'chofer' => 'chofer_id',
+        };
+        $flag = match ($tipo) {
+            'cliente' => 'liquidado_cliente',
+            'proveedor' => 'liquidado_proveedor',
+            'chofer' => 'liquidado_chofer',
+        };
+
+        $query = Viaje::query()
+            ->where($flag, false);
+
+        $subQuery = \DB::table('liquidacion_viaje')
+            ->join('liquidaciones', 'liquidaciones.id', '=', 'liquidacion_viaje.liquidacion_id')
+            ->where('liquidaciones.tipo', $tipo)
+            ->whereNull('liquidaciones.deleted_at')
+            ->select('liquidacion_viaje.viaje_id');
+        $query->whereNotIn('viajes.id', $subQuery);
+
+        if ($request->filled('fecha_desde')) {
+            $query->whereDate('fecha_salida', '>=', $validated['fecha_desde']);
+        }
+        if ($request->filled('fecha_hasta')) {
+            $query->whereDate('fecha_salida', '<=', $validated['fecha_hasta']);
+        }
+
+        $counts = $query->selectRaw("{$column} as id, count(*) as cantidad")
+            ->whereNotNull($column)
+            ->groupBy($column)
+            ->orderBy('cantidad', 'desc')
+            ->get()
+            ->map(fn ($r) => ['id' => (int) $r->id, 'cantidad' => (int) $r->cantidad])
+            ->values();
+
+        return response()->json($counts);
     }
 }

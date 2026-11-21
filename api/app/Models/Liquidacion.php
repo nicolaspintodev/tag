@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\TipoLiquidacion;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -19,6 +20,7 @@ class Liquidacion extends Model
         'tipo',
         'cliente_id',
         'proveedor_id',
+        'chofer_id',
         'fecha_emision',
         'total',
         'estado',
@@ -29,6 +31,7 @@ class Liquidacion extends Model
     protected function casts(): array
     {
         return [
+            'tipo' => TipoLiquidacion::class,
             'fecha_emision' => 'date',
             'total' => 'decimal:2',
         ];
@@ -44,10 +47,25 @@ class Liquidacion extends Model
         return $this->belongsTo(Proveedor::class);
     }
 
+    public function chofer(): BelongsTo
+    {
+        return $this->belongsTo(Chofer::class);
+    }
+
+    public function entity()
+    {
+        return match ($this->tipo) {
+            TipoLiquidacion::CLIENTE => $this->cliente,
+            TipoLiquidacion::PROVEEDOR => $this->proveedor,
+            TipoLiquidacion::CHOFER => $this->chofer,
+            default => null,
+        };
+    }
+
     public function viajes(): BelongsToMany
     {
         return $this->belongsToMany(Viaje::class, 'liquidacion_viaje', 'liquidacion_id', 'viaje_id')
-            ->withPivot('monto')
+            ->withPivot('monto', 'iva_monto')
             ->withTimestamps();
     }
 
