@@ -69,7 +69,7 @@ class LiquidacionWizardTest extends TestCase
             'fecha_salida' => '2026-07-15',
         ]);
 
-        $response = $this->getJson('/api/viajes/disponibles-para-liquidacion?tipo=cliente&cliente_id=' . $this->cliente->id);
+        $response = $this->getJson('/api/viajes/disponibles-para-liquidacion?tipo=cliente&cliente_id='.$this->cliente->id);
 
         $response->assertOk()
             ->assertJsonCount(2)
@@ -100,7 +100,7 @@ class LiquidacionWizardTest extends TestCase
             'fecha_salida' => '2026-07-15',
         ]);
 
-        $response = $this->getJson('/api/viajes/disponibles-para-liquidacion?tipo=proveedor&proveedor_id=' . $this->proveedor->id);
+        $response = $this->getJson('/api/viajes/disponibles-para-liquidacion?tipo=proveedor&proveedor_id='.$this->proveedor->id);
 
         $response->assertOk()
             ->assertJsonCount(1)
@@ -129,7 +129,7 @@ class LiquidacionWizardTest extends TestCase
             'fecha_salida' => '2026-07-15',
         ]);
 
-        $response = $this->getJson('/api/viajes/disponibles-para-liquidacion?tipo=cliente&cliente_id=' . $this->cliente->id . '&ordenar_precio=asc');
+        $response = $this->getJson('/api/viajes/disponibles-para-liquidacion?tipo=cliente&cliente_id='.$this->cliente->id.'&ordenar_precio=asc');
 
         $response->assertOk()
             ->assertJsonPath('0.id', $viajeBarato->id);
@@ -157,7 +157,7 @@ class LiquidacionWizardTest extends TestCase
             'fecha_salida' => '2026-06-01',
         ]);
 
-        $response = $this->getJson('/api/viajes/disponibles-para-liquidacion?tipo=cliente&cliente_id=' . $this->cliente->id . '&fecha_desde=2026-07-01&fecha_hasta=2026-07-31');
+        $response = $this->getJson('/api/viajes/disponibles-para-liquidacion?tipo=cliente&cliente_id='.$this->cliente->id.'&fecha_desde=2026-07-01&fecha_hasta=2026-07-31');
 
         $response->assertOk()
             ->assertJsonCount(1)
@@ -372,5 +372,106 @@ class LiquidacionWizardTest extends TestCase
         $response->assertOk()
             ->assertJsonCount(1)
             ->assertJsonFragment(['id' => $cliente->id, 'cantidad' => 1]);
+    }
+
+    /** @test */
+    public function test_disponibles_para_liquidacion_incluye_viajes_de_liquidaciones_archivadas(): void
+    {
+        $cuit = '30-'.mt_rand(10000000, 99999999).'-'.mt_rand(1, 9);
+        $cliente = Cliente::create([
+            'razon_social' => 'Cliente Archivado '.$cuit,
+            'cuit' => $cuit,
+        ]);
+
+        // Viaje disponible (no en ninguna liquidación)
+        $v1 = Viaje::create([
+            'cliente_id' => $cliente->id,
+            'estado' => 'terminado',
+            'liquidado' => false,
+            'precio_pactado' => 100000,
+            'origen' => 'CABA',
+            'destino' => 'Rosario',
+            'fecha_salida' => '2026-07-15',
+        ]);
+
+        // Liquidación archivada (soft deleted) con un viaje
+        $liqArchivada = Liquidacion::create([
+            'tipo' => 'cliente',
+            'cliente_id' => $cliente->id,
+            'estado' => 'borrador',
+            'fecha_emision' => now()->toDateString(),
+            'numero' => 'LIQ-C-ARCH01',
+        ]);
+        $vArchivado = Viaje::create([
+            'cliente_id' => $cliente->id,
+            'estado' => 'terminado',
+            'liquidado' => false,
+            'precio_pactado' => 80000,
+            'origen' => 'CABA',
+            'destino' => 'Rosario',
+            'fecha_salida' => '2026-07-15',
+        ]);
+        $liqArchivada->viajes()->attach($vArchivado->id, ['monto' => 80000]);
+        $liqArchivada->delete(); // soft delete
+
+        $response = $this->getJson('/api/viajes/disponibles-para-liquidacion?tipo=cliente&cliente_id='.$cliente->id);
+
+        $response->assertOk()
+            ->assertJsonCount(2) // ambos viajes deben estar disponibles
+            ->assertJsonFragment(['id' => $v1->id])
+            ->assertJsonFragment(['id' => $vArchivado->id]);
+    }
+
+    /** @test */
+    public function test_disponibles_por_entidad_incluye_viajes_de_liquidaciones_archivadas(): void
+    {
+        $cuit = '30-'.mt_rand(10000000, 99999999).'-'.mt_rand(1, 9);
+        $cliente = Cliente::create([
+            'razon_social' => 'Cliente Archivado Count '.$cuit,
+            'cuit' => $cuit,
+        ]);
+
+        // 3 viajes disponibles
+        for ($i = 0; $i < 3; $i++) {
+            Viaje::create([
+                'cliente_id' => $cliente->id,
+                'estado' => 'terminado',
+                'liquidado' => false,
+                'precio_pactado' => 100000,
+                'origen' => 'CABA',
+                'destino' => 'Rosario',
+                'fecha_salida' => '2026-07-15',
+            ]);
+        }
+
+        // Liquidación archivada con 2 viajes
+        $liqArchivada = Liquidacion::create([
+            'tipo' => 'cliente',
+            'cliente_id' => $cliente->id,
+            'estado' => 'borrador',
+            'fecha_emision' => now()->toDateString(),
+            'numero' => 'LIQ-C-ARCH02',
+        ]);
+        for ($i = 0; $i < 2; $i++) {
+            $v = Viaje::create([
+                'cliente_id' => $cliente->id,
+                'estado' => 'terminado',
+                'liquidado' => false,
+                'precio_pactado' => 80000,
+                'origen' => 'CABA',
+                'destino' => 'Rosario',
+                'fecha_salida' => '2026-07-15',
+            ]);
+            $liqArchivada->viajes()->attach($v->id, ['monto' => 80000]);
+        }
+        $liqArchivada->delete(); // soft delete
+
+        $response = $this->getJson('/api/viajes/disponibles-por-entidad?tipo=cliente');
+
+        $response->assertOk();
+        $data = $response->json();
+        $found = collect($data)->firstWhere('id', $cliente->id);
+        $this->assertNotNull($found, 'Cliente should be in response');
+        $this->assertEquals(5, $found['cantidad'], 'Archived liquidaciones should not block viajes');
     }
 }

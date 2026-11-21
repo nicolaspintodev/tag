@@ -118,12 +118,12 @@ class Viaje extends Model
 
     public function getPuedeFacturarseAttribute(): bool
     {
-        return $this->estado->value === 'terminado' && !$this->attributes['facturado'];
+        return $this->estado->value === 'terminado' && ! $this->attributes['facturado'];
     }
 
     public function getPuedeLiquidarseAttribute(): bool
     {
-        return $this->estado->value === 'terminado' && !$this->attributes['liquidado'];
+        return $this->estado->value === 'terminado' && ! $this->attributes['liquidado'];
     }
 
     // ---------- Relaciones ----------
@@ -246,7 +246,7 @@ class Viaje extends Model
             $errors['estado'] = 'Solo los viajes Terminados pueden ser facturados/liquidados.';
         }
 
-        if (!empty($errors)) {
+        if (! empty($errors)) {
             throw ValidationException::withMessages($errors);
         }
     }

@@ -158,9 +158,11 @@ class LiquidacionApiTest extends TestCase
     // CAMBIAR ESTADO LIQUIDACION
     // ================================================================
 
-    public function test_cambiar_estado_liquidacion(): void
+    public function test_cambiar_estado_borrador_a_pendiente(): void
     {
+        $viaje = $this->crearViaje(['estado' => 'terminado', 'liquidado' => false]);
         $liquidacion = $this->crearLiquidacion(['estado' => 'borrador']);
+        $liquidacion->viajes()->attach($viaje->id, ['monto' => 100000, 'iva_monto' => 21000]);
 
         $response = $this->putJson("/api/liquidaciones/{$liquidacion->id}/estado", [
             'estado' => 'pendiente',
@@ -173,6 +175,44 @@ class LiquidacionApiTest extends TestCase
             'id' => $liquidacion->id,
             'estado' => 'pendiente',
         ]);
+
+        $this->assertDatabaseHas('viajes', [
+            'id' => $viaje->id,
+            'liquidado' => true,
+        ]);
+    }
+
+    public function test_rechaza_cambiar_estado_pendiente_a_borrador(): void
+    {
+        $liquidacion = $this->crearLiquidacion(['estado' => 'pendiente']);
+
+        $response = $this->putJson("/api/liquidaciones/{$liquidacion->id}/estado", [
+            'estado' => 'borrador',
+        ]);
+
+        $response->assertStatus(422);
+    }
+
+    public function test_rechaza_cambiar_estado_pendiente_a_facturada(): void
+    {
+        $liquidacion = $this->crearLiquidacion(['estado' => 'pendiente']);
+
+        $response = $this->putJson("/api/liquidaciones/{$liquidacion->id}/estado", [
+            'estado' => 'facturada',
+        ]);
+
+        $response->assertStatus(422);
+    }
+
+    public function test_rechaza_cambiar_estado_borrador_a_facturada(): void
+    {
+        $liquidacion = $this->crearLiquidacion(['estado' => 'borrador']);
+
+        $response = $this->putJson("/api/liquidaciones/{$liquidacion->id}/estado", [
+            'estado' => 'facturada',
+        ]);
+
+        $response->assertStatus(422);
     }
 
     public function test_cambiar_estado_invalido(): void

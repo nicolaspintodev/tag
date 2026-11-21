@@ -14,6 +14,7 @@ class LiquidacionDetalleTest extends TestCase
     use RefreshDatabase;
 
     private $cliente;
+
     private $proveedor;
 
     protected function setUp(): void

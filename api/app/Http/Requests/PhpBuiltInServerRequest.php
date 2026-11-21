@@ -3,12 +3,13 @@
 namespace App\Http\Requests;
 
 use Illuminate\Http\Request;
+use Symfony\Component\HttpFoundation\InputBag;
 
 class PhpBuiltInServerRequest extends Request
 {
     public static function capture(): static
     {
-        $request = new static();
+        $request = new static;
         $content = file_get_contents('php://input') ?: '';
 
         $request->initialize(
@@ -34,7 +35,7 @@ class PhpBuiltInServerRequest extends Request
             }
 
             if (is_array($data)) {
-                $request->request = new \Symfony\Component\HttpFoundation\InputBag($data);
+                $request->request = new InputBag($data);
             }
         }
 

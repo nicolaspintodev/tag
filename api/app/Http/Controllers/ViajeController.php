@@ -3,7 +3,6 @@
 namespace App\Http\Controllers;
 
 use App\Models\Carga;
-use App\Models\Liquidacion;
 use App\Models\Viaje;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -150,7 +149,7 @@ class ViajeController extends Controller
             'chofer_id' => ['required', 'exists:choferes,id', function ($attribute, $value, $fail) use ($request) {
                 $estado = $request->input('estado', 'planificado');
                 if ($estado === 'iniciado') {
-                    $conflict = \App\Models\Viaje::where('chofer_id', $value)
+                    $conflict = Viaje::where('chofer_id', $value)
                         ->where('estado', 'iniciado')
                         ->exists();
                     if ($conflict) {
@@ -164,7 +163,7 @@ class ViajeController extends Controller
                     if (empty($value)) {
                         $fail('Un viaje Iniciado debe tener una tractora asignada.');
                     }
-                    $conflict = \App\Models\Viaje::where('tractora_id', $value)
+                    $conflict = Viaje::where('tractora_id', $value)
                         ->where('estado', 'iniciado')
                         ->exists();
                     if ($conflict) {
@@ -176,11 +175,11 @@ class ViajeController extends Controller
                 $estado = $request->input('estado', 'planificado');
                 $tractoraId = $request->input('tractora_id');
                 if ($estado === 'iniciado') {
-                    if (!empty($value) && empty($tractoraId)) {
+                    if (! empty($value) && empty($tractoraId)) {
                         $fail('No se puede asignar acoplado sin tractora.');
                     }
-                    if (!empty($value)) {
-                        $conflict = \App\Models\Viaje::where('acoplado_id', $value)
+                    if (! empty($value)) {
+                        $conflict = Viaje::where('acoplado_id', $value)
                             ->where('estado', 'iniciado')
                             ->exists();
                         if ($conflict) {
@@ -189,7 +188,7 @@ class ViajeController extends Controller
                     }
                 } else {
                     // Validar acoplado sin tractora en cualquier estado
-                    if (!empty($value) && empty($tractoraId)) {
+                    if (! empty($value) && empty($tractoraId)) {
                         $fail('No se puede asignar acoplado sin tractora.');
                     }
                 }
@@ -298,8 +297,8 @@ class ViajeController extends Controller
             // Reglas de negocio
             'chofer_id' => ['nullable', 'exists:choferes,id', function ($attribute, $value, $fail) use ($request, $viaje) {
                 $estado = $request->input('estado', $viaje->estado->value);
-                if ($estado === 'iniciado' && !empty($value)) {
-                    $conflict = \App\Models\Viaje::where('chofer_id', $value)
+                if ($estado === 'iniciado' && ! empty($value)) {
+                    $conflict = Viaje::where('chofer_id', $value)
                         ->where('estado', 'iniciado')
                         ->where('id', '!=', $viaje->id)
                         ->exists();
@@ -315,7 +314,7 @@ class ViajeController extends Controller
                     if (empty($value) && empty($tractoraId)) {
                         $fail('Un viaje Iniciado debe tener una tractora asignada.');
                     }
-                    $conflict = \App\Models\Viaje::where('tractora_id', $value)
+                    $conflict = Viaje::where('tractora_id', $value)
                         ->where('estado', 'iniciado')
                         ->where('id', '!=', $viaje->id)
                         ->exists();
@@ -328,11 +327,11 @@ class ViajeController extends Controller
                 $estado = $request->input('estado', $viaje->estado->value);
                 $tractoraId = $request->input('tractora_id', $viaje->tractora_id);
                 if ($estado === 'iniciado') {
-                    if (!empty($value) && empty($tractoraId)) {
+                    if (! empty($value) && empty($tractoraId)) {
                         $fail('No se puede asignar acoplado sin tractora.');
                     }
-                    if (!empty($value)) {
-                        $conflict = \App\Models\Viaje::where('acoplado_id', $value)
+                    if (! empty($value)) {
+                        $conflict = Viaje::where('acoplado_id', $value)
                             ->where('estado', 'iniciado')
                             ->where('id', '!=', $viaje->id)
                             ->exists();
@@ -342,7 +341,7 @@ class ViajeController extends Controller
                     }
                 } else {
                     // Validar acoplado sin tractora en cualquier estado
-                    if (!empty($value) && empty($tractoraId)) {
+                    if (! empty($value) && empty($tractoraId)) {
                         $fail('No se puede asignar acoplado sin tractora.');
                     }
                 }
@@ -495,10 +494,11 @@ class ViajeController extends Controller
             $query->where('proveedor_id', $targetId);
         }
 
-        // Excluir viajes ya en otra liquidación del mismo tipo
+        // Excluir viajes ya en otra liquidación del mismo tipo (excluir archivadas)
         $subQuery = DB::table('liquidacion_viaje')
             ->join('liquidaciones', 'liquidaciones.id', '=', 'liquidacion_viaje.liquidacion_id')
             ->where('liquidaciones.tipo', $tipo)
+            ->whereNull('liquidaciones.deleted_at')
             ->select('liquidacion_viaje.viaje_id');
 
         $query->whereNotIn('viajes.id', $subQuery);
@@ -537,6 +537,7 @@ class ViajeController extends Controller
         $subQuery = \DB::table('liquidacion_viaje')
             ->join('liquidaciones', 'liquidaciones.id', '=', 'liquidacion_viaje.liquidacion_id')
             ->where('liquidaciones.tipo', $tipo)
+            ->whereNull('liquidaciones.deleted_at')
             ->select('liquidacion_viaje.viaje_id');
         $query->whereNotIn('viajes.id', $subQuery);
 
@@ -552,7 +553,7 @@ class ViajeController extends Controller
             ->groupBy($column)
             ->orderBy('cantidad', 'desc')
             ->get()
-            ->map(fn($r) => ['id' => (int)$r->id, 'cantidad' => (int)$r->cantidad])
+            ->map(fn ($r) => ['id' => (int) $r->id, 'cantidad' => (int) $r->cantidad])
             ->values();
 
         return response()->json($counts);

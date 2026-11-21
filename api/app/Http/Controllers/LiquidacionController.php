@@ -6,6 +6,7 @@ use App\Models\Factura;
 use App\Models\Liquidacion;
 use App\Models\Viaje;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class LiquidacionController extends Controller
 {
@@ -258,10 +259,30 @@ class LiquidacionController extends Controller
         $liquidacion = Liquidacion::findOrFail($id);
 
         $validated = $request->validate([
-            'estado' => 'required|string|in:borrador,pendiente,facturada',
+            'estado' => 'required|string|in:pendiente',
         ]);
 
-        $liquidacion->update(['estado' => $validated['estado']]);
+        if ($liquidacion->estado !== 'borrador') {
+            return response()->json(['message' => 'Solo se puede cambiar el estado de una liquidación en borrador'], 422);
+        }
+
+        $viajeIds = $liquidacion->viajes->pluck('id')->toArray();
+
+        DB::transaction(function () use ($id, $viajeIds, $validated) {
+            $liq = Liquidacion::lockForUpdate()->findOrFail($id);
+
+            if ($liq->estado !== 'borrador') {
+                throw new \Exception('Solo se puede cambiar el estado de una liquidación en borrador');
+            }
+
+            $liq->update(['estado' => $validated['estado']]);
+
+            if ($validated['estado'] === 'pendiente') {
+                Viaje::whereIn('id', $viajeIds)->update(['liquidado' => true]);
+            }
+        });
+
+        $liquidacion = Liquidacion::findOrFail($id);
 
         return response()->json($liquidacion->load(['cliente', 'proveedor', 'viajes']));
     }
@@ -300,6 +321,7 @@ class LiquidacionController extends Controller
 
             if ($liquidacion->estado !== 'borrador') {
                 $error = response()->json(['message' => 'Solo se puede editar una liquidación en estado borrador'], 422);
+
                 return;
             }
 
@@ -309,16 +331,19 @@ class LiquidacionController extends Controller
 
             if ($viajes->count() !== $viajeIds->count()) {
                 $error = response()->json(['message' => 'Uno de los viajes no existe'], 422);
+
                 return;
             }
 
             foreach ($viajes as $viaje) {
                 if ((int) $viaje->{$entityColumn} !== (int) $entityId) {
                     $error = response()->json(['message' => 'Un viaje no pertenece a la entidad de la liquidación'], 422);
+
                     return;
                 }
                 if ($viaje->liquidado) {
                     $error = response()->json(['message' => 'Un viaje ya está liquidado'], 422);
+
                     return;
                 }
             }
@@ -334,6 +359,7 @@ class LiquidacionController extends Controller
 
             if ($viajesEnOtras) {
                 $error = response()->json(['message' => 'Un viaje ya está incluido en otra liquidación'], 422);
+
                 return;
             }
 
@@ -344,6 +370,7 @@ class LiquidacionController extends Controller
 
             $sync = $viajeIds->mapWithKeys(function ($viajeId) use ($validated) {
                 $item = collect($validated['viajes'])->firstWhere('viaje_id', $viajeId);
+
                 return [$viajeId => [
                     'monto' => $item['monto'],
                     'iva_monto' => $item['iva_monto'],
