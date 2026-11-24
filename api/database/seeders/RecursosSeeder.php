@@ -330,10 +330,11 @@ class RecursosSeeder extends Seeder
         ];
 
         foreach ($viajesData as $data) {
-            Viaje::updateOrCreate(
+            $viaje = Viaje::updateOrCreate(
                 ['chofer_id' => $data['chofer_id'], 'cliente_id' => $data['cliente_id'], 'tractora_id' => $data['tractora_id'], 'fecha_salida' => $data['fecha_salida']],
                 $data
             );
+            $viaje->recalcularCostoViaje();
         }
 
         $this->command?->info('RecursosSeeder: completado (users, proveedores, clientes, choferes, unidades, viajes).');

@@ -245,6 +245,8 @@ class ViajeController extends Controller
             'observaciones' => $validated['observaciones'] ?? null,
         ]);
 
+        $viaje->recalcularCostoViaje();
+
         if (! empty($validated['unidades'])) {
             $viaje->unidades()->sync($validated['unidades']);
         }
@@ -403,6 +405,8 @@ class ViajeController extends Controller
         }
 
         $viaje->update($updateData);
+
+        $viaje->recalcularCostoViaje();
 
         if (array_key_exists('unidades', $validated)) {
             $viaje->unidades()->sync($validated['unidades'] ?? []);
