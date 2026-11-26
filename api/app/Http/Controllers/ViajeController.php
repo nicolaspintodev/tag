@@ -25,7 +25,7 @@ class ViajeController extends Controller
             'gastos',
             'anticipos',
             'documento',
-            'liquidaciones',
+            'liquidaciones.factura',
         ]);
 
         if ($request->boolean('archivados')) {
@@ -65,12 +65,15 @@ class ViajeController extends Controller
             $query->where('estado', $request->get('estado'));
         }
 
-        if ($request->filled('facturado') && $request->boolean('facturado')) {
-            $query->where('facturado', true);
-        }
-
-        if ($request->filled('liquidado') && $request->boolean('liquidado')) {
-            $query->where('liquidado', true);
+        foreach ([
+            'facturado' => 'facturado',
+            'liquidado_cliente' => 'liquidado_cliente',
+            'liquidado_proveedor' => 'liquidado_proveedor',
+            'liquidado_chofer' => 'liquidado_chofer',
+        ] as $param => $column) {
+            if ($request->boolean($param)) {
+                $query->where($column, true);
+            }
         }
 
         if ($request->filled('sort_by') && $request->filled('sort_dir')) {
@@ -442,7 +445,7 @@ class ViajeController extends Controller
             'gastos',
             'anticipos',
             'documento',
-            'liquidaciones',
+            'liquidaciones.factura',
         ])->findOrFail($id);
 
         return response()->json($viaje);

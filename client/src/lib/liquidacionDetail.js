@@ -1,4 +1,21 @@
-import { montoBaseViaje, toNumber } from './liquidacion';
+import { ivaFromMonto, montoBaseViaje, toNumber } from './liquidacion';
+
+const fechaInputValue = (value) => String(value ?? '').slice(0, 10);
+
+export const createDetailViaje = (viaje, tipo = 'cliente') => {
+  const monto = montoBaseViaje(viaje, tipo);
+
+  return {
+    viaje_id: viaje.id,
+    codigo_viaje: viaje.codigo_viaje ?? '-',
+    fecha_salida: viaje.fecha_salida,
+    origen: viaje.origen,
+    destino: viaje.destino,
+    estado: viaje.estado,
+    monto,
+    iva_monto: ivaFromMonto(monto),
+  };
+};
 
 export const toDetailDraft = (liquidacion) => ({
   id: liquidacion.id,
@@ -9,19 +26,23 @@ export const toDetailDraft = (liquidacion) => ({
     chofer: liquidacion.chofer,
     proveedor: liquidacion.proveedor,
   }[liquidacion.tipo] ?? liquidacion.proveedor,
-  fecha_emision: liquidacion.fecha_emision,
+  fecha_emision: fechaInputValue(liquidacion.fecha_emision),
   notas: liquidacion.notas ?? '',
   estado: liquidacion.estado,
-  viajes: (liquidacion.viajes ?? []).map((viaje) => ({
-    viaje_id: viaje.id,
-    codigo_viaje: viaje.codigo_viaje ?? '-',
-    fecha_salida: viaje.fecha_salida,
-    origen: viaje.origen,
-    destino: viaje.destino,
-    estado: viaje.estado,
-    monto: toNumber(viaje.pivot?.monto ?? montoBaseViaje(viaje, liquidacion.tipo)),
-    iva_monto: toNumber(viaje.pivot?.iva_monto),
-  })),
+  viajes: (liquidacion.viajes ?? []).map((viaje) => {
+    const monto = toNumber(viaje.pivot?.monto ?? montoBaseViaje(viaje, liquidacion.tipo));
+
+    return {
+      viaje_id: viaje.id,
+      codigo_viaje: viaje.codigo_viaje ?? '-',
+      fecha_salida: viaje.fecha_salida,
+      origen: viaje.origen,
+      destino: viaje.destino,
+      estado: viaje.estado,
+      monto,
+      iva_monto: ivaFromMonto(monto),
+    };
+  }),
 });
 
 export const createDetailRequest = (open, liquidacionId) => ({
@@ -42,7 +63,6 @@ export const normalizeDraft = (draft) => JSON.stringify({
     .map((viaje) => ({
       viaje_id: viaje.viaje_id,
       monto: toNumber(viaje.monto),
-      iva_monto: toNumber(viaje.iva_monto),
     })),
 });
 
@@ -54,16 +74,16 @@ const isValidAmount = (value) => {
 };
 
 export const hasInvalidDetailAmount = (viajes = []) => viajes.some(
-  (viaje) => !isValidAmount(viaje.monto) || !isValidAmount(viaje.iva_monto),
+  (viaje) => !isValidAmount(viaje.monto),
 );
 
 const roundMoney = (value) => Math.round((value + Number.EPSILON) * 100) / 100;
 
 export const computeDetailTotals = (viajes) => {
-  const items = (viajes ?? []).map((viaje) => ({
-    monto: toNumber(viaje.monto),
-    iva_monto: toNumber(viaje.iva_monto),
-  }));
+  const items = (viajes ?? []).map((viaje) => {
+    const monto = toNumber(viaje.monto);
+    return { monto, iva_monto: ivaFromMonto(monto) };
+  });
   const subtotalNeto = roundMoney(items.reduce((sum, viaje) => sum + viaje.monto, 0));
   const ivaTotal = roundMoney(items.reduce((sum, viaje) => sum + viaje.iva_monto, 0));
   return {
@@ -78,11 +98,14 @@ export const buildDetailPayload = (draft, { estado } = {}) => {
   const payload = {
     fecha_emision: draft.fecha_emision,
     notas: draft.notas ?? '',
-    viajes: (draft.viajes ?? []).map((viaje) => ({
-      viaje_id: viaje.viaje_id,
-      monto: toNumber(viaje.monto),
-      iva_monto: toNumber(viaje.iva_monto),
-    })),
+    viajes: (draft.viajes ?? []).map((viaje) => {
+      const monto = toNumber(viaje.monto);
+      return {
+        viaje_id: viaje.viaje_id,
+        monto,
+        iva_monto: ivaFromMonto(monto),
+      };
+    }),
   };
   if (estado) payload.estado = estado;
   return payload;

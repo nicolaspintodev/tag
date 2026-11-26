@@ -4,6 +4,7 @@ import {
   computeTotals,
   deriveMontos,
   deriveMontosSeleccion,
+  ivaFromMonto,
   montoBaseViaje,
   montoLabel,
   montoViaje,
@@ -196,5 +197,14 @@ describe('montoViaje', () => {
       iva_monto: 18900,
       monto_final: 108900,
     });
+  });
+});
+
+describe('ivaFromMonto', () => {
+  it('deriva IVA 21% redondeado al entero más cercano', () => {
+    expect(ivaFromMonto('1000.00')).toBe(210);
+    expect(ivaFromMonto(1002.38)).toBe(210);
+    expect(ivaFromMonto(1002.39)).toBe(211);
+    expect(ivaFromMonto('abc')).toBe(0);
   });
 });

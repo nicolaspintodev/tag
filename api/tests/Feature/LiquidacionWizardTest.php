@@ -214,6 +214,38 @@ class LiquidacionWizardTest extends TestCase
     }
 
     /** @test */
+    public function test_store_deriva_iva_e_ignora_valor_manipulado(): void
+    {
+        $viaje = Viaje::create([
+            'cliente_id' => $this->cliente->id,
+            'estado' => 'terminado',
+            'liquidado' => false,
+            'precio_pactado' => 1000,
+            'origen' => 'CABA',
+            'destino' => 'Rosario',
+            'fecha_salida' => '2026-07-15',
+        ]);
+
+        $response = $this->postJson('/api/liquidaciones', [
+            'tipo' => 'cliente',
+            'cliente_id' => $this->cliente->id,
+            'fecha_emision' => now()->toDateString(),
+            'estado' => 'borrador',
+            'viajes' => [
+                ['viaje_id' => $viaje->id, 'monto' => 1000, 'iva_monto' => 999],
+            ],
+        ]);
+
+        $response->assertCreated();
+        $this->assertDatabaseHas('liquidacion_viaje', [
+            'liquidacion_id' => $response->json('id'),
+            'viaje_id' => $viaje->id,
+            'monto' => 1000,
+            'iva_monto' => 210,
+        ]);
+    }
+
+    /** @test */
     public function test_store_liquidacion_pendiente_marca_viajes_liquidados(): void
     {
         $cliente = Cliente::create([

@@ -12,6 +12,7 @@
 
 /client/node_modules
 /client/dist
+/client/docs/
 /client/.env
 /client/.env.local
 /client/.env.*.local
@@ -22,3 +23,4 @@ Thumbs.db
 .idea/
 .vscode/
 nul
+/.superpowers/

@@ -8,7 +8,11 @@ import Select from '../components/ui/Select';
 import StateBar from '../components/ui/StateBar';
 import { useEditableResource } from '../hooks/useEditableResource';
 import { liquidaciones } from '../api/resources';
-import { buildListRowView, canPersistLiquidacion } from '../lib/liquidacionViews';
+import {
+  buildListRowView,
+  buildLiquidacionGridMontosView,
+  canPersistLiquidacion,
+} from '../lib/liquidacionViews';
 
 const TIPO_OPTIONS = [
   { value: '', label: 'Todos' },
@@ -153,7 +157,8 @@ const Liquidaciones = () => {
               <th>Destinatario</th>
               <th style={{ width: '120px' }}>Fecha</th>
               <th style={{ width: '110px' }}>Estado</th>
-              <th style={{ width: '130px' }}>Total</th>
+              <th style={{ width: '110px' }}>Monto</th>
+              <th style={{ width: '110px' }}>Monto+IVA</th>
               <th style={{ width: '110px' }}>Acciones</th>
             </tr>
           </thead>
@@ -173,6 +178,7 @@ const Liquidaciones = () => {
                 isSavedPulse ? 'row-saved-pulse' : ''
               ].filter(Boolean).join(' ');
               const { destinatarioNombre } = buildListRowView(row);
+              const { monto, montoConIva } = buildLiquidacionGridMontosView(row);
 
               return (
                 <tr key={row.id} className={rowClass}>
@@ -185,7 +191,8 @@ const Liquidaciones = () => {
                   <td>{destinatarioNombre}</td>
                   <td className="mono">{dateRender(row.fecha_emision)}</td>
                   <td>{estadoBadge(row.estado)}</td>
-                  <td className="mono">{currencyRender(row.total)}</td>
+                  <td className="mono">{currencyRender(monto)}</td>
+                  <td className="mono">{currencyRender(montoConIva)}</td>
                   <td>
                     <div className="row-actions">
                       <button
@@ -234,7 +241,7 @@ const Liquidaciones = () => {
             })}
             {rows.length === 0 && (
               <tr>
-                <td colSpan={8} style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-muted)' }}>
+                <td colSpan={9} style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-muted)' }}>
                   Sin liquidaciones.
                 </td>
               </tr>

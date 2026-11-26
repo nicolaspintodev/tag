@@ -11,6 +11,8 @@ use Illuminate\Support\Facades\DB;
 
 class LiquidacionController extends Controller
 {
+    private const IVA_RATE = 0.21;
+
     public function index(Request $request)
     {
         $query = Liquidacion::query();
@@ -88,7 +90,7 @@ class LiquidacionController extends Controller
             foreach ($viajesData as $item) {
                 $viaje = Viaje::findOrFail($item['viaje_id']);
                 $monto = $item['monto'] ?? $this->precioSugerido($viaje, $liquidacion->tipo->value);
-                $ivaMonto = $item['iva_monto'] ?? 0;
+                $ivaMonto = $this->calcularIva($monto);
 
                 $itemsToAttach[$viaje->id] = ['monto' => $monto, 'iva_monto' => $ivaMonto];
             }
@@ -323,7 +325,7 @@ class LiquidacionController extends Controller
             'viajes' => 'required|array',
             'viajes.*.viaje_id' => 'required|integer|exists:viajes,id',
             'viajes.*.monto' => 'required|numeric|min:0',
-            'viajes.*.iva_monto' => 'required|numeric|min:0',
+            'viajes.*.iva_monto' => 'nullable|numeric|min:0',
             'estado' => 'nullable|string|in:pendiente',
         ]);
 
@@ -397,10 +399,11 @@ class LiquidacionController extends Controller
 
             $sync = $viajeIds->mapWithKeys(function ($viajeId) use ($validated) {
                 $item = collect($validated['viajes'])->firstWhere('viaje_id', $viajeId);
+                $ivaCalculado = $this->calcularIva($item['monto']);
 
                 return [$viajeId => [
                     'monto' => $item['monto'],
-                    'iva_monto' => $item['iva_monto'],
+                    'iva_monto' => $ivaCalculado,
                 ]];
             })->all();
 
@@ -485,6 +488,11 @@ class LiquidacionController extends Controller
         });
 
         return response()->json($liquidacion->load(['factura', 'viajes']), 201);
+    }
+
+    private function calcularIva($monto): float
+    {
+        return round((float) $monto * self::IVA_RATE, 0, PHP_ROUND_HALF_UP);
     }
 
     private function recalcularTotal(Liquidacion $liquidacion): void
