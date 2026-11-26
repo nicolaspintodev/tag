@@ -1685,6 +1685,22 @@ tr.row-saved-pulse td.col-acciones {
   white-space: nowrap;
 }
 
+button.outline.entity-pick-required {
+  background: var(--bg-primary);
+  color: var(--text-invert);
+  border-color: var(--bg-primary);
+  border-width: 2px;
+  font-weight: 700;
+  box-shadow: 0 0 0 3px rgba(var(--bg-primary-rgb), 0.18);
+}
+
+button.outline.entity-pick-required:hover {
+  background: var(--bg-primary);
+  color: var(--text-invert);
+  border-color: var(--bg-primary);
+  opacity: 0.85;
+}
+
 .entity-label {
   font-weight: 500;
   color: var(--text-primary);

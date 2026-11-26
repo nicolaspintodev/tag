@@ -40,7 +40,11 @@ export default function LiquidacionToolbar({
             />
           </div>
 
-          <Button variant="outline" onClick={onEntityPick} className="entity-pick-btn">
+          <Button
+            variant="outline"
+            onClick={onEntityPick}
+            className={`entity-pick-btn ${currentEntity ? '' : 'entity-pick-required'}`}
+          >
             {pickButtonLabel}
           </Button>
           {currentEntity && (

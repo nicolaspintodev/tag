@@ -356,6 +356,7 @@ export default function LiquidacionDetailModal({ liquidacionId, open, onClose, o
         title="Pasar a pendiente"
         message="La liquidación pasará a pendiente y no podrá volver a borrador. Los viajes incluidos quedarán marcados como liquidados."
         confirmLabel="Confirmar"
+        confirmVariant="primary"
         onCancel={() => setConfirmPending(false)}
         onConfirm={() => save('pendiente')}
       />

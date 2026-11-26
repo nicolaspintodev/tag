@@ -1,6 +1,6 @@
 import Button from './Button';
 
-const ConfirmDialog = ({ open, title, message, confirmLabel = 'Confirmar', onConfirm, onCancel }) => {
+const ConfirmDialog = ({ open, title, message, confirmLabel = 'Confirmar', confirmVariant = 'danger', onConfirm, onCancel }) => {
   if (!open) return null;
   return (
     <div className="overlay" onClick={onCancel}>
@@ -11,7 +11,7 @@ const ConfirmDialog = ({ open, title, message, confirmLabel = 'Confirmar', onCon
           <Button variant="outline" onClick={onCancel}>
             Cancelar
           </Button>
-          <Button variant="danger" onClick={onConfirm}>
+          <Button variant={confirmVariant} onClick={onConfirm}>
             {confirmLabel}
           </Button>
         </div>
