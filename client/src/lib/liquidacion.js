@@ -2,6 +2,8 @@ export const IVA_DEFAULT = 0.21;
 
 export const toNumber = (value) => Number(value ?? 0) || 0;
 
+export const ivaFromMonto = (monto) => Math.round(toNumber(monto) * IVA_DEFAULT);
+
 export function montoBaseViaje(viaje, tipo = 'cliente') {
   if (tipo === 'chofer') return toNumber(viaje?.costo_viaje);
   if (tipo === 'proveedor') return toNumber(viaje?.costo_proveedor_ajustado ?? viaje?.costo_proveedor);
@@ -22,7 +24,7 @@ export function tipoLabel(tipo = 'cliente') {
 
 const calcularMontos = (viaje, tipo) => {
   const monto = montoBaseViaje(viaje, tipo);
-  const iva_monto = Math.round(monto * IVA_DEFAULT);
+  const iva_monto = ivaFromMonto(monto);
   return { monto, iva_monto, monto_final: monto + iva_monto };
 };
 

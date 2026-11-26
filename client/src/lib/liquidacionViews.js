@@ -58,3 +58,22 @@ export const canPersistLiquidacion = (row = {}) => Boolean(row.id) || (
   && String(row.cliente_id ?? row.chofer_id ?? row.proveedor_id ?? '').trim() !== ''
   && String(row.fecha_emision ?? '').trim() !== ''
 );
+
+export const buildLiquidacionGridMontosView = (row = {}) => {
+  const viajes = Array.isArray(row.viajes) ? row.viajes : [];
+
+  if (viajes.length === 0) {
+    return { monto: null, montoConIva: toNumber(row.total) };
+  }
+
+  const monto = viajes.reduce(
+    (sum, viaje) => sum + toNumber(viaje.pivot?.monto),
+    0,
+  );
+  const iva = viajes.reduce(
+    (sum, viaje) => sum + toNumber(viaje.pivot?.iva_monto),
+    0,
+  );
+
+  return { monto, montoConIva: monto + iva };
+};

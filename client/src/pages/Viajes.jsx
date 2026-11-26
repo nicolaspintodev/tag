@@ -12,6 +12,7 @@ import { viajes, choferes as choferesResource, clientes as clientesResource, pro
 import {
   buildViajesGridColumns,
   buildViajesDetailFields,
+  buildViajeProcesosView,
 } from '../lib/columns/viajes';
 
 const baseCanPersist = (row) =>
@@ -183,13 +184,6 @@ const Viajes = () => {
 
   const [activeTab, setActiveTab] = useState('operativo');
 
-  const handleBooleanChange = (rowId, fieldId, checked) => {
-    updateCell(rowId, fieldId, checked);
-    if (checked && (fieldId === 'facturado' || fieldId === 'liquidado')) {
-      updateCell(rowId, 'estado', 'terminado');
-    }
-  };
-
   const renderTabContent = () => {
     if (!selected) return null;
 
@@ -212,37 +206,6 @@ const Viajes = () => {
             className="modal-detail-value"
             disabled={disabled}
           />
-        );
-      }
-      if (field.type === 'boolean') {
-        const isChecked = Boolean(selected[field.id]);
-        return (
-          <label style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.25rem',
-            cursor: disabled ? 'not-allowed' : 'pointer',
-            opacity: disabled ? 0.5 : 1,
-            width: '100%',
-          }}>
-            <span style={{ fontWeight: 500, fontSize: '0.875rem', whiteSpace: 'nowrap' }}>
-              {field.label}
-            </span>
-            <input
-              type="checkbox"
-              checked={isChecked}
-              onChange={(event) => {
-                if (disabled) return;
-                handleBooleanChange(selected.id, field.id, event.target.checked);
-              }}
-              style={{
-                width: '22px',
-                height: '22px',
-                accentColor: 'var(--color-success)',
-                flexShrink: 0,
-              }}
-            />
-          </label>
         );
       }
       if (field.type === 'currency') {
@@ -299,7 +262,6 @@ const Viajes = () => {
     if (sectionName === 'Comercial') {
       const topFields = fields.filter(f => f.id === 'precio_pactado' || f.id === 'costo_proveedor');
       const obsField = fields.find(f => f.id === 'observaciones');
-      const bottomFields = fields.filter(f => f.id === 'facturado' || f.id === 'liquidado');
 
       return (
         <div className="modal-detail-section">
@@ -318,13 +280,22 @@ const Viajes = () => {
                 {renderInput(obsField)}
               </div>
             )}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-              {bottomFields.map((field) => (
-                <div key={field.id} className="modal-detail-row">
-                  {renderInput(field)}
-                </div>
-              ))}
-            </div>
+            <table className="procesos-table">
+              <thead>
+                <tr>
+                  <th>Proceso</th>
+                  <th>Documento</th>
+                </tr>
+              </thead>
+              <tbody>
+                {buildViajeProcesosView(selected).map(({ proceso, completo, documento }) => (
+                  <tr key={proceso}>
+                    <td className={completo ? 'proceso-complete' : 'proceso-pending'}>{proceso}</td>
+                    <td className="mono">{documento}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         </div>
       );

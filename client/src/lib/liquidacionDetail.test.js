@@ -3,6 +3,7 @@ import {
   buildDetailPayload,
   computeDetailTotals,
   createDetailRequest,
+  createDetailViaje,
   hasInvalidDetailAmount,
   normalizeDraft,
   shouldCloseAfterSave,
@@ -15,7 +16,7 @@ const liquidacion = {
   tipo: 'cliente',
   cliente: { razon_social: 'Cliente Test', cuit: '30-11111111-1', condicion_iva: 'responsable_inscripto' },
   proveedor: null,
-  fecha_emision: '2026-11-20',
+  fecha_emision: '2026-11-20T00:00:00.000000Z',
   notas: 'Notas originales',
   estado: 'borrador',
   total: '1000.00',
@@ -84,21 +85,33 @@ describe('toDetailDraft', () => {
     expect(toDetailDraft(liquidacionChofer)).toMatchObject({
       tipo: 'chofer',
       entidad: { nombre: 'Chofer', apellido: 'Test', cuil: '20-33333333-4' },
-      viajes: [{ viaje_id: 12, monto: 80000, iva_monto: 0 }],
+      viajes: [{ viaje_id: 12, monto: 80000, iva_monto: 16800 }],
     });
+  });
+
+  it('deriva IVA desde el monto aunque el pivot tenga otro valor', () => {
+    const viajeConIvaViejo = {
+      ...liquidacion,
+      viajes: [{
+        ...liquidacion.viajes[0],
+        pivot: { monto: '1000.00', iva_monto: '999.00' },
+      }],
+    };
+
+    expect(toDetailDraft(viajeConIvaViejo).viajes[0].iva_monto).toBe(210);
   });
 });
 
 describe('computeDetailTotals', () => {
-  it('calcula neto, IVA y total a pagar con strings numéricos', () => {
+  it('deriva IVA desde el monto e ignora IVA guardado distinto', () => {
     expect(computeDetailTotals([
-      { monto: '1000.00', iva_monto: '210.00' },
-      { monto: '500.50', iva_monto: '105.11' },
+      { monto: '1000.00', iva_monto: '999.00' },
+      { monto: 500, iva_monto: 'abc' },
     ])).toEqual({
-      subtotalNeto: 1500.5,
-      ivaTotal: 315.11,
-      totalGuardado: 1500.5,
-      totalPagar: 1815.61,
+      subtotalNeto: 1500,
+      ivaTotal: 315,
+      totalGuardado: 1500,
+      totalPagar: 1815,
     });
   });
 });
@@ -107,6 +120,12 @@ describe('normalizeDraft', () => {
   it('ignora el orden de viajes y produce una comparación estable', () => {
     const a = { fecha_emision: '2026-11-20', notas: '', viajes: [{ viaje_id: 2, monto: 10, iva_monto: 1 }, { viaje_id: 1, monto: 20, iva_monto: 2 }] };
     const b = { fecha_emision: '2026-11-20', notas: '', viajes: [{ viaje_id: 1, monto: 20, iva_monto: 2 }, { viaje_id: 2, monto: 10, iva_monto: 1 }] };
+    expect(normalizeDraft(a)).toBe(normalizeDraft(b));
+  });
+
+  it('ignora IVA porque es un valor derivado del monto', () => {
+    const a = { fecha_emision: '2026-11-20', notas: '', viajes: [{ viaje_id: 1, monto: 1000, iva_monto: 210 }] };
+    const b = { fecha_emision: '2026-11-20', notas: '', viajes: [{ viaje_id: 1, monto: 1000, iva_monto: 999 }] };
     expect(normalizeDraft(a)).toBe(normalizeDraft(b));
   });
 });
@@ -144,10 +163,10 @@ describe('hasInvalidDetailAmount', () => {
     ])).toBe(true);
   });
 
-  it('detecta IVA no numérico', () => {
+  it('no considera inválido un IVA no numérico porque es derivado', () => {
     expect(hasInvalidDetailAmount([
       { monto: '100', iva_monto: 'abc' },
-    ])).toBe(true);
+    ])).toBe(false);
   });
 
   it('detecta montos negativos', () => {
@@ -177,5 +196,35 @@ describe('buildDetailPayload', () => {
   it('incluye estado pendiente en la transición', () => {
     const draft = toDetailDraft(liquidacion);
     expect(buildDetailPayload(draft, { estado: 'pendiente' }).estado).toBe('pendiente');
+  });
+
+  it('recalcula IVA aunque el borrador traiga un valor distinto', () => {
+    const draft = toDetailDraft(liquidacion);
+    draft.viajes[0].iva_monto = 999;
+
+    expect(buildDetailPayload(draft).viajes[0]).toEqual({
+      viaje_id: 12,
+      monto: 1000,
+      iva_monto: 210,
+    });
+  });
+});
+
+describe('createDetailViaje', () => {
+  it('inicia un viaje agregado con IVA derivado del monto base', () => {
+    expect(createDetailViaje({
+      id: 12,
+      codigo_viaje: 'V-1',
+      fecha_salida: '2026-11-10',
+      origen: 'CABA',
+      destino: 'Rosario',
+      estado: 'terminado',
+      costo_viaje: 80000,
+      precio_pactado: 170000,
+    }, 'chofer')).toMatchObject({
+      viaje_id: 12,
+      monto: 80000,
+      iva_monto: 16800,
+    });
   });
 });

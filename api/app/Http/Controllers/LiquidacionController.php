@@ -11,6 +11,8 @@ use Illuminate\Support\Facades\DB;
 
 class LiquidacionController extends Controller
 {
+    private const IVA_RATE = 0.21;
+
     public function index(Request $request)
     {
         $query = Liquidacion::query();
@@ -323,7 +325,7 @@ class LiquidacionController extends Controller
             'viajes' => 'required|array',
             'viajes.*.viaje_id' => 'required|integer|exists:viajes,id',
             'viajes.*.monto' => 'required|numeric|min:0',
-            'viajes.*.iva_monto' => 'required|numeric|min:0',
+            'viajes.*.iva_monto' => 'nullable|numeric|min:0',
             'estado' => 'nullable|string|in:pendiente',
         ]);
 
@@ -397,10 +399,11 @@ class LiquidacionController extends Controller
 
             $sync = $viajeIds->mapWithKeys(function ($viajeId) use ($validated) {
                 $item = collect($validated['viajes'])->firstWhere('viaje_id', $viajeId);
+                $ivaCalculado = round((float) $item['monto'] * self::IVA_RATE, 0, PHP_ROUND_HALF_UP);
 
                 return [$viajeId => [
                     'monto' => $item['monto'],
-                    'iva_monto' => $item['iva_monto'],
+                    'iva_monto' => $ivaCalculado,
                 ]];
             })->all();
 

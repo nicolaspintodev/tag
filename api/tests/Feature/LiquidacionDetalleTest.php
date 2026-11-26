@@ -88,6 +88,48 @@ class LiquidacionDetalleTest extends TestCase
         ]);
     }
 
+    public function test_recalcula_iva_e_ignora_valor_manipulado(): void
+    {
+        $viaje = $this->crearViaje();
+        $liquidacion = $this->crearLiquidacion();
+
+        $response = $this->putJson("/api/liquidaciones/{$liquidacion->id}/detalle", [
+            'fecha_emision' => '2026-11-21',
+            'viajes' => [
+                ['viaje_id' => $viaje->id, 'monto' => 1000, 'iva_monto' => 999],
+            ],
+        ]);
+
+        $response->assertOk();
+        $this->assertDatabaseHas('liquidacion_viaje', [
+            'liquidacion_id' => $liquidacion->id,
+            'viaje_id' => $viaje->id,
+            'monto' => 1000,
+            'iva_monto' => 210,
+        ]);
+    }
+
+    public function test_calcula_iva_cuando_no_se_envia_iva_monto(): void
+    {
+        $viaje = $this->crearViaje();
+        $liquidacion = $this->crearLiquidacion();
+
+        $response = $this->putJson("/api/liquidaciones/{$liquidacion->id}/detalle", [
+            'fecha_emision' => '2026-11-21',
+            'viajes' => [
+                ['viaje_id' => $viaje->id, 'monto' => 1000],
+            ],
+        ]);
+
+        $response->assertOk();
+        $this->assertDatabaseHas('liquidacion_viaje', [
+            'liquidacion_id' => $liquidacion->id,
+            'viaje_id' => $viaje->id,
+            'monto' => 1000,
+            'iva_monto' => 210,
+        ]);
+    }
+
     public function test_rechaza_viaje_duplicado(): void
     {
         $viaje = $this->crearViaje();

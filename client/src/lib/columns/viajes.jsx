@@ -45,41 +45,15 @@ const clienteRender = (v, row) => {
   return '-';
 };
 
-const estadoBadgeRender = (v, row) => {
-  const estado = v;
-  const facturado = row.facturado;
-  const liquidado = row.liquidado;
-
-  const estadoColors = {
-    planificado: 'var(--color-warning-bg)',
-    iniciado: 'var(--color-info-bg)',
-    terminado: 'var(--color-success-bg)',
-  };
-  const estadoLabels = {
-    planificado: 'P',
-    iniciado: 'I',
-    terminado: 'T',
-  };
-
-  const flagColorTrue = 'var(--color-success-bg)';
-  const flagColorFalse = 'var(--bg-tertiary)';
-  const flagTextColorTrue = 'var(--color-success-text)';
-  const flagTextColorFalse = 'var(--text-muted)';
-
-  return (
-    <div style={{ display: 'flex', gap: '0.35rem', alignItems: 'center', flexWrap: 'wrap' }}>
-      <span className="status-badge" style={{ background: estadoColors[estado] || 'var(--bg-secondary)', minWidth: '24px', textAlign: 'center' }}>
-        {estadoLabels[estado] ?? estado?.[0]?.toUpperCase() ?? '-'}
-      </span>
-      <span className="status-badge" style={{ background: facturado ? flagColorTrue : flagColorFalse, color: facturado ? flagTextColorTrue : flagTextColorFalse, minWidth: '24px', textAlign: 'center' }}>
-        F
-      </span>
-      <span className="status-badge" style={{ background: liquidado ? flagColorTrue : flagColorFalse, color: liquidado ? flagTextColorTrue : flagTextColorFalse, minWidth: '24px', textAlign: 'center' }}>
-        L
-      </span>
-    </div>
-  );
+const ESTADO_LABELS = {
+  planificado: 'Planificado',
+  iniciado: 'Iniciado',
+  terminado: 'Terminado',
 };
+
+const estadoRender = (v) => (
+  <span className="estado-texto">{ESTADO_LABELS[v] ?? v ?? '-'}</span>
+);
 
 export const buildViajesGridColumns = () => {
   return [
@@ -90,7 +64,7 @@ export const buildViajesGridColumns = () => {
     { id: 'tractora_id', accessor: 'tractora_id', header: 'Vehículo', type: 'text', width: '200px', render: tractoraRender },
     { id: 'origen', accessor: 'origen', header: 'Origen', type: 'text', editable: true, width: '150px', className: 'truncate' },
     { id: 'destino', accessor: 'destino', header: 'Destino', type: 'text', editable: true, width: '150px', className: 'truncate' },
-    { id: 'estado', accessor: 'estado', header: 'Estado', type: 'text', width: '140px', render: estadoBadgeRender },
+    { id: 'estado', accessor: 'estado', header: 'Estado', type: 'text', width: '140px', render: estadoRender },
   ];
 };
 
@@ -113,9 +87,44 @@ export const buildViajesDetailFields = (choferOptions = [], clienteOptions = [],
     { id: 'precio_pactado', label: 'Precio del viaje', type: 'currency', required: true, section: 'Comercial' },
     { id: 'costo_proveedor', label: 'Costo', type: 'currency', section: 'Comercial' },
     { id: 'observaciones', label: 'Observaciones', type: 'textarea', section: 'Comercial' },
-    { id: 'facturado', label: 'Facturado', type: 'boolean', section: 'Comercial', disabled: true },
-    { id: 'liquidado', label: 'Liquidado', type: 'boolean', section: 'Comercial', disabled: true },
   ];
 };
 
 export { TIPO_OPTIONS, ESTADO_OPTIONS };
+
+const LIQUIDACION_PROCESOS = [
+  { tipo: 'cliente', proceso: 'Cliente Liquidado', flag: 'liquidado_cliente' },
+  { tipo: 'proveedor', proceso: 'Proveedor Liquidado', flag: 'liquidado_proveedor' },
+  { tipo: 'chofer', proceso: 'Chofer Liquidado', flag: 'liquidado_chofer' },
+];
+
+const documentoPorProceso = (row, tipo) => {
+  const liquidaciones = Array.isArray(row?.liquidaciones) ? row.liquidaciones : [];
+
+  if (tipo === 'facturado') {
+    const conFactura = liquidaciones.find(liquidacion => liquidacion?.tipo === 'cliente' && liquidacion?.factura?.numero);
+    return conFactura?.factura?.numero ?? '—';
+  }
+
+  const liquidacion = liquidaciones.find(item => item?.tipo === tipo && item?.numero);
+  return liquidacion?.numero ?? '—';
+};
+
+export const buildViajeProcesosView = (row = {}) => {
+  const procesos = LIQUIDACION_PROCESOS
+    .filter(({ tipo }) => tipo !== 'proveedor' || Boolean(row.proveedor_id || row.proveedor))
+    .map(({ tipo, proceso, flag }) => ({
+      proceso,
+      completo: Boolean(row[flag]),
+      documento: documentoPorProceso(row, tipo),
+    }));
+
+  return [
+    ...procesos,
+    {
+      proceso: 'Facturado',
+      completo: Boolean(row.facturado),
+      documento: documentoPorProceso(row, 'facturado'),
+    },
+  ];
+};

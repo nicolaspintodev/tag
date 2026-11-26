@@ -25,7 +25,7 @@ class ViajeController extends Controller
             'gastos',
             'anticipos',
             'documento',
-            'liquidaciones',
+            'liquidaciones.factura',
         ]);
 
         if ($request->boolean('archivados')) {
@@ -442,7 +442,7 @@ class ViajeController extends Controller
             'gastos',
             'anticipos',
             'documento',
-            'liquidaciones',
+            'liquidaciones.factura',
         ])->findOrFail($id);
 
         return response()->json($viaje);

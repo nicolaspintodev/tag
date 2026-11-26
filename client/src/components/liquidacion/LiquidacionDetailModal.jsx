@@ -10,12 +10,13 @@ import {
   buildDetailPayload,
   computeDetailTotals,
   createDetailRequest,
+  createDetailViaje,
   hasInvalidDetailAmount,
   normalizeDraft,
   shouldCloseAfterSave,
   toDetailDraft,
 } from '../../lib/liquidacionDetail';
-import { montoBaseViaje, tipoLabel, toNumber } from '../../lib/liquidacion';
+import { ivaFromMonto, tipoLabel, toNumber } from '../../lib/liquidacion';
 import { entidadNombre, montoLabelVista } from '../../lib/liquidacionViews';
 
 const dateRender = (value) => {
@@ -127,16 +128,7 @@ export default function LiquidacionDetailModal({ liquidacionId, open, onClose, o
       const existingIds = new Set(prev.draft.viajes.map((viaje) => viaje.viaje_id));
       const nuevos = seleccionados
         .filter((viaje) => !existingIds.has(viaje.id))
-        .map((viaje) => ({
-          viaje_id: viaje.id,
-          codigo_viaje: viaje.codigo_viaje ?? '-',
-          fecha_salida: viaje.fecha_salida,
-          origen: viaje.origen,
-          destino: viaje.destino,
-          estado: viaje.estado,
-          monto: montoBaseViaje(viaje, tipo),
-          iva_monto: 0,
-        }));
+        .map((viaje) => createDetailViaje(viaje, tipo));
       return { ...prev, draft: { ...prev.draft, viajes: [...prev.draft.viajes, ...nuevos] } };
     });
     setPickerOpen(false);
@@ -246,9 +238,10 @@ export default function LiquidacionDetailModal({ liquidacionId, open, onClose, o
                 </div>
                 <div className="detail-modal-field" style={{ gridColumn: 'span 2' }}>
                   <label htmlFor="detail-notas">Notas</label>
-                  <textarea
+                  <Input
                     id="detail-notas"
-                    className="input-field detail-modal-input detail-modal-textarea"
+                    className="detail-modal-input"
+                    type="text"
                     value={draft.notas}
                     disabled={!isBorrador || saving}
                     onChange={(event) => updateDraft({ notas: event.target.value })}
@@ -300,20 +293,13 @@ export default function LiquidacionDetailModal({ liquidacionId, open, onClose, o
                             step="0.01"
                             value={viaje.monto}
                             disabled={!isBorrador || saving}
-                            onChange={(event) => updateViaje(viaje.viaje_id, { monto: event.target.value })}
+                            onChange={(event) => {
+                              const monto = event.target.value;
+                              updateViaje(viaje.viaje_id, { monto, iva_monto: ivaFromMonto(monto) });
+                            }}
                           />
                         </td>
-                        <td>
-                          <Input
-                            className="detail-modal-number"
-                            type="number"
-                            min="0"
-                            step="0.01"
-                            value={viaje.iva_monto}
-                            disabled={!isBorrador || saving}
-                            onChange={(event) => updateViaje(viaje.viaje_id, { iva_monto: event.target.value })}
-                          />
-                        </td>
+                        <td className="mono">{money(toNumber(viaje.iva_monto))}</td>
                         <td className="mono">{money(toNumber(viaje.monto) + toNumber(viaje.iva_monto))}</td>
                         <td>
                           {isBorrador && (

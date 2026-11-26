@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import {
   buildListRowView,
+  buildLiquidacionGridMontosView,
   buildPrintView,
   canPersistLiquidacion,
   entidadDocumento,
@@ -109,5 +110,28 @@ describe('canPersistLiquidacion', () => {
       chofer_id: 3,
       fecha_emision: '',
     })).toBe(false);
+  });
+});
+
+describe('buildLiquidacionGridMontosView', () => {
+  it('suma pivot montos como strings', () => {
+    const row = {
+      viajes: [
+        { pivot: { monto: '1000.00', iva_monto: '210.00' } },
+        { pivot: { monto: 2000, iva_monto: 420 } },
+      ],
+    };
+
+    expect(buildLiquidacionGridMontosView(row)).toEqual({
+      monto: 3000,
+      montoConIva: 3630,
+    });
+  });
+
+  it('cae a row.total cuando no hay viajes', () => {
+    expect(buildLiquidacionGridMontosView({ total: 1210, viajes: [] })).toEqual({
+      monto: null,
+      montoConIva: 1210,
+    });
   });
 });

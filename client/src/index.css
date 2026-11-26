@@ -407,6 +407,39 @@ button.btn-ghost:hover {
   gap: 1rem 1.5rem;
 }
 
+.estado-texto {
+  color: var(--text-main);
+  font-weight: 500;
+}
+
+.procesos-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+
+.procesos-table th {
+  text-align: left;
+  padding: 0.5rem 0.75rem;
+  color: var(--text-muted);
+  border-bottom: 1px solid var(--border-color);
+  font-weight: 600;
+}
+
+.procesos-table td {
+  padding: 0.5rem 0.75rem;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.proceso-complete {
+  color: var(--color-success-text);
+  font-weight: 600;
+}
+
+.proceso-pending {
+  color: var(--text-muted);
+}
+
 .modal-detail-row {
   display: flex;
   flex-direction: column;
@@ -2118,11 +2151,6 @@ tr.row-saved-pulse td.col-acciones {
 
 .detail-modal-input {
   width: 100%;
-}
-
-.detail-modal-textarea {
-  min-height: 5rem;
-  resize: vertical;
 }
 
 .detail-modal-number {
