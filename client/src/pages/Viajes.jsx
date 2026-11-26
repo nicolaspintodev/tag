@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
-import { Search, X, Calendar, ChevronDown, ChevronUp, ChevronLeft, ChevronRight } from 'lucide-react';
+import { useEffect, useMemo, useReducer, useRef, useState } from 'react';
+import { Search, X, Calendar, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, Filter } from 'lucide-react';
 import ViajeGrid from '../components/grid/ViajeGrid';
 import Modal from '../components/ui/Modal';
 import ConfirmDialog from '../components/ui/ConfirmDialog';
@@ -15,6 +15,7 @@ import {
   buildViajeProcesosView,
   buildViajeProcessFilterParams,
 } from '../lib/columns/viajes';
+import { emptyProcessFilters, initialProcessFilterState, processFilterReducer } from '../lib/processFilters';
 
 const baseCanPersist = (row) =>
   Boolean(row.id) ||
@@ -28,13 +29,6 @@ const baseCanPersist = (row) =>
 
 const DETAIL_SECTIONS = ['Operativo', 'Comercial'];
 
-const PROCESS_FILTER_KEYS = [
-  'liquidado_cliente',
-  'liquidado_chofer',
-  'liquidado_proveedor',
-  'facturado',
-];
-
 const PROCESS_FILTER_OPTIONS = [
   { key: 'liquidado_cliente', label: 'L. Cliente' },
   { key: 'liquidado_chofer', label: 'L. Chofer' },
@@ -42,15 +36,12 @@ const PROCESS_FILTER_OPTIONS = [
   { key: 'facturado', label: 'Facturado' },
 ];
 
-const emptyProcessFilters = () => Object.fromEntries(PROCESS_FILTER_KEYS.map(key => [key, false]));
-
 const Viajes = () => {
   const [search, setSearch] = useState('');
   const [archivados, setArchivados] = useState(false);
   const [estadoFilter, setEstadoFilter] = useState('');
-  const [processFilters, setProcessFilters] = useState(emptyProcessFilters);
-  const [draftProcessFilters, setDraftProcessFilters] = useState(emptyProcessFilters);
-  const [processMenuOpen, setProcessMenuOpen] = useState(false);
+  const [processFilterState, dispatchProcessFilter] = useReducer(processFilterReducer, undefined, initialProcessFilterState);
+  const { applied: processFilters, draft: draftProcessFilters, menuOpen: processMenuOpen } = processFilterState;
   const processMenuRef = useRef(null);
   const [fechaDesde, setFechaDesde] = useState('');
   const [fechaHasta, setFechaHasta] = useState('');
@@ -91,7 +82,7 @@ const Viajes = () => {
 
     const handleClickOutside = (event) => {
       if (processMenuRef.current && !processMenuRef.current.contains(event.target)) {
-        setProcessMenuOpen(false);
+        dispatchProcessFilter({ type: 'close' });
       }
     };
 
@@ -194,17 +185,13 @@ const Viajes = () => {
   };
 
   const handleApplyProcessFilters = () => {
-    setProcessFilters(draftProcessFilters);
-    setProcessMenuOpen(false);
+    dispatchProcessFilter({ type: 'apply' });
     fetchRows({ processValues: draftProcessFilters });
   };
 
   const handleClearProcessFilters = () => {
-    const empty = emptyProcessFilters();
-    setProcessFilters(empty);
-    setDraftProcessFilters(empty);
-    setProcessMenuOpen(false);
-    fetchRows({ processValues: empty });
+    dispatchProcessFilter({ type: 'clear' });
+    fetchRows({ processValues: emptyProcessFilters() });
   };
 
   const handleFechaDesdeChange = (value) => {
@@ -391,8 +378,9 @@ const Viajes = () => {
               style={{ width: '150px', marginLeft: '0.5rem' }}
             />
             <div className="process-filter" ref={processMenuRef}>
-              <Button variant="outline" size="sm" onClick={() => setProcessMenuOpen(open => !open)}>
-                {activeProcessFilterCount > 0 ? `Filtrar (${activeProcessFilterCount})` : 'Filtrar'}
+              <Button variant="outline" size="sm" onClick={() => dispatchProcessFilter({ type: 'toggle' })}>
+                <Filter size={14} />
+                {activeProcessFilterCount > 0 ? `Procesos (${activeProcessFilterCount})` : 'Procesos'}
               </Button>
               {processMenuOpen && (
                 <div className="process-filter-menu">
@@ -401,7 +389,7 @@ const Viajes = () => {
                       <input
                         type="checkbox"
                         checked={Boolean(draftProcessFilters[key])}
-                        onChange={(event) => setDraftProcessFilters(prev => ({ ...prev, [key]: event.target.checked }))}
+                        onChange={(event) => dispatchProcessFilter({ type: 'change', key, value: event.target.checked })}
                       />
                       {label}
                     </label>

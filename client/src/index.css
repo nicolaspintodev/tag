@@ -2229,6 +2229,11 @@ button.outline.entity-pick-required:hover {
   width: 100%;
 }
 
+.detail-modal-textarea {
+  min-height: 5rem;
+  resize: vertical;
+}
+
 .detail-modal-number {
   width: 110px;
 }

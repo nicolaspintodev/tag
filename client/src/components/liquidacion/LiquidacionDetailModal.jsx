@@ -44,6 +44,16 @@ const estadoBadge = (estado) => {
   );
 };
 
+export const NotasField = ({ value, disabled, onChange }) => (
+  <textarea
+    id="detail-notas"
+    className="input-field detail-modal-input detail-modal-textarea"
+    value={value}
+    disabled={disabled}
+    onChange={onChange}
+  />
+);
+
 export default function LiquidacionDetailModal({ liquidacionId, open, onClose, onSaved }) {
   const [request, setRequest] = useState(() => createDetailRequest(open, liquidacionId));
   const [saving, setSaving] = useState(false);
@@ -238,10 +248,7 @@ export default function LiquidacionDetailModal({ liquidacionId, open, onClose, o
                 </div>
                 <div className="detail-modal-field" style={{ gridColumn: 'span 2' }}>
                   <label htmlFor="detail-notas">Notas</label>
-                  <Input
-                    id="detail-notas"
-                    className="detail-modal-input"
-                    type="text"
+                  <NotasField
                     value={draft.notas}
                     disabled={!isBorrador || saving}
                     onChange={(event) => updateDraft({ notas: event.target.value })}

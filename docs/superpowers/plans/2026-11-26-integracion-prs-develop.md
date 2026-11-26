@@ -40,15 +40,15 @@
 - Consumes: aprobación del usuario sobre alcance y estrategia.
 - Produces: spec y plan versionados en la rama.
 
-- [ ] **Step 1: Escribir la spec**
+- [x] **Step 1: Escribir la spec**
 
 Contenido obligatorio: objetivo, alcance (`fix/liquidaciones` solamente), decisiones (1 PR, merge commit, sin force-push), cambios incluidos, verificación, PR, riesgos y criterios de aceptación.
 
-- [ ] **Step 2: Escribir el plan**
+- [x] **Step 2: Escribir el plan**
 
 Usar este archivo con tareas ejecutables y comandos exactos.
 
-- [ ] **Step 3: Commitear los docs**
+- [x] **Step 3: Commitear los docs**
 
 ```bash
 git add docs/superpowers/specs/2026-11-26-integracion-prs-develop-design.md docs/superpowers/plans/2026-11-26-integracion-prs-develop.md
@@ -71,7 +71,7 @@ git commit -m "docs: spec y plan de integración a develop"
 - Consumes: working tree actual de `fix/liquidaciones`.
 - Produces: commit `fix(liquidaciones): ajustar confirmación y resaltar entidad`.
 
-- [ ] **Step 1: Verificar archivos a incluir**
+- [x] **Step 1: Verificar archivos a incluir**
 
 ```bash
 git status --short
@@ -80,7 +80,7 @@ git diff --check
 
 Expected: aparecen exactamente los 6 archivos anteriores; `index.css.test.js` no aparece.
 
-- [ ] **Step 2: Stagear sólo esos archivos**
+- [x] **Step 2: Stagear sólo esos archivos**
 
 ```bash
 git add client/src/components/liquidacion/LiquidacionDetailModal.jsx client/src/components/liquidacion/LiquidacionToolbar.jsx client/src/components/ui/ConfirmDialog.jsx client/src/index.css client/src/components/liquidacion/LiquidacionToolbar.test.js client/src/components/ui/ConfirmDialog.test.js
@@ -89,7 +89,7 @@ git diff --cached --stat
 
 Expected: 6 archivos; 0 secretos ni `.env`.
 
-- [ ] **Step 3: Commitear**
+- [x] **Step 3: Commitear**
 
 ```bash
 git commit -m "fix(liquidaciones): ajustar confirmación y resaltar entidad"
@@ -106,23 +106,23 @@ git commit -m "fix(liquidaciones): ajustar confirmación y resaltar entidad"
 - Consumes: commits de Task 1 y Task 2.
 - Produces: evidencia verde y aprobación de revisión antes del PR.
 
-- [ ] **Step 1: Verificar frontend**
+- [x] **Step 1: Verificar frontend**
 
 ```bash
 cd client && npm test && npm run lint && npm run build
 ```
 
-Expected: 14 test files, 114 tests, lint sin errores, build exitoso.
+Expected: 16 test files, 119 tests, lint sin errores, build exitoso.
 
-- [ ] **Step 2: Verificar backend**
+- [x] **Step 2: Verificar backend**
 
 ```bash
-cd api && composer test && composer lint
+cd api && C:/php84/php.exe artisan config:clear && C:/php84/php.exe artisan test && C:/php84/php.exe vendor/bin/pint --test
 ```
 
-Expected: tests y Pint sin errores.
+Expected: 162 tests y Pint sin errores. Composer no está en el PATH local, así que se ejecutan los equivalentes directos de `composer test` y `composer lint`.
 
-- [ ] **Step 3: Detectar conflictos con `develop`**
+- [x] **Step 3: Detectar conflictos con `develop`**
 
 ```bash
 cd ..
@@ -132,9 +132,9 @@ git merge-tree "$BASE" origin/develop HEAD
 
 Expected: sin secciones de conflicto.
 
-- [ ] **Step 4: Revisar el diff con subagente**
+- [x] **Step 4: Revisar el diff con subagente**
 
-Base: `568b2e5`. Head: SHA obtenido con `git rev-parse HEAD`. Usar el template `code-reviewer.md`. Corregir Critical e Important con commits nuevos antes de continuar.
+Base: `568b2e5`. Head: SHA obtenido con `git rev-parse HEAD`. Usar el template `code-reviewer.md`. Corregir Critical e Important con commits nuevos antes de continuar. El review encontró tres issues Important: filtros pendientes al cerrar el dropdown, notas multilínea degradadas a input y IVA no derivado en `store`; todos fueron corregidos con tests.
 
 ---
 
@@ -161,10 +161,13 @@ Expected: fast-forward desde `c62bad9`; sin rechazo.
 ## Qué cambia
 
 - Colorea los estados de viajes y filtra procesos en la vista de Viajes.
+- Descarta los cambios pendientes del dropdown de procesos al cerrarlo sin `Aplicar`.
 - Muestra procesos y montos de liquidaciones en el detalle de viaje.
+- Restaura las notas multilínea en el detalle de liquidaciones.
+- Deriva `iva_monto` en servidor tanto al crear como al editar liquidaciones, ignorando valores manipulados por el cliente.
 - Ajusta `ConfirmDialog` para permitir variante primary y la aplica al pasar una liquidación a pendiente.
 - Resalta con azul oscuro el botón para elegir cliente/chofer cuando falta la entidad.
-- Agrega tests de resaltado y de variantes del diálogo de confirmación.
+- Agrega tests de filtros, notas, IVA, resaltado y variantes del diálogo de confirmación.
 
 ## Issue relacionado
 
@@ -172,8 +175,7 @@ Expected: fast-forward desde `c62bad9`; sin rechazo.
 
 ## Cómo probar
 
-- [x] `cd api && composer test`
-- [x] `cd api && composer lint`
+- [x] `cd api && C:/php84/php.exe artisan config:clear && C:/php84/php.exe artisan test && C:/php84/php.exe vendor/bin/pint --test`
 - [x] `cd client && npm test`
 - [x] `cd client && npm run lint`
 - [x] `cd client && npm run build`

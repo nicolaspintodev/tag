@@ -90,7 +90,7 @@ class LiquidacionController extends Controller
             foreach ($viajesData as $item) {
                 $viaje = Viaje::findOrFail($item['viaje_id']);
                 $monto = $item['monto'] ?? $this->precioSugerido($viaje, $liquidacion->tipo->value);
-                $ivaMonto = $item['iva_monto'] ?? 0;
+                $ivaMonto = $this->calcularIva($monto);
 
                 $itemsToAttach[$viaje->id] = ['monto' => $monto, 'iva_monto' => $ivaMonto];
             }
@@ -399,7 +399,7 @@ class LiquidacionController extends Controller
 
             $sync = $viajeIds->mapWithKeys(function ($viajeId) use ($validated) {
                 $item = collect($validated['viajes'])->firstWhere('viaje_id', $viajeId);
-                $ivaCalculado = round((float) $item['monto'] * self::IVA_RATE, 0, PHP_ROUND_HALF_UP);
+                $ivaCalculado = $this->calcularIva($item['monto']);
 
                 return [$viajeId => [
                     'monto' => $item['monto'],
@@ -488,6 +488,11 @@ class LiquidacionController extends Controller
         });
 
         return response()->json($liquidacion->load(['factura', 'viajes']), 201);
+    }
+
+    private function calcularIva($monto): float
+    {
+        return round((float) $monto * self::IVA_RATE, 0, PHP_ROUND_HALF_UP);
     }
 
     private function recalcularTotal(Liquidacion $liquidacion): void
