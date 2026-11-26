@@ -407,9 +407,30 @@ button.btn-ghost:hover {
   gap: 1rem 1.5rem;
 }
 
-.estado-texto {
-  color: var(--text-main);
-  font-weight: 500;
+.estado-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.15rem 0.5rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.estado-badge-planificado {
+  background: var(--color-warning-bg);
+  color: var(--color-warning-text);
+}
+
+.estado-badge-iniciado {
+  background: var(--color-info-bg);
+  color: var(--color-info-text);
+}
+
+.estado-badge-terminado {
+  background: var(--color-success-bg);
+  color: var(--color-success-text);
 }
 
 .procesos-table {
@@ -575,6 +596,45 @@ button.btn-ghost:hover {
 
 .filter-select {
   max-width: 200px;
+}
+
+.process-filter {
+  position: relative;
+  margin-left: 0.5rem;
+}
+
+.process-filter-menu {
+  position: absolute;
+  top: calc(100% + 0.25rem);
+  left: 0;
+  z-index: 20;
+  min-width: 200px;
+  padding: 0.75rem;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.12);
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.process-filter-option {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-size: 0.85rem;
+  color: var(--text-main);
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.process-filter-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid var(--border-color);
 }
 
 .state-bar-right {

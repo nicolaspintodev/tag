@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { buildViajeProcesosView, buildViajesDetailFields, buildViajesGridColumns } from './viajes';
+import {
+  buildViajeProcessFilterParams,
+  buildViajeProcesosView,
+  buildViajesDetailFields,
+  buildViajesGridColumns,
+} from './viajes';
 
 describe('buildViajeProcesosView', () => {
   it('arma procesos con flags, documentos y proveedor', () => {
@@ -89,12 +94,68 @@ describe('buildViajeProcesosView', () => {
 });
 
 describe('buildViajesGridColumns estado', () => {
-  it('muestra texto completo y no badges', () => {
+  it('muestra badge con color y texto completo', () => {
     const column = buildViajesGridColumns().find(item => item.id === 'estado');
-    const result = column.render('terminado', { facturado: true, liquidado: true });
 
-    expect(result.props.className).toBe('estado-texto');
-    expect(result.props.children).toBe('Terminado');
+    expect(column.render('planificado', {}).props).toMatchObject({
+      className: 'estado-badge estado-badge-planificado',
+      children: 'Planificado',
+    });
+    expect(column.render('iniciado', {}).props).toMatchObject({
+      className: 'estado-badge estado-badge-iniciado',
+      children: 'Iniciado',
+    });
+    expect(column.render('terminado', {}).props).toMatchObject({
+      className: 'estado-badge estado-badge-terminado',
+      children: 'Terminado',
+    });
+  });
+
+  it('muestra badge neutral y guion para estado desconocido', () => {
+    const column = buildViajesGridColumns().find(item => item.id === 'estado');
+
+    expect(column.render('', {}).props).toMatchObject({
+      className: 'estado-badge',
+      children: '-',
+    });
+  });
+});
+
+describe('buildViajeProcessFilterParams', () => {
+  it('devuelve objeto vacío cuando no hay filtros', () => {
+    expect(buildViajeProcessFilterParams({})).toEqual({});
+    expect(buildViajeProcessFilterParams({
+      liquidado_cliente: false,
+      liquidado_chofer: false,
+      liquidado_proveedor: false,
+      facturado: false,
+    })).toEqual({});
+  });
+
+  it('incluye solamente los filtros marcados', () => {
+    expect(buildViajeProcessFilterParams({
+      liquidado_cliente: true,
+      liquidado_chofer: false,
+      liquidado_proveedor: false,
+      facturado: true,
+    })).toEqual({
+      liquidado_cliente: 'true',
+      facturado: 'true',
+    });
+  });
+
+  it('combina los cuatro filtros', () => {
+    expect(buildViajeProcessFilterParams({
+      liquidado_cliente: true,
+      liquidado_chofer: true,
+      liquidado_proveedor: true,
+      facturado: true,
+    })).toEqual({
+      liquidado_cliente: 'true',
+      liquidado_chofer: 'true',
+      liquidado_proveedor: 'true',
+      facturado: 'true',
+    });
   });
 });
 

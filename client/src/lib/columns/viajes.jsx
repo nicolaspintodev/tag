@@ -51,9 +51,27 @@ const ESTADO_LABELS = {
   terminado: 'Terminado',
 };
 
+const ESTADO_BADGE_CLASSES = {
+  planificado: 'estado-badge estado-badge-planificado',
+  iniciado: 'estado-badge estado-badge-iniciado',
+  terminado: 'estado-badge estado-badge-terminado',
+};
+
 const estadoRender = (v) => (
-  <span className="estado-texto">{ESTADO_LABELS[v] ?? v ?? '-'}</span>
+  <span className={ESTADO_BADGE_CLASSES[v] ?? 'estado-badge'}>{ESTADO_LABELS[v] ?? (v || '-')}</span>
 );
+
+const PROCESO_FILTER_KEYS = [
+  'liquidado_cliente',
+  'liquidado_chofer',
+  'liquidado_proveedor',
+  'facturado',
+];
+
+export const buildViajeProcessFilterParams = (filters = {}) => PROCESO_FILTER_KEYS.reduce((params, key) => {
+  if (filters[key]) params[key] = 'true';
+  return params;
+}, {});
 
 export const buildViajesGridColumns = () => {
   return [

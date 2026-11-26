@@ -124,6 +124,81 @@ class ViajeApiTest extends TestCase
             ->assertJsonCount(2);
     }
 
+    public function test_index_filtra_por_flag_de_proceso(): void
+    {
+        $conCliente = $this->crearViaje([
+            'origen' => 'Con cliente',
+            'estado' => 'terminado',
+            'liquidado_cliente' => true,
+        ]);
+        $conChofer = $this->crearViaje([
+            'origen' => 'Con chofer',
+            'estado' => 'terminado',
+            'liquidado_chofer' => true,
+        ]);
+        $facturado = $this->crearViaje([
+            'origen' => 'Facturado',
+            'estado' => 'terminado',
+            'facturado' => true,
+        ]);
+
+        $this->getJson('/api/viajes?liquidado_cliente=true')
+            ->assertOk()
+            ->assertJsonCount(1)
+            ->assertJsonFragment(['id' => $conCliente->id, 'origen' => 'Con cliente'])
+            ->assertJsonMissing(['origen' => 'Con chofer'])
+            ->assertJsonMissing(['origen' => 'Facturado']);
+    }
+
+    public function test_index_combina_filtros_de_procesos_con_and(): void
+    {
+        $ambos = $this->crearViaje([
+            'origen' => 'Ambos',
+            'estado' => 'terminado',
+            'liquidado_cliente' => true,
+            'facturado' => true,
+        ]);
+        $soloCliente = $this->crearViaje([
+            'origen' => 'Solo cliente',
+            'estado' => 'terminado',
+            'liquidado_cliente' => true,
+            'facturado' => false,
+        ]);
+        $soloFacturado = $this->crearViaje([
+            'origen' => 'Solo facturado',
+            'estado' => 'terminado',
+            'liquidado_cliente' => false,
+            'facturado' => true,
+        ]);
+
+        $this->getJson('/api/viajes?liquidado_cliente=true&facturado=true')
+            ->assertOk()
+            ->assertJsonCount(1)
+            ->assertJsonFragment(['id' => $ambos->id, 'origen' => 'Ambos'])
+            ->assertJsonMissing(['origen' => 'Solo cliente'])
+            ->assertJsonMissing(['origen' => 'Solo facturado']);
+    }
+
+    public function test_index_ignora_param_legacy_liquidado(): void
+    {
+        $legacy = $this->crearViaje([
+            'origen' => 'Legacy',
+            'estado' => 'terminado',
+            'liquidado' => true,
+        ]);
+        $normal = $this->crearViaje([
+            'origen' => 'Normal',
+            'estado' => 'terminado',
+            'liquidado' => false,
+        ]);
+
+        $this->getJson('/api/viajes?liquidado=true')
+            ->assertOk()
+            ->assertJsonCount(2)
+            ->assertJsonFragment(['id' => $legacy->id])
+            ->assertJsonFragment(['id' => $normal->id]);
+    }
+
     public function test_store_crea_viaje(): void
     {
         $response = $this->postJson('/api/viajes', [

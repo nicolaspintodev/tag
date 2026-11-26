@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Search, X, Calendar, Filter, ChevronDown, ChevronUp, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Search, X, Calendar, ChevronDown, ChevronUp, ChevronLeft, ChevronRight } from 'lucide-react';
 import ViajeGrid from '../components/grid/ViajeGrid';
 import Modal from '../components/ui/Modal';
 import ConfirmDialog from '../components/ui/ConfirmDialog';
@@ -13,6 +13,7 @@ import {
   buildViajesGridColumns,
   buildViajesDetailFields,
   buildViajeProcesosView,
+  buildViajeProcessFilterParams,
 } from '../lib/columns/viajes';
 
 const baseCanPersist = (row) =>
@@ -27,12 +28,30 @@ const baseCanPersist = (row) =>
 
 const DETAIL_SECTIONS = ['Operativo', 'Comercial'];
 
+const PROCESS_FILTER_KEYS = [
+  'liquidado_cliente',
+  'liquidado_chofer',
+  'liquidado_proveedor',
+  'facturado',
+];
+
+const PROCESS_FILTER_OPTIONS = [
+  { key: 'liquidado_cliente', label: 'L. Cliente' },
+  { key: 'liquidado_chofer', label: 'L. Chofer' },
+  { key: 'liquidado_proveedor', label: 'L. Proveedor' },
+  { key: 'facturado', label: 'Facturado' },
+];
+
+const emptyProcessFilters = () => Object.fromEntries(PROCESS_FILTER_KEYS.map(key => [key, false]));
+
 const Viajes = () => {
   const [search, setSearch] = useState('');
   const [archivados, setArchivados] = useState(false);
   const [estadoFilter, setEstadoFilter] = useState('');
-  const [facturadoFilter, setFacturadoFilter] = useState(false); // false=all, true=facturado
-  const [liquidadoFilter, setLiquidadoFilter] = useState(false);
+  const [processFilters, setProcessFilters] = useState(emptyProcessFilters);
+  const [draftProcessFilters, setDraftProcessFilters] = useState(emptyProcessFilters);
+  const [processMenuOpen, setProcessMenuOpen] = useState(false);
+  const processMenuRef = useRef(null);
   const [fechaDesde, setFechaDesde] = useState('');
   const [fechaHasta, setFechaHasta] = useState('');
   const [selectedKey, setSelectedKey] = useState(null);
@@ -67,6 +86,19 @@ const Viajes = () => {
     return () => { cancelado = true; };
   }, []);
 
+  useEffect(() => {
+    if (!processMenuOpen) return undefined;
+
+    const handleClickOutside = (event) => {
+      if (processMenuRef.current && !processMenuRef.current.contains(event.target)) {
+        setProcessMenuOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [processMenuOpen]);
+
   const columns = useMemo(() => buildViajesGridColumns(), []);
   const detailFields = useMemo(() => buildViajesDetailFields(
     choferes.map(c => ({ value: c.id, label: `${c.nombre} ${c.apellido}` })),
@@ -94,22 +126,21 @@ const Viajes = () => {
     useEditableResource(viajes, { rowKey: 'id', canPersist });
 
   const selected = useMemo(() => rows.find((row) => row.id === selectedKey), [rows, selectedKey]);
+  const activeProcessFilterCount = Object.values(processFilters).filter(Boolean).length;
   const selectedSnapshotRef = useRef(null);
 
   const fetchRows = (overrides = {}) => {
     const searchValue = overrides.searchValue ?? search;
     const archivadosValue = overrides.archivadosValue ?? archivados;
     const estadoValue = overrides.estadoValue ?? estadoFilter;
-    const facturadoValue = overrides.facturadoValue ?? facturadoFilter;
-    const liquidadoValue = overrides.liquidadoValue ?? liquidadoFilter;
+    const processValues = overrides.processValues ?? processFilters;
     const fechaDesdeValue = overrides.fechaDesdeValue ?? fechaDesde;
     const fechaHastaValue = overrides.fechaHastaValue ?? fechaHasta;
     return reload({
       search: searchValue || undefined,
       archivados: archivadosValue ? 1 : undefined,
       estado: estadoValue || undefined,
-      facturado: facturadoValue === true ? 'true' : undefined,
-      liquidado: liquidadoValue === true ? 'true' : undefined,
+      ...buildViajeProcessFilterParams(processValues),
       fecha_desde: fechaDesdeValue || undefined,
       fecha_hasta: fechaHastaValue || undefined,
     });
@@ -162,14 +193,18 @@ const Viajes = () => {
     fetchRows({ estadoValue: value });
   };
 
-  const handleFacturadoFilterChange = (checked) => {
-    setFacturadoFilter(checked);
-    fetchRows({ facturadoValue: checked });
+  const handleApplyProcessFilters = () => {
+    setProcessFilters(draftProcessFilters);
+    setProcessMenuOpen(false);
+    fetchRows({ processValues: draftProcessFilters });
   };
 
-  const handleLiquidadoFilterChange = (checked) => {
-    setLiquidadoFilter(checked);
-    fetchRows({ liquidadoValue: checked });
+  const handleClearProcessFilters = () => {
+    const empty = emptyProcessFilters();
+    setProcessFilters(empty);
+    setDraftProcessFilters(empty);
+    setProcessMenuOpen(false);
+    fetchRows({ processValues: empty });
   };
 
   const handleFechaDesdeChange = (value) => {
@@ -355,22 +390,29 @@ const Viajes = () => {
               className="filter-select"
               style={{ width: '150px', marginLeft: '0.5rem' }}
             />
-            <label style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', fontSize: '0.85rem', color: 'var(--text-muted)', marginLeft: '0.5rem' }}>
-              <input
-                type="checkbox"
-                checked={facturadoFilter}
-                onChange={(event) => handleFacturadoFilterChange(event.target.checked)}
-              />
-              Facturado
-            </label>
-            <label style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', fontSize: '0.85rem', color: 'var(--text-muted)', marginLeft: '0.5rem' }}>
-              <input
-                type="checkbox"
-                checked={liquidadoFilter}
-                onChange={(event) => handleLiquidadoFilterChange(event.target.checked)}
-              />
-              Liquidado
-            </label>
+            <div className="process-filter" ref={processMenuRef}>
+              <Button variant="outline" size="sm" onClick={() => setProcessMenuOpen(open => !open)}>
+                {activeProcessFilterCount > 0 ? `Filtrar (${activeProcessFilterCount})` : 'Filtrar'}
+              </Button>
+              {processMenuOpen && (
+                <div className="process-filter-menu">
+                  {PROCESS_FILTER_OPTIONS.map(({ key, label }) => (
+                    <label key={key} className="process-filter-option">
+                      <input
+                        type="checkbox"
+                        checked={Boolean(draftProcessFilters[key])}
+                        onChange={(event) => setDraftProcessFilters(prev => ({ ...prev, [key]: event.target.checked }))}
+                      />
+                      {label}
+                    </label>
+                  ))}
+                  <div className="process-filter-actions">
+                    <Button variant="ghost" size="sm" onClick={handleClearProcessFilters}>Limpiar</Button>
+                    <Button size="sm" onClick={handleApplyProcessFilters}>Aplicar</Button>
+                  </div>
+                </div>
+              )}
+            </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', marginLeft: '0.5rem' }}>
               <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Desde</label>
               <Input type="date" value={fechaDesde} onChange={(e) => handleFechaDesdeChange(e.target.value)} style={{ width: '140px' }} />
