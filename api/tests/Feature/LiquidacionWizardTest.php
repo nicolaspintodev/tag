@@ -274,6 +274,39 @@ class LiquidacionWizardTest extends TestCase
     }
 
     /** @test */
+    public function test_store_pendiente_cambia_viaje_planificado_a_terminado(): void
+    {
+        $cliente = Cliente::create([
+            'razon_social' => 'Cliente Planificado',
+            'cuit' => '30-77777777-7',
+        ]);
+        $viaje = Viaje::create([
+            'cliente_id' => $cliente->id,
+            'estado' => 'planificado',
+            'liquidado_cliente' => false,
+            'precio_pactado' => 100000,
+            'origen' => 'CABA',
+            'destino' => 'Rosario',
+            'fecha_salida' => '2026-07-15',
+        ]);
+
+        $this->postJson('/api/liquidaciones', [
+            'tipo' => 'cliente',
+            'cliente_id' => $cliente->id,
+            'fecha_emision' => now()->toDateString(),
+            'estado' => 'pendiente',
+            'viajes' => [['viaje_id' => $viaje->id, 'monto' => 100000, 'iva_monto' => 21000]],
+        ])->assertCreated();
+
+        $this->assertDatabaseHas('viajes', [
+            'id' => $viaje->id,
+            'estado' => 'terminado',
+            'liquidado_cliente' => true,
+            'liquidado' => true,
+        ]);
+    }
+
+    /** @test */
     public function test_disponibles_por_entidad_cliente(): void
     {
         $cliente1 = Cliente::create([

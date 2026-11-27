@@ -160,6 +160,7 @@ class Viaje extends Model
         if ($column) {
             $this->{$column} = true;
             $this->liquidado = true; // keep aggregate in sync
+            $this->estado = EstadoViaje::TERMINADO;
             $this->save();
         }
     }

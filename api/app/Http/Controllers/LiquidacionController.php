@@ -517,12 +517,10 @@ class LiquidacionController extends Controller
 
     private function marcarViajesLiquidados(Liquidacion $liquidacion): void
     {
-        $flag = match ($liquidacion->tipo) {
-            TipoLiquidacion::CLIENTE => 'liquidado_cliente',
-            TipoLiquidacion::PROVEEDOR => 'liquidado_proveedor',
-            TipoLiquidacion::CHOFER => 'liquidado_chofer',
-        };
-        $viajeIds = $liquidacion->viajes->pluck('id')->toArray();
-        Viaje::whereIn('id', $viajeIds)->update([$flag => true, 'liquidado' => true]);
+        Viaje::whereIn('id', $liquidacion->viajes->pluck('id'))
+            ->get()
+            ->each(function (Viaje $viaje) use ($liquidacion) {
+                $viaje->marcarLiquidadoPara($liquidacion->tipo->value);
+            });
     }
 }
