@@ -197,7 +197,7 @@ class LiquidacionApiTest extends TestCase
 
     public function test_cambiar_estado_borrador_a_pendiente(): void
     {
-        $viaje = $this->crearViaje(['estado' => 'terminado', 'liquidado' => false]);
+        $viaje = $this->crearViaje(['estado' => 'planificado', 'liquidado' => false]);
         $liquidacion = $this->crearLiquidacion(['estado' => 'borrador']);
         $liquidacion->viajes()->attach($viaje->id, ['monto' => 100000, 'iva_monto' => 21000]);
 
@@ -215,6 +215,8 @@ class LiquidacionApiTest extends TestCase
 
         $this->assertDatabaseHas('viajes', [
             'id' => $viaje->id,
+            'estado' => 'terminado',
+            'liquidado_cliente' => true,
             'liquidado' => true,
         ]);
     }

@@ -72,6 +72,7 @@ describe('buildViajeProcesosView', () => {
     });
 
     expect(procesos.every(proceso => proceso.documento === '—')).toBe(true);
+    expect(procesos.filter(proceso => proceso.proceso !== 'Facturado').every(proceso => proceso.completo === false)).toBe(true);
   });
 
   it('usa la factura de cliente aunque haya factura de otro tipo', () => {

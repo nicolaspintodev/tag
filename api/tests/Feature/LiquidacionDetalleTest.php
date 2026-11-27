@@ -245,7 +245,7 @@ class LiquidacionDetalleTest extends TestCase
 
     public function test_transicion_a_pendiente_marca_viajes_como_liquidados(): void
     {
-        $viaje = $this->crearViaje();
+        $viaje = $this->crearViaje(['estado' => 'planificado']);
         $liquidacion = $this->crearLiquidacion();
 
         $response = $this->putJson("/api/liquidaciones/{$liquidacion->id}/detalle", [
@@ -263,6 +263,8 @@ class LiquidacionDetalleTest extends TestCase
         ]);
         $this->assertDatabaseHas('viajes', [
             'id' => $viaje->id,
+            'estado' => 'terminado',
+            'liquidado_cliente' => true,
             'liquidado' => 1,
         ]);
     }
