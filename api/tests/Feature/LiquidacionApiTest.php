@@ -154,6 +154,22 @@ class LiquidacionApiTest extends TestCase
         ]);
     }
 
+    public function test_actualizar_monto_pivot_tambien_actualiza_columna_del_viaje(): void
+    {
+        $viaje = $this->crearViaje(['cliente_id' => $this->cliente->id, 'precio_pactado' => 780000]);
+        $liquidacion = $this->crearLiquidacion(['tipo' => 'cliente', 'cliente_id' => $this->cliente->id]);
+        $liquidacion->viajes()->attach($viaje->id, ['monto' => 780000]);
+
+        $this->putJson("/api/liquidaciones/{$liquidacion->id}/viajes/{$viaje->id}/monto", [
+            'monto' => 850000,
+        ])->assertOk();
+
+        $this->assertDatabaseHas('viajes', [
+            'id' => $viaje->id,
+            'precio_pactado' => 850000,
+        ]);
+    }
+
     // ================================================================
     // CAMBIAR ESTADO LIQUIDACION
     // ================================================================

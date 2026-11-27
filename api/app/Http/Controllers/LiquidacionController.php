@@ -268,6 +268,7 @@ class LiquidacionController extends Controller
         ]);
 
         $liquidacion->viajes()->updateExistingPivot($viajeId, ['monto' => $validated['monto']]);
+        $this->sincronizarPrecioViaje(Viaje::findOrFail($viajeId), $liquidacion->tipo, $validated['monto']);
 
         $this->recalcularTotal($liquidacion);
 
@@ -408,6 +409,10 @@ class LiquidacionController extends Controller
             })->all();
 
             $liquidacion->viajes()->sync($sync);
+            foreach ($viajes as $viaje) {
+                $item = collect($validated['viajes'])->firstWhere('viaje_id', $viaje->id);
+                $this->sincronizarPrecioViaje($viaje, $liquidacion->tipo, $item['monto']);
+            }
             $this->recalcularTotal($liquidacion);
 
             if (($validated['estado'] ?? null) === 'pendiente') {
@@ -501,6 +506,12 @@ class LiquidacionController extends Controller
             ->where('liquidacion_id', $liquidacion->id)
             ->sum('monto');
         $liquidacion->update(['total' => $total]);
+    }
+
+    private function sincronizarPrecioViaje(Viaje $viaje, TipoLiquidacion $tipo, $monto): void
+    {
+        $viaje->{$tipo->precioColumn()} = $monto;
+        $viaje->save();
     }
 
     private function precioSugerido(Viaje $viaje, string $tipo): float

@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\Chofer;
 use App\Models\Cliente;
 use App\Models\Liquidacion;
 use App\Models\Proveedor;
@@ -17,6 +18,8 @@ class LiquidacionDetalleTest extends TestCase
 
     private $proveedor;
 
+    private $chofer;
+
     protected function setUp(): void
     {
         parent::setUp();
@@ -29,6 +32,11 @@ class LiquidacionDetalleTest extends TestCase
         $this->proveedor = Proveedor::create([
             'razon_social' => 'Proveedor Detalle',
             'cuit' => '30-22222222-2',
+        ]);
+        $this->chofer = Chofer::create([
+            'nombre' => 'Juan',
+            'apellido' => 'Garcia',
+            'dni' => '30.333.333',
         ]);
     }
 
@@ -85,6 +93,75 @@ class LiquidacionDetalleTest extends TestCase
             'viaje_id' => $viaje->id,
             'monto' => 1000,
             'iva_monto' => 210,
+        ]);
+    }
+
+    public function test_update_detalle_actualiza_precio_pactado_en_borrador(): void
+    {
+        $viaje = $this->crearViaje(['precio_pactado' => 1000]);
+        $liquidacion = $this->crearLiquidacion();
+
+        $this->putJson("/api/liquidaciones/{$liquidacion->id}/detalle", [
+            'fecha_emision' => '2026-11-20',
+            'viajes' => [
+                ['viaje_id' => $viaje->id, 'monto' => 1500],
+            ],
+        ])->assertOk();
+
+        $this->assertDatabaseHas('viajes', [
+            'id' => $viaje->id,
+            'precio_pactado' => 1500,
+        ]);
+    }
+
+    public function test_update_detalle_actualiza_costo_proveedor_en_borrador(): void
+    {
+        $viaje = $this->crearViaje([
+            'cliente_id' => null,
+            'proveedor_id' => $this->proveedor->id,
+            'costo_proveedor' => 700,
+        ]);
+        $liquidacion = $this->crearLiquidacion([
+            'tipo' => 'proveedor',
+            'cliente_id' => null,
+            'proveedor_id' => $this->proveedor->id,
+        ]);
+
+        $this->putJson("/api/liquidaciones/{$liquidacion->id}/detalle", [
+            'fecha_emision' => '2026-11-20',
+            'viajes' => [
+                ['viaje_id' => $viaje->id, 'monto' => 1500],
+            ],
+        ])->assertOk();
+
+        $this->assertDatabaseHas('viajes', [
+            'id' => $viaje->id,
+            'costo_proveedor' => 1500,
+        ]);
+    }
+
+    public function test_update_detalle_actualiza_costo_viaje_en_borrador(): void
+    {
+        $viaje = $this->crearViaje([
+            'chofer_id' => $this->chofer->id,
+            'costo_viaje' => 800,
+        ]);
+        $liquidacion = $this->crearLiquidacion([
+            'tipo' => 'chofer',
+            'cliente_id' => null,
+            'chofer_id' => $this->chofer->id,
+        ]);
+
+        $this->putJson("/api/liquidaciones/{$liquidacion->id}/detalle", [
+            'fecha_emision' => '2026-11-20',
+            'viajes' => [
+                ['viaje_id' => $viaje->id, 'monto' => 1500],
+            ],
+        ])->assertOk();
+
+        $this->assertDatabaseHas('viajes', [
+            'id' => $viaje->id,
+            'costo_viaje' => 1500,
         ]);
     }
 
