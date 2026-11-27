@@ -170,6 +170,27 @@ class LiquidacionApiTest extends TestCase
         ]);
     }
 
+    public function test_actualizar_monto_rechaza_viaje_ajeno_a_la_liquidacion(): void
+    {
+        $viaje = $this->crearViaje();
+        $otroViaje = $this->crearViaje(['precio_pactado' => 500000]);
+        $liquidacion = $this->crearLiquidacion();
+        $liquidacion->viajes()->attach($viaje->id, ['monto' => 780000]);
+
+        $this->putJson("/api/liquidaciones/{$liquidacion->id}/viajes/{$otroViaje->id}/monto", [
+            'monto' => 850000,
+        ])->assertNotFound();
+
+        $this->assertDatabaseHas('viajes', [
+            'id' => $otroViaje->id,
+            'precio_pactado' => 500000,
+        ]);
+        $this->assertDatabaseMissing('liquidacion_viaje', [
+            'liquidacion_id' => $liquidacion->id,
+            'viaje_id' => $otroViaje->id,
+        ]);
+    }
+
     // ================================================================
     // CAMBIAR ESTADO LIQUIDACION
     // ================================================================

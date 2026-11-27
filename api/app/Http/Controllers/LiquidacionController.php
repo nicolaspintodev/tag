@@ -267,10 +267,13 @@ class LiquidacionController extends Controller
             'monto' => 'required|numeric|min:0',
         ]);
 
-        $liquidacion->viajes()->updateExistingPivot($viajeId, ['monto' => $validated['monto']]);
-        $this->sincronizarPrecioViaje(Viaje::findOrFail($viajeId), $liquidacion->tipo, $validated['monto']);
+        DB::transaction(function () use ($liquidacion, $viajeId, $validated) {
+            $viaje = $liquidacion->viajes()->findOrFail($viajeId);
 
-        $this->recalcularTotal($liquidacion);
+            $liquidacion->viajes()->updateExistingPivot($viajeId, ['monto' => $validated['monto']]);
+            $this->sincronizarPrecioViaje($viaje, $liquidacion->tipo, $validated['monto']);
+            $this->recalcularTotal($liquidacion);
+        });
 
         return response()->json($liquidacion->load(['cliente', 'proveedor', 'viajes']));
     }
