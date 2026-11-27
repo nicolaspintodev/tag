@@ -48,6 +48,7 @@ export const NotasField = ({ value, disabled, onChange }) => (
   <textarea
     id="detail-notas"
     className="input-field detail-modal-input detail-modal-textarea"
+    rows={1}
     value={value}
     disabled={disabled}
     onChange={onChange}

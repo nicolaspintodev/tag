@@ -12,6 +12,7 @@ describe('NotasField', () => {
     }));
 
     expect(html).toContain('<textarea');
+    expect(html).toContain('rows="1"');
     expect(html).toContain('detail-modal-textarea');
     expect(html).toContain('Primera línea\nSegunda línea');
   });
