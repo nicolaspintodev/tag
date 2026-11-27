@@ -157,7 +157,7 @@ class Viaje extends Model
             'chofer' => 'liquidado_chofer',
             default => null,
         };
-        if ($column) {
+        if ($column && $this->estado !== EstadoViaje::CANCELADO) {
             $this->{$column} = true;
             $this->liquidado = true; // keep aggregate in sync
             $this->estado = EstadoViaje::TERMINADO;
