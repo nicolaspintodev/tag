@@ -15,10 +15,13 @@ const pendingDraft = () => ({
 });
 
 describe('Viajes', () => {
-  it('muestra el dropdown de procesos con la etiqueta acordada', () => {
+  it('muestra el botón de filtros con la etiqueta Filtrar y sin icono', () => {
     const html = renderToStaticMarkup(createElement(Viajes));
 
-    expect(html).toContain('Procesos');
+    expect(html).toContain('Filtrar');
+    expect(html).not.toContain('Procesos');
+    expect(html).not.toContain('lucide-funnel');
+    expect(html).not.toContain('Filtrar (');
   });
 });
 

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useReducer, useRef, useState } from 'react';
-import { Search, X, Calendar, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, Filter } from 'lucide-react';
+import { Search, X, Calendar, ChevronDown, ChevronUp, ChevronLeft, ChevronRight } from 'lucide-react';
 import ViajeGrid from '../components/grid/ViajeGrid';
 import Modal from '../components/ui/Modal';
 import ConfirmDialog from '../components/ui/ConfirmDialog';
@@ -117,7 +117,6 @@ const Viajes = () => {
     useEditableResource(viajes, { rowKey: 'id', canPersist });
 
   const selected = useMemo(() => rows.find((row) => row.id === selectedKey), [rows, selectedKey]);
-  const activeProcessFilterCount = Object.values(processFilters).filter(Boolean).length;
   const selectedSnapshotRef = useRef(null);
 
   const fetchRows = (overrides = {}) => {
@@ -379,8 +378,7 @@ const Viajes = () => {
             />
             <div className="process-filter" ref={processMenuRef}>
               <Button variant="outline" size="sm" onClick={() => dispatchProcessFilter({ type: 'toggle' })}>
-                <Filter size={14} />
-                {activeProcessFilterCount > 0 ? `Procesos (${activeProcessFilterCount})` : 'Procesos'}
+                Filtrar
               </Button>
               {processMenuOpen && (
                 <div className="process-filter-menu">

@@ -154,13 +154,50 @@ class LiquidacionApiTest extends TestCase
         ]);
     }
 
+    public function test_actualizar_monto_pivot_tambien_actualiza_columna_del_viaje(): void
+    {
+        $viaje = $this->crearViaje(['cliente_id' => $this->cliente->id, 'precio_pactado' => 780000]);
+        $liquidacion = $this->crearLiquidacion(['tipo' => 'cliente', 'cliente_id' => $this->cliente->id]);
+        $liquidacion->viajes()->attach($viaje->id, ['monto' => 780000]);
+
+        $this->putJson("/api/liquidaciones/{$liquidacion->id}/viajes/{$viaje->id}/monto", [
+            'monto' => 850000,
+        ])->assertOk();
+
+        $this->assertDatabaseHas('viajes', [
+            'id' => $viaje->id,
+            'precio_pactado' => 850000,
+        ]);
+    }
+
+    public function test_actualizar_monto_rechaza_viaje_ajeno_a_la_liquidacion(): void
+    {
+        $viaje = $this->crearViaje();
+        $otroViaje = $this->crearViaje(['precio_pactado' => 500000]);
+        $liquidacion = $this->crearLiquidacion();
+        $liquidacion->viajes()->attach($viaje->id, ['monto' => 780000]);
+
+        $this->putJson("/api/liquidaciones/{$liquidacion->id}/viajes/{$otroViaje->id}/monto", [
+            'monto' => 850000,
+        ])->assertNotFound();
+
+        $this->assertDatabaseHas('viajes', [
+            'id' => $otroViaje->id,
+            'precio_pactado' => 500000,
+        ]);
+        $this->assertDatabaseMissing('liquidacion_viaje', [
+            'liquidacion_id' => $liquidacion->id,
+            'viaje_id' => $otroViaje->id,
+        ]);
+    }
+
     // ================================================================
     // CAMBIAR ESTADO LIQUIDACION
     // ================================================================
 
     public function test_cambiar_estado_borrador_a_pendiente(): void
     {
-        $viaje = $this->crearViaje(['estado' => 'terminado', 'liquidado' => false]);
+        $viaje = $this->crearViaje(['estado' => 'planificado', 'liquidado' => false]);
         $liquidacion = $this->crearLiquidacion(['estado' => 'borrador']);
         $liquidacion->viajes()->attach($viaje->id, ['monto' => 100000, 'iva_monto' => 21000]);
 
@@ -178,6 +215,8 @@ class LiquidacionApiTest extends TestCase
 
         $this->assertDatabaseHas('viajes', [
             'id' => $viaje->id,
+            'estado' => 'terminado',
+            'liquidado_cliente' => true,
             'liquidado' => true,
         ]);
     }

@@ -2230,7 +2230,7 @@ button.outline.entity-pick-required:hover {
 }
 
 .detail-modal-textarea {
-  min-height: 5rem;
+  min-height: 0;
   resize: vertical;
 }
 
