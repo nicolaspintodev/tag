@@ -111,31 +111,39 @@ export const buildViajesDetailFields = (choferOptions = [], clienteOptions = [],
 export { TIPO_OPTIONS, ESTADO_OPTIONS };
 
 const LIQUIDACION_PROCESOS = [
-  { tipo: 'cliente', proceso: 'Cliente Liquidado', flag: 'liquidado_cliente' },
-  { tipo: 'proveedor', proceso: 'Proveedor Liquidado', flag: 'liquidado_proveedor' },
-  { tipo: 'chofer', proceso: 'Chofer Liquidado', flag: 'liquidado_chofer' },
+  { tipo: 'cliente', proceso: 'Cliente Liquidado' },
+  { tipo: 'proveedor', proceso: 'Proveedor Liquidado' },
+  { tipo: 'chofer', proceso: 'Chofer Liquidado' },
 ];
 
-const documentoPorProceso = (row, tipo) => {
-  const liquidaciones = Array.isArray(row?.liquidaciones) ? row.liquidaciones : [];
+const liquidacionesDelViaje = (row) => (
+  Array.isArray(row?.liquidaciones) ? row.liquidaciones : []
+);
 
+const liquidacionPorProceso = (row, tipo) => (
+  liquidacionesDelViaje(row).find(item => item?.tipo === tipo && item?.numero) ?? null
+);
+
+const documentoPorProceso = (row, tipo) => {
   if (tipo === 'facturado') {
-    const conFactura = liquidaciones.find(liquidacion => liquidacion?.tipo === 'cliente' && liquidacion?.factura?.numero);
+    const conFactura = liquidacionesDelViaje(row).find(liquidacion => liquidacion?.tipo === 'cliente' && liquidacion?.factura?.numero);
     return conFactura?.factura?.numero ?? '—';
   }
 
-  const liquidacion = liquidaciones.find(item => item?.tipo === tipo && item?.numero);
-  return liquidacion?.numero ?? '—';
+  return liquidacionPorProceso(row, tipo)?.numero ?? '—';
 };
 
 export const buildViajeProcesosView = (row = {}) => {
   const procesos = LIQUIDACION_PROCESOS
     .filter(({ tipo }) => tipo !== 'proveedor' || Boolean(row.proveedor_id || row.proveedor))
-    .map(({ tipo, proceso, flag }) => ({
-      proceso,
-      completo: Boolean(row[flag]),
-      documento: documentoPorProceso(row, tipo),
-    }));
+    .map(({ tipo, proceso }) => {
+      const liquidacion = liquidacionPorProceso(row, tipo);
+      return {
+        proceso,
+        completo: Boolean(liquidacion),
+        documento: liquidacion?.numero ?? '—',
+      };
+    });
 
   return [
     ...procesos,

@@ -47,18 +47,18 @@ describe('buildViajeProcesosView', () => {
     ]);
   });
 
-  it('no usa el agregado legacy para pintar', () => {
+  it('usa la relacion de liquidacion para pintar aunque el flag este en false', () => {
     const procesos = buildViajeProcesosView({
-      liquidado: true,
+      liquidado: false,
       liquidado_cliente: false,
       liquidado_chofer: false,
       facturado: false,
-      liquidaciones: [{ tipo: 'cliente', numero: 'LIQ-C-0002' }],
+      liquidaciones: [{ tipo: 'cliente', numero: 'LIQ-C-0002', estado: 'borrador' }],
     });
 
     expect(procesos[0]).toEqual({
       proceso: 'Cliente Liquidado',
-      completo: false,
+      completo: true,
       documento: 'LIQ-C-0002',
     });
   });
